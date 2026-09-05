@@ -8,7 +8,7 @@ Work in a feature worktree and a neutral `feat/` or `fix/` branch. Open a pull r
 
 Use maintained platform libraries and supported Things interfaces. Do not introduce private app APIs, database access, shell execution tools, or automatic retries of uncertain writes. Every advertised capability needs a verified postcondition or an explicit limitation. New UI needs reviewed design work before implementation.
 
-New mutations must include failure-path tests, permission enforcement, bounded inputs, shared coordination, durable request handling, and read-back verification. Real mutation tests belong in a separate macOS user with a disposable Things library, never a personal library. Public automation is not transactional; report uncertainty instead of fabricating rollback.
+New mutations must include failure-path tests, permission enforcement, bounded inputs, shared coordination, durable request handling, and read-back verification. Default real mutation tests to a separate macOS user with a disposable Things library. A library owner may explicitly authorize testing in their real library: use a labeled synthetic fixture, make one single-item write at a time, read it back, and preserve the shared lock and journal. That authorization does not enable ordinary writes for connected clients. Public automation is not transactional; report uncertainty instead of fabricating rollback.
 
 Consult `almanac/README.md` for project context. Treat the wiki as read-only during ordinary implementation; use the maintenance workflow for durable knowledge changes. Current code is authoritative for implementation behavior.
 

@@ -11,3 +11,4 @@
 - Use only supported Things automation interfaces. Never write directly to its database, use private experimental APIs, or collect Things Cloud credentials.
 - Product planning precedes implementation. New UI requires approved artboards. The current planning work does not authorize publication, deployment, or distribution.
 - Implementation of the approved feasibility plan is authorized. Verify local checks and submit a private pull request; do not merge it or publish the project.
+- The owner authorizes small single-item writes in the real Things library for this verification session. Use a clearly labeled synthetic item, perform one mutation at a time, and read it back before continuing. Keep normal client write permission disabled during verification. This explicit authorization overrides the isolated-library testing requirement for this session only.

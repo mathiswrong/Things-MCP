@@ -49,7 +49,7 @@ async function main() {
     await state.setWrites(Boolean(values["allow-writes"]));
     process.stdout.write(
       values["allow-writes"]
-        ? "Ordinary writes enabled locally. Native mutations still require isolated-library verification.\n"
+        ? "Ordinary writes enabled locally. To-do mutations verified; other item types remain experimental.\n"
         : "Read-only access enabled.\n",
     );
     return;

@@ -90,7 +90,7 @@ export function createServer(service: ThingsService) {
   );
   register(
     "things_create_item",
-    "Create a to-do, project, area, or tag. Supply a unique UUID requestId. Native writes are experimental until isolated-library verification is complete; disabled by default.",
+    "Create a to-do, project, area, or tag. Supply a unique UUID requestId. To-do creation is verified; other item types remain experimental. Local write permission is required and disabled by default.",
     createSchema,
     false,
     (input) => service.create(input),

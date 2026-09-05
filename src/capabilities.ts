@@ -14,24 +14,27 @@ export const capabilities = [
   { operation: "get_item", state: "implemented", adapter: "applescript" },
   {
     operation: "create_item",
-    state: "unverified",
+    state: "implemented",
     adapter: "applescript",
+    validation: "todo_live_write_verified_3.23.3",
     limitation:
-      "Implemented behind local write permission; real mutations require an isolated test library.",
+      "Local write permission required. Project, area and tag creation remain unverified.",
   },
   {
     operation: "update_item",
-    state: "unverified",
+    state: "implemented",
     adapter: "applescript",
+    validation: "todo_live_write_verified_3.23.3",
     limitation:
-      "Title, notes, status and deadline only. Read revision required.",
+      "To-do title, notes, status and deadline set/clear verified. Other item types remain unverified. Read revision required.",
   },
   {
     operation: "schedule_item",
-    state: "unverified",
+    state: "implemented",
     adapter: "applescript",
+    validation: "todo_live_write_verified_3.23.3",
     limitation:
-      "Calendar date only. Clearing, Evening and reminders are not implemented.",
+      "To-do calendar-date scheduling verified; projects remain unverified. Clearing, Evening and reminders are not implemented.",
   },
   {
     operation: "request_status",

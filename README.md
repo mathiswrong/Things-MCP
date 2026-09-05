@@ -2,7 +2,7 @@
 
 Use Things 3 through local MCP tools backed by its supported macOS automation interfaces.
 
-This is an early feasibility build. Read access has been checked against Things 3.23.3 on macOS. Ordinary mutations have synthetic test coverage but still need isolated-library verification. Writes are off by default. Headings, checklists, deletion, recurrence, and remote HTTP are not implemented. The complete target scope is in [PLAN.md](PLAN.md).
+This is an early feasibility build. Read access and single-to-do creation, editing, scheduling, and status changes have been checked against Things 3.23.3 on macOS. Project, area, and tag mutations remain unverified. Writes are off by default. Headings, checklists, deletion, recurrence, and remote HTTP are not implemented. The complete target scope is in [PLAN.md](PLAN.md).
 
 ## Local setup
 
@@ -47,7 +47,7 @@ To keep access read-only:
 npm start -- setup --read-only
 ```
 
-Only after verifying mutations in a disposable Things library, enable ordinary writes locally with `setup --allow-writes`. No MCP tool can grant this permission. The setting applies to every local client using the same state directory; per-client grants are future work. Do not isolate each client into a different state directory, because that defeats coordination.
+Enable ordinary writes locally with `setup --allow-writes` when ready to grant connected clients write access. Check the capability report for tested operations and remaining limitations first. No MCP tool can grant this permission. The setting applies to every local client using the same state directory; per-client grants are future work. Do not isolate each client into a different state directory, because that defeats coordination.
 
 ## Safety and privacy
 
@@ -68,5 +68,7 @@ npm audit
 ```
 
 `npm run smoke` launches the built stdio executable and proves discovery, capability reporting, and write rejection without accessing Things. `npm run smoke -- --live-read` additionally checks real health and bounded reads, without printing task contents or making native changes. Temporary test directories are created in Downloads and removed by the tests. Build artifacts stay outside the repository.
+
+The [live verification record](VERIFICATION.md) describes the authorized single-item checks and their limits. Real writes are never part of the automatic test suite.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md). Source is private and unlicensed pending the owner's public-release and license decisions. Do not redistribute Things or vendor assets. The project is intended to become independently buildable and suitable for a free, open-source release.
