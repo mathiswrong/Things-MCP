@@ -17,7 +17,9 @@
     "build": "node scripts/build.mjs",
     "install:local": "node scripts/install-local.mjs",
     "smoke": "node scripts/smoke.mjs",
-    "check": "npm run typecheck && npm run lint && npm test && npm run build"
+    "check": "npm run typecheck && npm run lint && npm test && npm run build",
+    "package:extension": "node scripts/package-extension.mjs",
+    "smoke:extension": "node scripts/smoke-extension.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/client": "2.0.0",
@@ -27,11 +29,15 @@
     "zod": "4.5.4"
   },
   "devDependencies": {
+    "@anthropic-ai/mcpb": "2.1.2",
     "@biomejs/biome": "2.5.12",
     "@types/node": "26.4.1",
     "@types/proper-lockfile": "4.1.4",
     "esbuild": "0.28.2",
     "tsx": "4.23.13",
     "typescript": "7.0.2"
+  },
+  "overrides": {
+    "tmp": "0.2.7"
   }
 }

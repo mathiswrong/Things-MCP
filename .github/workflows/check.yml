@@ -16,4 +16,6 @@ jobs:
       - run: npm ci
       - run: npm run check
       - run: npm run smoke
+      - run: npm run package:extension
+      - run: npm run smoke:extension
       - run: npm audit --audit-level=high

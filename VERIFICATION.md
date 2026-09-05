@@ -22,3 +22,8 @@ Authorization was limited to the trusted local verification process by overridin
 The synthetic fixture remains completed in Things. No global log, trash, delete, or cleanup operation was used. The native adapter needed no changes for these checks.
 
 These results cover to-dos only. They do not verify project, area, or tag writes, dates across DST transitions, remote connections, actual assistant UI flows, headings, checklists, deletion, or full application coverage. The automatic suite continues to use synthetic adapters and cannot perform these live writes.
+# Installation package checkpoint
+
+On September 5, 2026, the read-only MCPB preview passed official manifest validation, archive creation and extraction, checksum verification, launch from a path containing spaces, eight-tool discovery, capability reporting, and two consecutive connect/close cycles. With ordinary writes enabled only in an isolated synthetic settings directory, the package still rejected creation and left those settings unchanged. Live health passed through the extracted package without reading task contents or making native changes.
+
+The synthetic suite now has 29 passing tests, including a new service-level check that creation, editing, and scheduling remain denied through a restricted connection as shared permissions change. Typecheck, lint, and bundle build pass. Actual host installation, Automation consent identity, and user acceptance remain unverified. Browser transport and the client-owned write control remain unfinished.

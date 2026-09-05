@@ -4,9 +4,17 @@ Use Things 3 through local MCP tools backed by its supported macOS automation in
 
 This is an early feasibility build. Read access and single-to-do creation, editing, scheduling, and status changes have been checked against Things 3.23.3 on macOS. Project, area, and tag mutations remain unverified. Writes are off by default. Headings, checklists, deletion, recurrence, and remote HTTP are not implemented. The complete target scope is in [PLAN.md](PLAN.md).
 
-## Local setup
+## Installation preview
 
-The commands below are developer setup. User installation must use supported client interfaces without configuration editing, Terminal commands, or a companion app; see [the setup plan](SETUP-PLAN.md). That packaging and the browser connection are not complete yet.
+A read-only MCPB package is available for local installation testing. Open it with Claude Desktop and select **Install**, or drag it into **Settings > Extensions**. Then ask it to check the Things connection without reading or changing tasks. The client supplies its built-in runtime; there are no commands, account credentials, or configuration files for the user. See [the installation guide](packaging/INSTALL.md).
+
+This preview always rejects mutations, even if another connection has write permission. It is not the complete setup experience: client-owned write controls, ChatGPT desktop packaging, and ordinary browser access remain unfinished.
+
+Contributors build and verify the package with `npm run package:extension` and `npm run smoke:extension`. The output is `things-mcp-0.1.0.mcpb` with a SHA-256 checksum beside the regular build, outside the repository. The smoke test extracts that archive and checks its actual launch configuration, discovery, write rejection, and restart without accessing Things. `--live-health` additionally checks connection health without reading task contents. [Packaging dependencies](packaging/DEPENDENCIES.md) documents notice generation and the development-only security override.
+
+## Developer setup
+
+The commands below are contributor setup. User installation must use supported client interfaces without configuration editing, Terminal commands, or a companion app; see [the setup plan](SETUP-PLAN.md).
 
 Requires macOS, an installed and running copy of Things 3, and Node.js 24 or later. The ordinary test suite also runs without Things or a Mac.
 
@@ -24,7 +32,7 @@ npm run install:local
 
 The installer prints a standard MCP configuration entry. Add it to a client's `mcpServers` configuration. Use the absolute Node executable and installed entry path it prints; MCP clients do not necessarily inherit the interactive shell environment. Start the bundled entry directly, not through `npm start`, because npm writes extra text to stdout.
 
-Claude Desktop accepts a local stdio server configuration. ChatGPT requires a separate supported connection such as Secure MCP Tunnel; that connection has not been provisioned or verified in this build. The SDK smoke test is not a substitute for testing either application's actual UI. See the [client connection plan](PLAN.md).
+Local MCP hosts can launch the stdio executable. ChatGPT browser access requires a separate supported connection such as Secure MCP Tunnel; that connection has not been provisioned or verified in this build. The SDK smoke test is not a substitute for testing either application's actual UI. See the [client connection plan](PLAN.md).
 
 The Mac must be awake and Things must be running. macOS may request Automation permission for the process running the bridge. `doctor` reports app version, timezone, and write permission without listing task contents.
 

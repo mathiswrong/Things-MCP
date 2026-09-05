@@ -22,14 +22,14 @@ async function main() {
   const command = positionals[0] ?? "stdio";
   if (values.help) {
     process.stdout.write(
-      "things-mcp [stdio|doctor|setup]\nsetup --allow-writes enables ordinary writes; setup --read-only disables them.\n",
+      "things-mcp [stdio|doctor|setup]\nstdio --read-only prevents writes for this connection.\nsetup --allow-writes enables ordinary writes; setup --read-only disables them.\n",
     );
     return;
   }
   if (
     positionals.length > 1 ||
     !["stdio", "doctor", "setup"].includes(command) ||
-    (command !== "setup" && (values["allow-writes"] || values["read-only"])) ||
+    (command !== "setup" && values["allow-writes"]) ||
     (values["allow-writes"] && values["read-only"])
   )
     throw new Error("Invalid command");
@@ -37,7 +37,7 @@ async function main() {
     process.env.THINGS_MCP_STATE_DIR ??
     join(homedir(), "Library", "Application Support", "Things MCP");
   if (!isAbsolute(directory)) throw new Error("State path must be absolute");
-  const state = new State(directory);
+  const state = new State(directory, !values["read-only"]);
   const service = new ThingsService(new NativeAdapter(), state);
   if (command === "setup") {
     if (!values["allow-writes"] && !values["read-only"]) {

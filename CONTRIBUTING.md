@@ -14,4 +14,6 @@ Consult `almanac/README.md` for project context. Treat the wiki as read-only dur
 
 The SDK and other dependency versions are locked. Update dependencies deliberately, rerun compatibility tests, check security advisories, and preserve license obligations. Native SDK/library checks should not be replaced by source-code-only assertions.
 
+For packaging changes, run `npm run package:extension` and `npm run smoke:extension` after the normal checks. Both work without Things, credentials, or a signing identity. The latter extracts the built archive and starts it from a path containing spaces, with only a minimal environment and isolated test state. The explicit `--live-health` option requires macOS and Things; CI does not use it. See `packaging/DEPENDENCIES.md` for the development dependency override and bundled notice handling.
+
 Publishing a package, changing repository visibility, distributing installers, and applying a license require the owner's separate authorization. No CI workflow in this repository deploys or publishes software.

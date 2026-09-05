@@ -11,7 +11,11 @@ const root = join(homedir(), "Library", "Application Support", "Things MCP");
 await mkdir(root, { recursive: true, mode: 0o700 });
 const destination = join(root, "runtime", "0.1.0");
 await mkdir(join(destination, "native"), { recursive: true, mode: 0o700 });
-for (const filename of ["cli.mjs", "native/things.jxa.js"]) {
+for (const filename of [
+  "cli.mjs",
+  "native/things.jxa.js",
+  "THIRD-PARTY-NOTICES.txt",
+]) {
   await copyFile(join(build, filename), join(destination, filename));
   await chmod(join(destination, filename), 0o600);
 }

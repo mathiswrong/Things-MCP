@@ -30,6 +30,14 @@ Disconnect and uninstall must preserve Things data and unrelated client settings
 
 No companion-app artboard approval is pending. Public distribution and license selection still require separate authorization. The packaging and browser-connection work are not complete.
 
+## Current implementation checkpoint
+
+The local MCPB installation preview is built with the official package validator and builder. It bundles the Node server and notices, uses the host runtime, and forces read-only access for its connection. This restriction is a per-process ceiling on shared permissions: another process enabling shared writes cannot lift it, and the preview does not modify shared settings. The existing shared lock and journal remain unchanged. Native write controls are deliberately absent until their grant and revocation behavior is implemented and tested.
+
+The extracted package passes tool discovery, mutation rejection with shared writes enabled, and close/reopen checks using the standard MCP client. Live health also passes without reading task contents. Actual installation, Automation consent identity, tool calls inside the client, and removal remain the owner's acceptance test.
+
+The upstream tunnel client now documents a bundled plugin and managed runtime lifecycle. That is the next candidate to verify for background transport reuse. Its macOS installation still uses Homebrew and setup still requires a tunnel identity and runtime credential. No supported command-free first-use route is established yet. Do not silently install a helper, connect a tunnel, or call this complete. See [upstream lifecycle guidance](https://github.com/openai/tunnel-client#for-codex--copilot) and [tunnel setup requirements](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels).
+
 ## Sources
 
 - [Desktop extension installation](https://support.claude.com/en/articles/10949351-getting-started-with-local-mcp-servers-on-claude-desktop)

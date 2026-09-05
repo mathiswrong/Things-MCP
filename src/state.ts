@@ -36,7 +36,10 @@ export interface Lease {
   assertOwned(): Promise<void>;
 }
 export class State {
-  constructor(public readonly directory: string) {}
+  constructor(
+    public readonly directory: string,
+    private readonly permitWrites = true,
+  ) {}
   async initialize() {
     await mkdir(this.directory, { recursive: true, mode: 0o700 });
     const stat = await lstat(this.directory);
@@ -98,6 +101,7 @@ export class State {
     }
   }
   async writesEnabled() {
+    if (!this.permitWrites) return false;
     const value = await this.read("settings.json");
     if (value === undefined) return false;
     const result = z

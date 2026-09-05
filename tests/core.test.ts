@@ -144,6 +144,39 @@ function update(item: Item) {
   };
 }
 
+test("a read-only connection stays restricted when shared write permission changes", async () => {
+  await fixture(async ({ adapter, state, directory }) => {
+    const restricted = new State(directory, false);
+    const service = new ThingsService(adapter, restricted);
+    const item = seed(adapter);
+    for (const enabled of [true, false, true]) {
+      await state.setWrites(enabled);
+      assert.equal(await state.writesEnabled(), enabled);
+      assert.equal((await service.health()).writesEnabled, false);
+      await assert.rejects(
+        service.create({
+          requestId: randomUUID(),
+          kind: "todo",
+          title: "Never created",
+        }),
+        code("READ_ONLY"),
+      );
+      await assert.rejects(service.update(update(item)), code("READ_ONLY"));
+      await assert.rejects(
+        service.schedule({
+          requestId: randomUUID(),
+          target: { kind: item.kind, id: item.id },
+          expectedRevision: fingerprint(item),
+          date: "2026-09-05",
+        }),
+        code("READ_ONLY"),
+      );
+    }
+    assert.equal(adapter.reads, 0);
+    assert.deepEqual(adapter.mutations, { create: 0, update: 0, schedule: 0 });
+  });
+});
+
 test("ordinary writes are denied by default before any adapter access", async () => {
   await fixture(async ({ adapter, service }) => {
     const item = seed(adapter);
