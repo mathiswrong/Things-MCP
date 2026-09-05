@@ -12,3 +12,5 @@
 - Product planning precedes implementation. New UI requires approved artboards. The current planning work does not authorize publication, deployment, or distribution.
 - Implementation of the approved feasibility plan is authorized. Verify local checks and submit a private pull request; do not merge it or publish the project.
 - The owner authorizes small single-item writes in the real Things library for this verification session. Use a clearly labeled synthetic item, perform one mutation at a time, and read it back before continuing. Keep normal client write permission disabled during verification. This explicit authorization overrides the isolated-library testing requirement for this session only.
+
+- No companion app, custom setup window, or menu-bar application. Use supported client extension/plugin installation and client-owned settings. User setup must not require configuration editing, Terminal commands, or manually managed runtimes. Both ChatGPT desktop and ordinary browser access are required for the first usable setup; a desktop-only result is incomplete. Any required background transport must not introduce a separate application UI.

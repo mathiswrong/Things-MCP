@@ -1,40 +1,34 @@
-# Easy setup proposal
+# Setup through the clients
 
-Status: design proposal for owner review. No connection is installed or enabled by this proposal.
+The owner requires no companion app. There will be no separate Things MCP setup window, settings app, or menu-bar application. The previous custom-window proposal is withdrawn.
 
-The owner requires both ChatGPT desktop and ordinary browser chats from the first usable setup. A desktop-only package does not satisfy this milestone.
+The owner must be able to install, connect, choose access, and run a first test through supported client interfaces without editing configuration, entering commands, installing a language runtime, or keeping Terminal open. Both ChatGPT desktop and ordinary browser chats are required from the start. Manual commands remain contributor documentation only.
 
-The setup acceptance test is that the owner can install, connect, choose access, and run a first test without editing configuration, entering a command, installing a language runtime, or keeping Terminal open. The installer must do that work. Manual developer instructions remain contributor documentation only.
+## Installation routes to verify
 
-## Recommended personal setup
+- Claude Desktop: package the existing server as an MCPB extension. Use the client's installation dialog and extension settings. Bundle dependencies and verify the host runtime and Automation permission identity. Leave final installation to the owner for the usability test.
+- ChatGPT desktop Work: verify the supported local plugin packaging and installation flow in the actual client. Local MCP support does not establish ordinary browser-chat support. Avoid private client APIs and hand-edited configuration.
+- ChatGPT browser: verify a supported remote connection with setup in the client's existing interfaces. Secure MCP Tunnel currently documents a tunnel identity, runtime credential, workspace association, and developer-mode access. How to package and manage that background transport without a companion app or manual commands remains unresolved. Do not describe this route as easy or complete until the owner can perform it independently. Do not expose an unauthenticated public endpoint to remove setup steps.
 
-Use a small native Mac setup and settings app, backed by the existing service. One window shows Things availability, the available client connections, the shared permission for task changes, and a connection test. Use native buttons, checkbox, progress, and file handling. Keep the default read-only. Let the owner perform the final client installation and permission approvals while testing onboarding.
+## Permissions and lifecycle
 
-Package the existing local server as an MCPB desktop extension for the first local client. Open the bundle in its native installation flow; do not ask the owner to edit JSON. Bundle dependencies and use the supported host runtime. Confirm the runtime version, Automation permission identity, and installation on the actual client before claiming completion. No global installation or account is needed for this route.
+Start read-only. Use trusted client-owned configuration controls to select ordinary write access, preserving enforcement at the service boundary. Define and test how each client's control interacts with shared permission revocation before implementing it. MCP calls cannot grant themselves permission.
 
-For ChatGPT desktop Work, investigate the supported local plugin installation path first. Official documentation establishes local MCP support; the exact plugin import experience and account support still need verification. Do not represent it as ordinary browser-chat support. Use a packaged local plugin or supported registration API; do not hand-edit TOML or depend on automating private client UI.
+Retain a shared state directory, filesystem lease, durable request journal, revision checks, and read-back verification across all connections. A different client package must not create an independent coordination directory for the same Things library.
 
-For ordinary ChatGPT browser chats, the current documented route requires remote access, such as Secure MCP Tunnel. The desktop helper must handle installation, process management, restart, diagnostics, and local secret storage. The documented tunnel flow still requires a tunnel identity, runtime credential, workspace association, and developer-mode access. The proposed first flow opens the official account setup page, accepts the connection ID and API key in ordinary native fields, saves the key to Keychain, and completes local configuration. These are credential inputs, never JSON, shell commands, or an editable configuration file. Clearly explain the account step before the user starts. A seamless browser sign-in that provisions everything has not been established. Do not promise it or expose an unauthenticated public endpoint to simplify setup.
+Report Connected only after the actual client successfully calls a tool. Health checks must not read task contents or create tasks. A separately requested test may create and verify one labeled Inbox item. Installing the package must not enable writes or create test data silently.
 
-## Window behavior
-
-- At first launch, check Things availability without reading task contents. Missing app, closed app, and denied Automation access each get one specific recovery action.
-- Offer each client as a row with Connect or Manage. Report Connected only after a tool call from that client succeeds. A saved configuration or launched app is not proof.
-- Offer Allow task changes as one local control. State explicitly that it applies to all bridge connections. Keep lock, journal, permission checks, and revision checks shared.
-- Check connection is read-only. A separate Test a to-do action states that it creates one labeled item in Inbox and verifies it. Never create a task during installation without that action.
-- Disconnect and uninstall remove only this project's integration and runtime, preserving Things data, unrelated client settings, and request receipts unless the owner explicitly removes them.
-- Local operation should use no remote credentials. If the browser route is selected, keep its secrets in Keychain and its helper outside the repository.
+Disconnect and uninstall must preserve Things data and unrelated client settings. Keep remote credentials out of source and logs, using the platform's secure credential storage when needed. Background components may be necessary for browser access, but must be managed through supported installation and lifecycle mechanisms without a separate application UI.
 
 ## Acceptance
 
-1. Open one installable artifact and complete setup with standard controls.
-2. Connect a desktop client without typing paths, commands, or structured configuration.
-3. Discover all eight tools and run a read-only health check from the actual client.
-4. Choose ordinary write access with a visible local control, then create and verify one Inbox test item.
-5. Quit and reopen the client. Confirm it reconnects. Test permission revocation, disconnect, and uninstall.
-6. Test the other selected client independently, preserving the same coordination and permission state. Both ChatGPT desktop and ordinary browser conversations must pass; do not mark setup complete based on desktop success alone.
+1. Install through supported client controls with no configuration syntax, commands, or runtime installation.
+2. Discover all eight tools and run a read-only health check from the actual client.
+3. Select ordinary write access through a trusted existing settings surface, then request and verify one Inbox test item.
+4. Quit and reopen the client. Confirm reconnect, permission revocation, disconnect, and uninstall.
+5. Repeat independently in the other desktop client and in ordinary ChatGPT browser conversations. A desktop-only result is incomplete.
 
-Artifacts are personal test builds until the owner authorizes public distribution, license selection, signing, and release. The attached native artboards show proposed empty and connected states, not live connection results. Only macOS has a setup surface in this milestone; phone and tablet client access is a separate remote-connection requirement.
+No companion-app artboard approval is pending. Public distribution and license selection still require separate authorization. The packaging and browser-connection work are not complete.
 
 ## Sources
 
@@ -43,7 +37,3 @@ Artifacts are personal test builds until the owner authorizes public distributio
 - [Local MCP in the desktop app](https://learn.chatgpt.com/docs/extend/mcp)
 - [Plugin installation](https://learn.chatgpt.com/docs/plugins)
 - [Secure MCP Tunnel requirements](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels)
-
-## Design review
-
-Use `scripts/render-setup-artboards.swift` to render the proposed native controls in Cream and Ink. Output goes to Downloads. The browser setup artboard exposes the current account requirement instead of hiding it behind an unverified sign-in claim. The renderer is a design artifact generator; it cannot install a connection, change permission, read Things, or write a task.
