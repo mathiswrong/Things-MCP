@@ -17,7 +17,7 @@ export type ErrorCode =
 const messages: Record<ErrorCode, string> = {
   INVALID_INPUT: "The request contains invalid or unsupported fields.",
   READ_ONLY:
-    "Writes are disabled. Enable ordinary writes in the local setup command.",
+    "Writes are disabled. Open Things MCP extension settings, enable Allow changes for this connection, and save.",
   NOT_FOUND: "The requested item was not found. Find it again before retrying.",
   AUTOMATION_DENIED:
     "Allow automation access to Things in macOS Privacy & Security settings.",
@@ -25,7 +25,7 @@ const messages: Record<ErrorCode, string> = {
     "Things is unavailable. Open Things on this Mac, then retry.",
   PLATFORM_UNSUPPORTED: "The Things adapter requires macOS.",
   NATIVE_FAILURE:
-    "Things automation failed. Run the local doctor command for connection status.",
+    "Things automation failed. Check that Things is running and automation access is allowed, then request a connection health check.",
   OUTCOME_UNKNOWN:
     "The write may have happened. Read the affected items before taking another action. This request will not be repeated automatically.",
   STALE_ITEM:

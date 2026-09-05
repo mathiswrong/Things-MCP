@@ -42,11 +42,23 @@ try {
     recursive: true,
     withFileTypes: true,
   });
-  assert.equal(entries.filter((entry) => entry.isFile()).length, 5);
+  assert.equal(
+    entries.filter((entry) => entry.isFile()).length,
+    metadata.license === "UNLICENSED" ? 5 : 6,
+  );
   assert.ok(entries.every((entry) => !entry.isSymbolicLink()));
   const manifest = JSON.parse(
     await readFile(join(extracted, "manifest.json"), "utf8"),
   );
+  if (metadata.license !== "UNLICENSED") {
+    assert.equal(manifest.license, metadata.license);
+    assert.equal(
+      await readFile(join(extracted, "LICENSE"), "utf8"),
+      await readFile(new URL("../LICENSE", import.meta.url), "utf8"),
+    );
+  }
+  const guide = await readFile(join(extracted, "README.md"), "utf8");
+  assert.ok(!guide.includes("](../"));
   assert.ok(
     !(await readFile(join(extracted, "server/cli.mjs"), "utf8")).includes(
       homedir(),

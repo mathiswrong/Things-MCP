@@ -1,84 +1,61 @@
 # Things MCP
 
-Use Things 3 through local MCP tools backed by its supported macOS automation interfaces.
+Find and manage Things 3 tasks from a conversation. Things MCP connects compatible MCP clients to the Things app on your Mac through its supported automation interfaces.
 
-This is an early feasibility build. Read access and single-to-do creation, editing, scheduling, and status changes have been checked against Things 3.23.3 on macOS. Project, area, and tag mutations remain unverified. Writes are off by default. Headings, checklists, deletion, recurrence, and a standalone HTTP server are not implemented. Browser access uses the optional provider tunnel. The complete target scope is in [PLAN.md](PLAN.md).
+Create Inbox tasks, edit titles and notes, set deadlines, schedule dates, and complete or reopen tasks. Your Mac runs the bridge. The local connection needs no companion app or project-operated account or server.
 
-## Installation
+[Installation](packaging/INSTALL.md) · [Capabilities](docs/CAPABILITIES.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) · [Buy me a coffee](https://buymeacoffee.com/paul2d)
 
-Install the desktop extension through the client's existing extension installer. Native settings provide separate local and ChatGPT write grants, both off by default. The ChatGPT plugin uses a private tunnel to the same Mac and is available through the account's supported desktop and browser surfaces. See [the installation guide](packaging/INSTALL.md).
+## Install
 
-The owner's remote connection has been provisioned and verified with an actual `things_health` call from an ordinary browser chat. A macOS LaunchAgent keeps the official tunnel client running without a companion app or an open Terminal. First-time provisioning on another Mac still needs the provider's account setup and the contributor installer; no public installer is distributed.
+For **Claude Desktop on macOS**, download the `.mcpb` package from [Releases](https://github.com/mathiswrong/Things-MCP/releases), open it, and select **Install**. The desktop client supplies the runtime. No configuration editing or Terminal commands are needed for this route. Release assets become available when a release is published; developers can [build the package from source](CONTRIBUTING.md).
 
-Contributors build and verify the extension with `npm run package:extension` and `npm run smoke:extension`. The archive and its SHA-256 checksum are written outside the repository. The smoke test extracts it, resolves native settings through the official configuration library, and checks discovery, write rejection, and restart. `--live-health` checks the real app connection without reading tasks. [Packaging dependencies](packaging/DEPENDENCIES.md) records third-party notices and the development security override.
+Open **Settings > Extensions > Things MCP > Configure**, enable **Allow changes** if you want to manage tasks, and **Save**. New installations start read-only so you choose when to grant access.
 
-## Developer setup
+In a new conversation, try:
 
-The commands below are contributor setup. User installation must use supported client interfaces without configuration editing, Terminal commands, or a companion app; see [the setup plan](SETUP-PLAN.md).
+> Use Things MCP to create an Inbox task called “Try Things MCP”, then read it back.
 
-Requires macOS, an installed and running copy of Things 3, and Node.js 24 or later. The ordinary test suite also runs without Things or a Mac.
+For **ChatGPT browser chats**, the Mac also needs a private tunnel connected to your own account. This route works, but first-time setup is currently an advanced installation. Follow [ChatGPT setup](docs/CHATGPT.md). After setup, the background connection starts at login and does not need an open Terminal. The **Allow changes from ChatGPT** switch grants writes through that tunnel.
 
-```sh
-npm ci
-npm run check
-npm start -- doctor
-```
+Other clients can use the standard local MCP transport. See [other MCP clients](docs/OTHER-CLIENTS.md). A model needs a client that supports tools; support for MCP alone does not guarantee compatibility with every host.
 
-The build command prints the executable path. Its default output is `~/Downloads/Things-MCP-builds/0.1.0/cli.mjs`, outside the source tree. Install that verified build into the local application-support directory with:
+## What works
 
-```sh
-npm run install:local
-```
-
-The installer prints a standard MCP configuration entry. Add it to a client's `mcpServers` configuration. Use the absolute Node executable and installed entry path it prints; MCP clients do not necessarily inherit the interactive shell environment. Start the bundled entry directly, not through `npm start`, because npm writes extra text to stdout.
-
-Local MCP hosts can launch the stdio executable. ChatGPT browser access uses Secure MCP Tunnel. The owner's connection is provisioned and verified; identifiers and credentials are not part of the repository. The SDK smoke test is not a substitute for testing either application's actual UI. See the [client connection plan](PLAN.md).
-
-The Mac must be awake and Things must be running. macOS may request Automation permission for the process running the bridge. `doctor` reports app version, timezone, and write permission without listing task contents.
-
-## Tools
-
-| Tool | Current behavior |
+| Operation | Version 0.1 |
 |---|---|
-| `things_capabilities` | Reports implemented, unverified, and unavailable operations |
-| `things_health` | Checks the Things connection and local write permission |
-| `things_find_items` | Finds to-dos, projects, areas, or tags; notes omitted by default |
-| `things_get_item` | Reads one item and its revision |
-| `things_create_item` | Experimental ordinary creation behind local permission |
-| `things_update_item` | Experimental title, notes, status, and deadline editing |
-| `things_schedule_item` | Experimental calendar-date scheduling |
-| `things_request_status` | Reports the durable receipt for a request ID |
+| Search and read to-dos, projects, areas, and tags | Available |
+| Create an Inbox to-do | Available |
+| Edit a to-do's title and notes | Available |
+| Set or clear a deadline | Available |
+| Schedule a to-do on a calendar date | Available |
+| Complete, cancel, or reopen a to-do | Available |
+| Create projects, areas, or tags; edit their supported fields | Experimental; not yet verified against the real app |
+| Headings, checklists, moves, tag assignment, deletion, reminders, repeating rules | Not included |
 
-Search scans at most 5000 objects and returns at most 100 items per page. `scanComplete: false` means the scan stopped early, either after filling a page or at the scan limit. Follow `nextOffset` only when present; otherwise narrow the query. Pagination is not a snapshot, so concurrent edits can move results between pages. Dates use the Mac timezone. Search revisions are computed before optional note omission; fetch an item before editing it.
+This release does not cover every Things operation. [The capability reference](docs/CAPABILITIES.md) explains field limits, search behavior, and unavailable features. Tools return their current implementation status through `things_capabilities`.
 
-To keep access read-only:
+## Requirements
 
-```sh
-npm start -- setup --read-only
-```
+- A Mac with Things 3 installed and running. Native checks used Things 3.23.3.
+- A client that supports the chosen connection. The packaged local route uses Claude Desktop; remote use depends on your ChatGPT account's available plugin and tunnel features.
+- macOS Automation permission to control Things when requested.
+- For remote access, the Mac must remain awake, online, and signed in.
 
-Enable ordinary writes locally with `setup --allow-writes` when ready to grant connected clients write access. Check the capability report for tested operations and remaining limitations first. No MCP tool can grant this permission. The developer grant applies to legacy stdio connections. Packaged client grants are independent. `setup --read-only` revokes all grants, and an unchanged native setting cannot re-enable a revoked grant on restart. Do not isolate each client into a different state directory, because that defeats coordination.
+Things and client subscriptions are separate products. This repository does not include Things, a subscription, or a vendor runtime license grant.
 
-## Safety and privacy
+## Your data and permissions
 
-All input is validated. A fixed script receives JSON on stdin; task contents never become executable source or process arguments. There is no shell tool, direct database access, or Things Cloud credential collection.
+Task content requested in a conversation is shared with that client and its provider. The bridge does not collect Things Cloud credentials, write to the Things database, or provide a shell tool. No telemetry destination is bundled.
 
-Mutations share a filesystem lease and durable local request receipts. Reusing a request ID with changed arguments fails. Interrupted or uncertain requests are not automatically replayed. Updates require the current revision, and successful writes require read-back verification. Lock loss stops subsequent work and aborts the native subprocess. Already-delivered Apple Events cannot be rolled back; the public interface provides no transaction or absolute exactly-once guarantee.
+Writes require your local grant. Every mutation checks permission, uses a durable request ID, and verifies the result in Things. Edits also require the current item revision. Uncertain writes are never automatically repeated with a new request ID. These checks reduce duplicate and stale edits; Things automation is not transactional and cannot promise automatic rollback.
 
-State lives under `~/Library/Application Support/Things MCP` with owner-only permissions. Receipts contain request fingerprints, item IDs and field names, not titles or notes. The journal stops accepting new writes at 10000 receipts instead of silently discarding retry protection. Use `THINGS_MCP_STATE_DIR` only for isolated test libraries or deliberate independent installations. Local same-user processes are trusted; this is not an operating-system security sandbox.
+Local and remote connections share the same permission store, write lock, and request journal. See [Security](SECURITY.md) for the trust boundary and private vulnerability reporting.
 
-Task content returned to a connected assistant is shared with that client and its provider. Sentry support is included but sends nothing without `THINGS_MCP_SENTRY_DSN`. Events are reduced to an error code and generic message; task data, filesystem paths, requests, users, breadcrumbs, and exception details are dropped. No production telemetry destination is bundled.
+## Support and contribution
 
-## Verification and contribution
+For a bug or feature request, [open an issue](https://github.com/mathiswrong/Things-MCP/issues) with versions and a synthetic example. Keep task contents and credentials out of reports. Developers can run the tests without Things, provider accounts, or personal configuration; see [Contributing](CONTRIBUTING.md).
 
-```sh
-npm run check
-npm run smoke
-npm audit
-```
+If Things MCP is useful to you, [buy me a coffee](https://buymeacoffee.com/paul2d). Support is optional and does not unlock features.
 
-`npm run smoke` launches the built stdio executable and proves discovery, capability reporting, and write rejection without accessing Things. `npm run smoke -- --live-read` additionally checks real health and bounded reads, without printing task contents or making native changes. Temporary test directories are created in Downloads and removed by the tests. Build artifacts stay outside the repository.
-
-The [live verification record](VERIFICATION.md) describes the authorized single-item checks and their limits. Real writes are never part of the automatic test suite.
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md). Source is private and unlicensed pending the owner's public-release and license decisions. Do not redistribute Things or vendor assets. The project is intended to become independently buildable and suitable for a free, open-source release.
+Things MCP is an independent project. Product names identify compatibility; the project is not affiliated with or endorsed by the named vendors. License selection is pending; third-party notices apply to their respective dependencies.

@@ -46,3 +46,13 @@ Still unverified: a real logout/login or sleep/wake cycle, a fresh Mac's consent
 # Background item name
 
 On September 5, 2026, macOS background-task diagnostics identified the existing tunnel LaunchAgent as `node`. After installing a named executable launcher, the same agent was recorded as `Things MCP`, enabled and allowed. The LaunchAgent plist and launcher shell syntax passed validation, and the tunnel returned healthy and ready. The launcher uses `exec` to run the existing runtime, preserving signal handling without an extra long-running shell, an app bundle, or a runtime copy. Lint passed. This verifies the current system registration; previously delivered notification text is not rewritten.
+
+# Normal-use authorization and release preparation
+
+Later on September 5, 2026, the library owner requested normal write access. Both native extension switches were enabled and saved. Their shared settings were checked as enabled, while the legacy unscoped grant remained disabled. This supersedes the earlier verification-only restriction for these two client connections.
+
+An ordinary browser conversation checked `writesEnabled: true`, created exactly one labeled synthetic to-do, and read back its returned ID. A separate direct read through supported Things automation confirmed the expected title, notes, and open status. A second request read that same item, completed it using its current revision, and read it back. An independent native read confirmed completion. No existing user tasks were edited. Both packaged client grants remained enabled after reinstalling the remote runtime and reconnecting the tunnel.
+
+The 30-test suite, typecheck, lint, runtime build, packaged extraction and live health checks, and dependency audit passed. Documentation links were checked locally. The installed archive passed credential, attribution-signature, and personal-configuration scans. A maintained secret scanner found no leaks in all reachable history. A separate history review found no generation-credit signatures or automated co-author trailers. The only path-pattern match was an intentionally synthetic path in a privacy test. Compatibility names and required dependency notices are retained.
+
+The new installation, capability, troubleshooting, other-client, remote setup, and release guides describe the actual supported scope. The sponsor configuration uses the existing Buy Me a Coffee username. License choice, public visibility, and release publication remain separate pending decisions. No claim is made that all Things operations or command-free browser provisioning on a new Mac are complete.

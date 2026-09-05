@@ -1,40 +1,63 @@
-# Things MCP
+# Install Things MCP
 
-## Local connection
+## Before you start
 
-1. Open Things 3 and leave it running.
-2. Open the `.mcpb` file with Claude Desktop and select **Install**. If opening the file does not show the installer, use **Settings > Extensions > Advanced settings > Install extension**.
-3. Keep both permission switches off for the first connection check.
-4. In a new conversation, ask: **Use Things MCP to check the connection without reading or changing tasks.**
-5. If macOS asks whether to allow control of Things, approve it to use the connection.
+You need a Mac with Things 3 installed, signed in, and running. The local package also needs a current Claude Desktop version that supports MCPB extensions and Node.js 24 or later in its bundled runtime. You do not need to install Node separately for that route.
 
-The extension uses the client's built-in runtime. There are no configuration files to edit or commands to enter.
+Things MCP is independent of Things and the client vendors. Their apps, accounts, and subscriptions are separate from this project.
 
-## Write access
+## Claude Desktop
 
-Open **Settings > Extensions > Things MCP > Configure**. The native settings contain two independent switches:
+1. Download `things-mcp-0.1.0.mcpb` from the repository's [Releases page](https://github.com/mathiswrong/Things-MCP/releases). Choose the `.mcpb` asset, not GitHub's source ZIP. If no release has been published, developers can build it using CONTRIBUTING.md.
+2. Open Things 3.
+3. Open the downloaded package with Claude Desktop and choose **Install**. If the file opens elsewhere, use **Settings > Extensions > Advanced settings > Install extension** and select it there.
+4. Open **Settings > Extensions > Things MCP > Configure**. Keep write access off for the first health check, or turn on **Allow changes** if you want to manage tasks immediately. Select **Save** after changing a setting.
+5. Start a new conversation and ask: **Use Things MCP to check the connection without reading or changing tasks.** Approve that tool call if prompted.
+6. If macOS requests permission to control Things, allow it. A successful result reports the Things version, running status, timezone, and whether writes are enabled.
 
-- **Allow changes** enables ordinary creation, editing, scheduling, completion, cancellation, and reopening through the local connection.
-- **Allow changes from ChatGPT** enables the same operations through the connected private tunnel.
+The local connection needs no API key, configuration editing, Terminal window, or separate background service. The client starts its packaged server when needed.
 
-Save the settings. Turning a switch off revokes that connection's access on its next request after the host applies the settings. An operation already delivered to Things cannot be undone automatically. ChatGPT also has its own tool approval controls.
+## Try a task
 
-Writes start disabled. No tool can grant its own permission. A global developer revocation survives restart; turn the relevant native switch off, save, then turn it back on to make a fresh grant.
+With **Allow changes** on, ask:
 
-## ChatGPT
+> Create one Inbox task titled “Try Things MCP” with the note “My first connection test”, then read it back.
 
-After the Mac's private tunnel has been provisioned, install or open **Things MCP** in the plugin list and select **Connect**. The connection is shared by the account's supported desktop and browser surfaces. Start a new chat and ask the same connection-check question. You do not need to keep Terminal or the local desktop client open; the background connection runs while you are signed in to your Mac.
+You should see that task in Things and receive its verified title and Things link. Then try:
 
-The local extension's settings control the Mac-side write grants for both connections. The ChatGPT desktop plugin references the same registered connector, so it does not launch a separate server or maintain separate task state.
+> Read the task we just created, mark it complete, and verify the result. Do not change any other tasks.
 
-First-time tunnel provisioning requires OpenAI Platform sign-in, a tunnel linked to the correct workspace, and a restricted runtime credential. The owner's installation has been provisioned and tested. A self-service installer for a different Mac is not yet distributed; the contributor setup is in `SETUP-PLAN.md`.
+Do not retry a create if the tool reports an uncertain result. Inspect the task and request receipt first; it may already exist.
 
-## Privacy and disconnect
+## Write permissions
 
-The Mac must be awake, online, and running Things. The tunnel credential stays in the login Keychain. The background service opens no inbound public port. Task information you request is shared with the connected client and provider. No telemetry destination is bundled.
+The native extension settings have two independent switches:
 
-In macOS background-item notifications and Login Items settings, this connection is named **Things MCP**. It is the helper that keeps the private tunnel available.
+| Switch | Connection it controls |
+|---|---|
+| **Allow changes** | This Mac's local extension |
+| **Allow changes from ChatGPT** | Your separately configured private tunnel, including clients using its account plugin |
 
-Disconnect Things MCP through ChatGPT's plugin settings to revoke that client connection. Remove the local extension through its extension settings. These actions preserve Things data. The background helper and its local receipt journal can be retained for reconnecting; its developer stop command also disables automatic start at login.
+Changes apply after **Save** and the host's server restart. Turning a switch off denies subsequent mutations. An operation already delivered to Things cannot be rolled back by switching access off. Client tool approval prompts are an additional control; they do not replace the Mac-side grant.
 
-This is a private development build. No public license has been granted for project code. Bundled third-party notices apply only to their named dependencies. Headings, checklists, deletion, moves, and recurrence remain outside the implemented tool set.
+New installations start read-only. Installing the extension does not create tasks. If a maintainer globally revoked access, regrant by switching the relevant control off, saving, switching it on, and saving again.
+
+## ChatGPT and other clients
+
+The `.mcpb` package alone does not connect ChatGPT browser chats. That route requires a tunnel associated with your own account and workspace. Follow [ChatGPT setup](../docs/CHATGPT.md). It currently requires an operator for initial provisioning; there is no one-click cross-client installer in this release.
+
+Other MCP hosts can launch the standard local transport. Follow [other client setup](../docs/OTHER-CLIENTS.md). These clients may require their own configuration steps.
+
+## Updates and removal
+
+Install a newer `.mcpb` through the same extension installer, review its permissions, and run a health check. If your host requests removing the previous extension first, use its **Uninstall** button, then install the new package. Keep the shared Things MCP state directory so retry protection remains intact.
+
+Disable or uninstall the local extension in **Settings > Extensions**. Disconnect the remote plugin in that client's settings. These actions do not delete your Things tasks. Removing the local extension does not revoke the separate tunnel's grant or stop its service; turn **Allow changes from ChatGPT** off and save before uninstalling if you also want to revoke remote writes.
+
+The remote helper appears as **Things MCP** in macOS background-item notifications and Login Items. Its full retirement procedure is in the ChatGPT guide. Local receipts remain in `~/Library/Application Support/Things MCP`; they contain operation metadata, not task titles or notes.
+
+## Privacy and help
+
+Task content you ask a client to retrieve is shared with that client and its provider. The bridge does not upload a database or collect Things Cloud credentials. The remote tunnel credential stays in the Mac's login Keychain. No telemetry destination is bundled.
+
+See [Troubleshooting](../docs/TROUBLESHOOTING.md), [Capabilities](../docs/CAPABILITIES.md), and [Security](../SECURITY.md). Release packages include the project license and third-party notices when licensing is complete.

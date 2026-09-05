@@ -1,8 +1,10 @@
 # Security
 
-This feasibility build is intended for the current user's local Mac. Writes are disabled by default. Do not expose its stdio stream through an unauthenticated public relay.
+Things MCP is intended for the current user's local Mac. Writes are disabled by default. Do not expose its stdio stream through an unauthenticated public relay.
 
-Report suspected vulnerabilities privately to the repository owner. Do not post task contents, secrets, database files, request journals, or personal configuration in an issue. A dedicated public reporting channel must be established before a public release.
+Report suspected vulnerabilities through the repository's **Security > Report a vulnerability** control when private reporting is available. The direct report page is https://github.com/mathiswrong/Things-MCP/security/advisories/new. Before publication, the maintainer must enable and verify that route. If it is unavailable, contact the maintainer through their GitHub profile to arrange a private channel; do not post exploit details in a public issue.
+
+Include affected versions and synthetic reproduction steps. Do not send task contents, credentials, database files, request journals, or personal configuration. There is no guaranteed response time or paid support service. Only the latest released version receives security fixes.
 
 The supported boundary is Things' public automation interface. The bridge does not access Things' database or request Things Cloud credentials. Local state and permissions are shared by clients using the same state directory. Malicious software already running as the same macOS user is outside this boundary.
 

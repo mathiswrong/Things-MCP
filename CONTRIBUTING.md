@@ -1,21 +1,54 @@
 # Contributing
 
-The project is in private feasibility development. No public license has been granted yet.
+Use a feature branch and open a pull request with the problem, resulting behavior, and relevant validation. Keep examples synthetic and changes focused. Public contributors do not need sibling rulebooks, a Things license, a provider account, or a signing identity to build and run the automatic tests.
 
-Use Node.js 24 or later, run `npm ci`, then `npm run check` and `npm run smoke`. These checks use synthetic fixtures and do not require Things, credentials, Sentry, a signing identity, or hosted infrastructure. Set `THINGS_MCP_BUILD_DIR` to an external build directory if the default Downloads location does not suit the environment.
+## Build and test
 
-Work in a feature worktree and a neutral `feat/` or `fix/` branch. Open a pull request with the problem, resulting behavior, and exact validation. Keep commit messages and source comments technical and free of generation attribution or automated co-author trailers. Do not commit credentials, task data, personal paths, screenshots, logs, or temporary build artifacts. Keep generated output outside the repository. Preserve required third-party notices.
+Install Node.js 24 or later and Git, then:
 
-Use maintained platform libraries and supported Things interfaces. Do not introduce private app APIs, database access, shell execution tools, or automatic retries of uncertain writes. Every advertised capability needs a verified postcondition or an explicit limitation. New UI needs reviewed design work before implementation.
+```sh
+git clone https://github.com/mathiswrong/Things-MCP.git
+cd Things-MCP
+npm ci
+npm run check
+npm run smoke
+npm run package:extension
+npm run smoke:extension
+npm audit --audit-level=high
+```
 
-New mutations must include failure-path tests, permission enforcement, bounded inputs, shared coordination, durable request handling, and read-back verification. Default real mutation tests to a separate macOS user with a disposable Things library. A library owner may explicitly authorize testing in their real library: use a labeled synthetic fixture, make one single-item write at a time, read it back, and preserve the shared lock and journal. That authorization does not enable ordinary writes for connected clients. Public automation is not transactional; report uncertainty instead of fabricating rollback.
+`check` runs typechecking, lint, tests, and the runtime build. The smoke tests launch the real bundled process through the official MCP client. They use isolated synthetic permission state and cannot make native writes. The extension smoke test validates the checksum, extracts the archive, resolves native settings with the official manifest library, launches from a path containing spaces, discovers the tools, rejects unauthorized writes, and reconnects.
 
-Consult `almanac/README.md` for project context. Treat the wiki as read-only during ordinary implementation; use the maintenance workflow for durable knowledge changes. Current code is authoritative for implementation behavior.
+Builds default to `~/Downloads/Things-MCP-builds/<version>`. Set `THINGS_MCP_BUILD_DIR` to another absolute directory outside the repository when needed. Tests create disposable directories under Downloads and remove them. Do not put screenshots, logs, personal configuration, disposable output, or packaged binaries in the source tree.
 
-The SDK and other dependency versions are locked. Update dependencies deliberately, rerun compatibility tests, check security advisories, and preserve license obligations. Native SDK/library checks should not be replaced by source-code-only assertions.
+On a Mac with Things running, `npm start -- doctor` checks app health. `npm run smoke:extension -- --live-health` checks native health without reading tasks. `npm run smoke -- --live-read` additionally performs bounded reads; use it only with the library owner's consent. Normal CI uses no native app or provider credentials.
 
-For packaging changes, run `npm run package:extension` and `npm run smoke:extension` after the normal checks. Both work without Things, credentials, or a signing identity. The latter extracts the built archive and starts it from a path containing spaces, with only a minimal environment and isolated test state. The explicit `--live-health` option requires macOS and Things; CI does not use it. See `packaging/DEPENDENCIES.md` for the development dependency override and bundled notice handling.
+## Changing behavior
 
-Publishing a package, changing repository visibility, distributing installers, and applying a license require the owner's separate authorization. No CI workflow in this repository deploys or publishes software.
+Use supported Things interfaces and maintained dependencies. Never add database access, private app APIs, arbitrary script execution, or automatic retries of uncertain writes. Inputs must remain bounded and validated. Keep every connection to a library on the same state directory.
 
-The optional desktop plugin generator accepts a registered app ID and writes its account-specific manifest outside the repository: `npm run package:plugin -- <registered-app-id>`. Use a synthetic ID when checking the generator without an account. Background tunnel installation is a macOS operator workflow described in `SETUP-PLAN.md`; normal builds and synthetic tests do not use it or require provider credentials. Never log Keychain output or provider runtime logs that could contain task data.
+New mutations need permission enforcement, failure-path tests, shared locking, durable request handling, revision checks where applicable, and verified read-back. Every advertised capability needs evidence or a clear limitation. Public automation is not transactional; report uncertainty instead of claiming rollback.
+
+Real write tests belong in a disposable Things library by default. A library owner may explicitly authorize single-item checks in their library. Use a clearly labeled synthetic item, perform one mutation at a time, and read it back before continuing. Ordinary client write grants require their own explicit authorization. Never test destructive operations on a personal library.
+
+Keep comments and commit messages technical. Do not add provenance signatures or automated co-author trailers. Preserve dependency copyright and license notices. Product names belong only in compatibility documentation and necessary integration configuration.
+
+Use native client installation and settings controls. There is no companion app. New UI needs an approved design before implementation. Consult the read-only `almanac/` knowledge tree for historical decisions, but use current code as implementation truth; some pages describe earlier plans.
+
+## Dependencies and packaging
+
+Dependency versions are exact and locked. Update them deliberately, review advisories, rerun checks, and preserve required notices. Runtime notice generation uses the actual bundle inputs and fails when a required dependency notice is missing. See [packaging dependencies](packaging/DEPENDENCIES.md).
+
+The optional desktop plugin generator accepts a registered app ID and writes account-specific metadata outside the repository:
+
+```sh
+npm run package:plugin -- asdk_app_synthetic_fixture
+```
+
+Use your actual app ID only for a private local installation. The tunnel is a separate advanced setup described in [ChatGPT setup](docs/CHATGPT.md). Never log credentials or raw provider requests.
+
+## Release preparation
+
+Follow [the release checklist](docs/RELEASING.md). Publishing, changing repository visibility, and merging require a maintainer's explicit release decision. CI checks pull requests and never publishes automatically. Keep the release notes focused on what works, how to install it, and known limits.
+
+License selection is pending. Do not distribute project code until the project license is approved and included. Third-party notices apply only to their named dependencies.

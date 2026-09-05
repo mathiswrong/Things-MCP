@@ -36,6 +36,7 @@ try {
     name: "things-mcp",
     display_name: "Things MCP",
     version: metadata.version,
+    ...(metadata.license !== "UNLICENSED" ? { license: metadata.license } : {}),
     description: "Find, create, and update your Things 3 tasks on this Mac.",
     long_description:
       "Requires Things 3 to be running on your Mac. Starts read-only. Enable Allow changes in extension settings to create, edit, and schedule tasks. No account, API key, or separate runtime installation is needed for this local connection. Task information you request is shared with the connected client.",
@@ -86,10 +87,16 @@ try {
     join(payload, "manifest.json"),
     `${JSON.stringify(manifest, null, 2)}\n`,
   );
-  await copyFile(
-    new URL("packaging/INSTALL.md", root),
+  const guide = await readFile(new URL("packaging/INSTALL.md", root), "utf8");
+  await writeFile(
     join(payload, "README.md"),
+    guide.replace(
+      /\]\(\.\.\/([^)]+)\)/g,
+      "](https://github.com/mathiswrong/Things-MCP/blob/main/$1)",
+    ),
   );
+  if (metadata.license !== "UNLICENSED")
+    await copyFile(new URL("LICENSE", root), join(payload, "LICENSE"));
   if (!validateManifest(join(payload, "manifest.json")))
     throw new Error("Invalid extension manifest");
   if (
@@ -118,6 +125,7 @@ try {
     "server/cli.mjs",
     "server/native/things.jxa.js",
     "server/THIRD-PARTY-NOTICES.txt",
+    ...(metadata.license !== "UNLICENSED" ? ["LICENSE"] : []),
   ]) {
     const original = await readFile(join(payload, file));
     if (!original.equals(await readFile(join(extracted, file))))
