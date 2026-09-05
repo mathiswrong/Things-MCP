@@ -167,7 +167,14 @@ async function main() {
     );
     await stop();
     await mkdir(dirname(launchFile), { recursive: true });
-    const args = [config.node, runner, "run"]
+    const launcher = join(root, "Things MCP");
+    await writeFile(
+      launcher,
+      `#!/bin/sh\nexec ${[config.node, runner, "run"].map(quoted).join(" ")}\n`,
+      { mode: 0o700 },
+    );
+    await chmod(launcher, 0o700);
+    const args = [launcher]
       .map((arg) => `<string>${xml(arg)}</string>`)
       .join("");
     await writeFile(

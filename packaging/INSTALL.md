@@ -33,6 +33,8 @@ First-time tunnel provisioning requires OpenAI Platform sign-in, a tunnel linked
 
 The Mac must be awake, online, and running Things. The tunnel credential stays in the login Keychain. The background service opens no inbound public port. Task information you request is shared with the connected client and provider. No telemetry destination is bundled.
 
+In macOS background-item notifications and Login Items settings, this connection is named **Things MCP**. It is the helper that keeps the private tunnel available.
+
 Disconnect Things MCP through ChatGPT's plugin settings to revoke that client connection. Remove the local extension through its extension settings. These actions preserve Things data. The background helper and its local receipt journal can be retained for reconnecting; its developer stop command also disables automatic start at login.
 
 This is a private development build. No public license has been granted for project code. Bundled third-party notices apply only to their named dependencies. Headings, checklists, deletion, moves, and recurrence remain outside the implemented tool set.

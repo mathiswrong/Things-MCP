@@ -42,3 +42,7 @@ The updated suite has 30 passing synthetic tests. Client grants are isolated, or
 The background LaunchAgent passed plist validation. Stop reported unhealthy and not ready; reinstall reported healthy and ready. Stop disables startup at future logins, while reinstall enables it. The service uses a stable supported runtime path and loads the restricted runtime credential from the login Keychain without printing it or passing it to the MCP child. All normal write grants remained disabled throughout this session.
 
 Still unverified: a real logout/login or sleep/wake cycle, a fresh Mac's consent prompts, native UI write-toggle changes against the real library, account disconnect/reconnect and uninstall after enabling writes, and the other desktop host's conversation flow. Another Mac still needs operator provisioning; there is no distributed self-service installer. Remaining unsupported Things operations are unchanged.
+
+# Background item name
+
+On September 5, 2026, macOS background-task diagnostics identified the existing tunnel LaunchAgent as `node`. After installing a named executable launcher, the same agent was recorded as `Things MCP`, enabled and allowed. The LaunchAgent plist and launcher shell syntax passed validation, and the tunnel returned healthy and ready. The launcher uses `exec` to run the existing runtime, preserving signal handling without an extra long-running shell, an app bundle, or a runtime copy. Lint passed. This verifies the current system registration; previously delivered notification text is not rewritten.

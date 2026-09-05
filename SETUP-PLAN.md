@@ -10,6 +10,8 @@ The macOS background connection uses the official tunnel client, supervised by a
 
 The local extension provides two native switches, both initially off: **Allow changes** for the local connection and **Allow changes from ChatGPT** for the shared remote connector. The latter applies to desktop and browser use of that connector. Save restarts the local server and applies the selected grants. These are trusted local settings, not MCP tools.
 
+The LaunchAgent starts an owner-only executable script named `Things MCP`, which immediately replaces itself with the existing runtime through `exec`. This gives macOS a recognizable background-item name without an app bundle or another long-running process. The shared runtime binary is not renamed or copied. Apple documents executable-name fallback for unassociated legacy agents in its [service management guidance](https://developer.apple.com/documentation/servicemanagement/updating-helper-executables-from-earlier-versions-of-macos).
+
 All connections share the same state directory, filesystem lease, request journal, revision checks, and read-back verification. Every mutation rechecks its connection's grant. Global revocation turns every grant off and survives a restart with unchanged native settings. Reauthorization requires turning the relevant native switch off and saving, then on and saving. Installing or reconnecting never creates test data.
 
 ## Scope of completion
