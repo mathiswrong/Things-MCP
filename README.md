@@ -6,6 +6,8 @@ This is an early feasibility build. Read access and single-to-do creation, editi
 
 ## Local setup
 
+The commands below are developer setup. The proposed user installer removes configuration editing and Terminal use; see [the easy setup proposal](SETUP-PLAN.md). That installer is awaiting design review and is not available yet.
+
 Requires macOS, an installed and running copy of Things 3, and Node.js 24 or later. The ordinary test suite also runs without Things or a Mac.
 
 ```sh
