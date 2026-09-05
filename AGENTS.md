@@ -1,0 +1,13 @@
+# Project working rules
+
+- In the owner's workspace, locate and read `DEV-RULEBOOK.md` and `SUPER-SIMPLE-DESIGN.md` at the Projects root before implementation, including when working in a sibling worktree directory. Apply their coding, design, security, verification, and release rules. Explicit project directions below take precedence where they differ. Portable contributor requirements are in `CONTRIBUTING.md`.
+- Personal use first, public use later. Prove the owner's daily workflow before investing in broad distribution. Keep the architecture and repository suitable for a future free, open-source release from the beginning.
+- No assistant or model names, AI attribution, generation signatures, or automated co-author trailers in commit messages, PR titles/descriptions, source comments, or docstrings. This applies while the repository is private too. Use neutral feature branches such as `feat/<task>` or `fix/<task>` instead of agent-branded branches.
+- Name integrations only where needed to accurately document compatibility or implement a required client configuration. Such references describe the product's function, never who wrote it. Preserve legally required third-party notices.
+- Keep personal task data, credentials, machine-specific configuration, private conversation history, screenshots, and disposable builds out of source control. Use synthetic fixtures and portable configuration. Scan staged changes and repository history before any public release.
+- Keep the core usable without an account or hosted service operated by this project. Remote connection options must remain replaceable. Do not require the owner's credentials, telemetry project, signing identity, or infrastructure to build and test the source.
+- Use maintained dependencies and track their redistribution requirements. Choose the project license with the owner before public release; do not publish the repository or apply a license grant without explicit authorization. Do not redistribute Things itself or proprietary vendor assets.
+- Include reproducible build instructions, capability documentation, synthetic tests, and a self-contained contributor guide before public release. Public contributors must not need the owner's sibling rulebooks or private services.
+- Use only supported Things automation interfaces. Never write directly to its database, use private experimental APIs, or collect Things Cloud credentials.
+- Product planning precedes implementation. New UI requires approved artboards. The current planning work does not authorize publication, deployment, or distribution.
+- Implementation of the approved feasibility plan is authorized. Verify local checks and submit a private pull request; do not merge it or publish the project.

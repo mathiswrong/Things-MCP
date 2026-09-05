@@ -1,0 +1,149 @@
+topics:
+  - slug: concepts
+    title: Concepts
+    description: Core vocabulary and mental models for this codebase.
+    parents: []
+  - slug: architecture
+    title: Architecture
+    description: Planned and implemented system structure, ownership, and runtime flow.
+    parents: []
+  - slug: reference
+    title: Reference
+    description: Lookup material for exact contracts, inventories, limits, and command surfaces.
+    parents: []
+  - slug: wiki
+    title: Wiki
+    description: CodeAlmanac build and maintenance artifacts for this repository.
+    parents: []
+  - slug: build
+    title: Build
+    description: First-wiki build planning and audit state.
+    parents: [wiki]
+  - slug: orientation
+    title: Orientation
+    description: Entry points that route future agents through the wiki.
+    parents: [wiki]
+  - slug: product-scope
+    title: Product Scope
+    description: Pages that define what Things-MCP is intended to be and what it is not.
+    parents: [concepts]
+  - slug: release-boundary
+    title: Release Boundary
+    description: Private-first, public-release, license, and distribution constraints.
+    parents: [product-scope]
+  - slug: local-first
+    title: Local First
+    description: Local Mac ownership and account-free core constraints.
+    parents: [product-scope, architecture]
+  - slug: automation-boundary
+    title: Automation Boundary
+    description: Supported Things automation routes and excluded unsafe routes.
+    parents: [concepts]
+  - slug: things-integration
+    title: Things Integration
+    description: Pages about the Things 3 integration surface and capability mapping.
+    parents: [automation-boundary]
+  - slug: things
+    title: Things
+    description: Pages that discuss Things 3 objects, capabilities, and adapters.
+    parents: [things-integration]
+  - slug: adapters
+    title: Adapters
+    description: Planned and implemented boundaries between the service core and Things automation.
+    parents: [architecture, things-integration]
+  - slug: capability-audit
+    title: Capability Audit
+    description: Completeness tracking for supported, limited, unavailable, and unverified operations.
+    parents: [things-integration, reference]
+  - slug: coverage
+    title: Coverage
+    description: Pages about capability coverage and gap accounting.
+    parents: [capability-audit]
+  - slug: verification
+    title: Verification
+    description: Pages about proving behavior through read-back checks, tests, and acceptance scenarios.
+    parents: [capability-audit]
+  - slug: safety
+    title: Safety
+    description: Cross-cutting controls that prevent unsafe writes, data exposure, and misleading results.
+    parents: []
+  - slug: privacy
+    title: Privacy
+    description: Task content, credentials, logs, diagnostics, and cloud-client data boundaries.
+    parents: [safety]
+  - slug: security
+    title: Security
+    description: Authentication, authorization, state safety, telemetry scrubbing, and release security.
+    parents: [safety]
+  - slug: tasks
+    title: Tasks
+    description: Things task data and task-operation behavior.
+    parents: [things-integration]
+  - slug: local-service
+    title: Local Service
+    description: The Mac service, local state, locking, and host-availability model.
+    parents: [architecture, local-first]
+  - slug: mcp
+    title: MCP
+    description: Model Context Protocol transports, tools, and client integration.
+    parents: [architecture]
+  - slug: clients
+    title: Clients
+    description: MCP host applications and connection behavior.
+    parents: [mcp]
+  - slug: client-connections
+    title: Client Connections
+    description: Local stdio, tunnel, HTTPS, and other client connection routes.
+    parents: [clients]
+  - slug: permissions
+    title: Permissions
+    description: Read, write, destructive, local UI, OAuth, and allowlist authorization rules.
+    parents: [security, local-service]
+  - slug: mutations
+    title: Mutations
+    description: Write operations and their request, result, and permission contracts.
+    parents: [safety]
+  - slug: mutation-safety
+    title: Mutation Safety
+    description: Request IDs, operation journals, stale checks, and read-back verification.
+    parents: [mutations, local-service]
+  - slug: planned-tools
+    title: Planned Tools
+    description: Planned MCP tool surfaces and future capability contract entries.
+    parents: [mcp]
+  - slug: tool-contracts
+    title: Tool Contracts
+    description: Exact tool names, schemas, result fields, and exposed operation boundaries.
+    parents: [mcp, reference]
+  - slug: tool-contract
+    title: Tool Contract
+    description: Decision pages that constrain exposed tool contracts.
+    parents: [tool-contracts]
+  - slug: setup
+    title: Setup
+    description: Planned installation and client-connection setup flow.
+    parents: [local-service]
+  - slug: diagnostics
+    title: Diagnostics
+    description: Planned status, doctor, and troubleshooting behavior.
+    parents: [setup]
+  - slug: remote-access
+    title: Remote Access
+    description: Optional tunnel, HTTPS, OAuth, and provider-replacement boundaries.
+    parents: [client-connections]
+  - slug: release-readiness
+    title: Release Readiness
+    description: Gates for public release, packaging, signing, docs, and security review.
+    parents: [release-boundary]
+  - slug: open-source
+    title: Open Source
+    description: Constraints for a possible future free open-source release.
+    parents: [release-boundary]
+  - slug: things-automation
+    title: Things Automation
+    description: Auditing and operating through AppleScript, Shortcuts, and Things URL commands.
+    parents: [things-integration]
+  - slug: milestones
+    title: Milestones
+    description: Planned implementation milestones and their exit criteria.
+    parents: [product-scope]

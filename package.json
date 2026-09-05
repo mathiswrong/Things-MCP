@@ -1,0 +1,37 @@
+{
+  "name": "things-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "type": "module",
+  "description": "Local MCP tools for Things 3 through supported automation interfaces",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "start": "tsx src/cli.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src tests scripts",
+    "format": "biome check --write src tests scripts",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "build": "node scripts/build.mjs",
+    "install:local": "node scripts/install-local.mjs",
+    "smoke": "node scripts/smoke.mjs",
+    "check": "npm run typecheck && npm run lint && npm test && npm run build"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/client": "2.0.0",
+    "@modelcontextprotocol/server": "2.0.0",
+    "@sentry/node": "10.73.0",
+    "proper-lockfile": "4.1.2",
+    "zod": "4.5.4"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.12",
+    "@types/node": "26.4.1",
+    "@types/proper-lockfile": "4.1.4",
+    "esbuild": "0.28.2",
+    "tsx": "4.23.13",
+    "typescript": "7.0.2"
+  }
+}
