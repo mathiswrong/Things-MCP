@@ -6,7 +6,7 @@ import { NativeAdapter } from "./adapter.js";
 import { publicError } from "./errors.js";
 import { createServer } from "./server.js";
 import { ThingsService } from "./service.js";
-import { State } from "./state.js";
+import { clientIdSchema, State } from "./state.js";
 import { closeTelemetry, reportFailure, startTelemetry } from "./telemetry.js";
 
 async function main() {
@@ -16,6 +16,8 @@ async function main() {
     options: {
       "allow-writes": { type: "boolean" },
       "read-only": { type: "boolean" },
+      client: { type: "string" },
+      "managed-client": { type: "string" },
       help: { type: "boolean" },
     },
   });
@@ -30,6 +32,9 @@ async function main() {
     positionals.length > 1 ||
     !["stdio", "doctor", "setup"].includes(command) ||
     (command !== "setup" && values["allow-writes"]) ||
+    (command !== "stdio" && values.client !== undefined) ||
+    (command !== "stdio" && values["managed-client"] !== undefined) ||
+    (values.client !== undefined && values["managed-client"] !== undefined) ||
     (values["allow-writes"] && values["read-only"])
   )
     throw new Error("Invalid command");
@@ -37,7 +42,37 @@ async function main() {
     process.env.THINGS_MCP_STATE_DIR ??
     join(homedir(), "Library", "Application Support", "Things MCP");
   if (!isAbsolute(directory)) throw new Error("State path must be absolute");
-  const state = new State(directory, !values["read-only"]);
+  const requestedClient = values.client ?? values["managed-client"];
+  const clientId =
+    requestedClient === undefined
+      ? undefined
+      : clientIdSchema.parse(requestedClient);
+  const clientWrites = process.env.THINGS_MCP_ALLOW_WRITES ?? "false";
+  if (clientId && !["true", "false"].includes(clientWrites))
+    throw new Error("Invalid write setting");
+  const browserWrites = process.env.THINGS_MCP_BROWSER_ALLOW_WRITES ?? "false";
+  if (
+    values.client === "desktop-extension" &&
+    !["true", "false"].includes(browserWrites)
+  )
+    throw new Error("Invalid browser write setting");
+  const state = new State(
+    directory,
+    !values["read-only"] &&
+      (!clientId ||
+        values["managed-client"] !== undefined ||
+        clientWrites === "true"),
+    clientId,
+  );
+  if (values.client)
+    await state.configureClient(
+      !values["read-only"] && clientWrites === "true",
+    );
+  if (values.client === "desktop-extension") {
+    await new State(directory, true, "browser").configureClient(
+      !values["read-only"] && browserWrites === "true",
+    );
+  }
   const service = new ThingsService(new NativeAdapter(), state);
   if (command === "setup") {
     if (!values["allow-writes"] && !values["read-only"]) {

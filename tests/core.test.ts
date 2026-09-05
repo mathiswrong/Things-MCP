@@ -177,6 +177,48 @@ test("a read-only connection stays restricted when shared write permission chang
   });
 });
 
+test("client grants are independent and revocation survives unchanged host configuration and restarts", async () => {
+  await fixture(async ({ state, adapter, directory }) => {
+    const desktop = new State(directory, true, "desktop-extension");
+    const browser = new State(directory, true, "browser");
+    await desktop.configureClient(false);
+    await browser.configureClient(false);
+    await state.setWrites(true);
+    assert.equal(await desktop.writesEnabled(), false);
+    assert.equal(await browser.writesEnabled(), false);
+    await desktop.configureClient(true);
+    assert.equal(await desktop.writesEnabled(), true);
+    assert.equal(await browser.writesEnabled(), false);
+    const service = new ThingsService(adapter, desktop);
+    await service.create({
+      requestId: randomUUID(),
+      kind: "todo",
+      title: "Native setting fixture",
+    });
+    await state.setWrites(false);
+    await desktop.configureClient(true);
+    const restarted = new State(directory, true, "desktop-extension");
+    await restarted.configureClient(true);
+    assert.equal(await restarted.writesEnabled(), false);
+    await assert.rejects(
+      service.create({
+        requestId: randomUUID(),
+        kind: "todo",
+        title: "Must not exist",
+      }),
+      code("READ_ONLY"),
+    );
+    await restarted.configureClient(false);
+    await restarted.configureClient(true);
+    assert.equal(await restarted.writesEnabled(), true);
+    assert.equal(await state.writesEnabled(), false);
+    assert.equal(await browser.writesEnabled(), false);
+    await restarted.configureClient(false);
+    assert.equal(await desktop.writesEnabled(), false);
+    assert.equal(adapter.mutations.create, 1);
+  });
+});
+
 test("ordinary writes are denied by default before any adapter access", async () => {
   await fixture(async ({ adapter, service }) => {
     const item = seed(adapter);

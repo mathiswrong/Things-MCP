@@ -8,4 +8,8 @@ The supported boundary is Things' public automation interface. The bridge does n
 
 Unknown write outcomes require inspection before further action. Deleting a journal or changing its directory removes retry protection. Do not use a new request ID as an automatic workaround for an unknown or pending request.
 
-The project does not currently implement remote authentication, per-client grants, destructive operations, or a general undo mechanism. These are capability limits, not security promises. Review `things_capabilities` before granting an application access.
+Native extension settings grant local and browser writes separately. Every mutation rechecks its grant. Global revocation disables all grants and survives restarting an unchanged client configuration. A new grant requires switching that client's control off and saving, then on and saving. MCP tools cannot grant access.
+
+The optional browser connection uses the provider's secure tunnel, workspace association, and a runtime credential restricted to tunnel Read and Use permissions. The credential stays in the macOS login Keychain. The background launcher supplies it only to the provider transport and removes it from the child MCP environment. No public listening port is opened. Disconnect the plugin to revoke account access; stop the background service and revoke its provider key to retire the transport. Same-user processes and workspace administrators are trusted boundaries.
+
+Destructive operations and a general undo mechanism are unavailable. Review `things_capabilities` before granting an application access.

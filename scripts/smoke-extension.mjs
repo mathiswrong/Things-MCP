@@ -56,7 +56,7 @@ try {
     manifest,
     extensionPath: extracted,
     systemDirs: {},
-    userConfig: {},
+    userConfig: { allow_changes: false, allow_browser_changes: false },
     pathSeparator: "/",
   });
   assert.ok(config);
@@ -64,11 +64,32 @@ try {
   assert.deepEqual(config.args, [
     join(extracted, "server/cli.mjs"),
     "stdio",
-    "--read-only",
+    "--client",
+    "desktop-extension",
   ]);
   const state = join(directory, "state");
   const runtime = process.env.THINGS_MCP_TEST_NODE ?? process.execPath;
-  const env = { PATH: "/usr/bin:/bin", THINGS_MCP_STATE_DIR: state };
+  assert.equal(config.env.THINGS_MCP_ALLOW_WRITES, "false");
+  const invalidState = join(directory, "invalid-settings");
+  await assert.rejects(
+    promisify(execFile)(runtime, config.args, {
+      env: {
+        PATH: "/usr/bin:/bin",
+        THINGS_MCP_STATE_DIR: invalidState,
+        THINGS_MCP_ALLOW_WRITES: "true",
+        THINGS_MCP_BROWSER_ALLOW_WRITES: "invalid",
+      },
+      timeout: 10000,
+    }),
+  );
+  await assert.rejects(readFile(join(invalidState, "settings.json")), {
+    code: "ENOENT",
+  });
+  const env = {
+    PATH: "/usr/bin:/bin",
+    THINGS_MCP_STATE_DIR: state,
+    ...config.env,
+  };
   await promisify(execFile)(
     runtime,
     [
@@ -117,9 +138,15 @@ try {
     await client.close();
     client = undefined;
   }
-  assert.equal(
-    await readFile(join(state, "settings.json"), "utf8"),
-    originalSettings,
+  assert.deepEqual(
+    JSON.parse(await readFile(join(state, "settings.json"), "utf8")),
+    {
+      allowWrites: true,
+      clients: {
+        "desktop-extension": { configured: false, enabled: false },
+        browser: { configured: false, enabled: false },
+      },
+    },
   );
   assert.deepEqual(await readdir(state), ["settings.json"]);
   process.stdout.write(

@@ -36,20 +36,50 @@ try {
     name: "things-mcp",
     display_name: "Things MCP",
     version: metadata.version,
-    description: "Find and read your Things 3 tasks on this Mac.",
+    description: "Find, create, and update your Things 3 tasks on this Mac.",
     long_description:
-      "Read-only installation preview. Requires Things 3 to be running on your Mac. No account, API key, or separate runtime installation is needed. This build cannot change tasks. Task information you request is shared with the connected client. Browser connections are not included.",
+      "Requires Things 3 to be running on your Mac. Starts read-only. Enable Allow changes in extension settings to create, edit, and schedule tasks. No account, API key, or separate runtime installation is needed for this local connection. Task information you request is shared with the connected client.",
     author: { name: "Things MCP contributors" },
     server: {
       type: "node",
       entry_point: "server/cli.mjs",
       mcp_config: {
         command: "node",
-        // biome-ignore lint/suspicious/noTemplateCurlyInString: The installation host resolves this standard bundle variable.
-        args: ["${__dirname}/server/cli.mjs", "stdio", "--read-only"],
+        args: [
+          // biome-ignore lint/suspicious/noTemplateCurlyInString: The installation host resolves this standard bundle variable.
+          "${__dirname}/server/cli.mjs",
+          "stdio",
+          "--client",
+          "desktop-extension",
+        ],
+        env: {
+          // biome-ignore lint/suspicious/noTemplateCurlyInString: The host reads the user's native extension setting.
+          THINGS_MCP_ALLOW_WRITES: "${user_config.allow_changes}",
+          THINGS_MCP_BROWSER_ALLOW_WRITES:
+            // biome-ignore lint/suspicious/noTemplateCurlyInString: The host owns the remote connection grant.
+            "${user_config.allow_browser_changes}",
+        },
       },
     },
     tools_generated: true,
+    user_config: {
+      allow_browser_changes: {
+        type: "boolean",
+        title: "Allow changes from ChatGPT",
+        description:
+          "Allow the connected tunnel to create, edit, and schedule items. Turn off to revoke this access on the next request. The Mac must remain awake and online.",
+        default: false,
+        required: false,
+      },
+      allow_changes: {
+        type: "boolean",
+        title: "Allow changes",
+        description:
+          "Allow creating, editing, and scheduling items. Turn off to return this connection to read-only access.",
+        default: false,
+        required: false,
+      },
+    },
     compatibility: { platforms: ["darwin"], runtimes: { node: ">=24" } },
   };
   await writeFile(

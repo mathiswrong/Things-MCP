@@ -1,47 +1,37 @@
-# Setup through the clients
+# Setup through existing clients
 
-The owner requires no companion app. There will be no separate Things MCP setup window, settings app, or menu-bar application. The previous custom-window proposal is withdrawn.
+There is no companion app, custom setup window, or menu-bar application. Local installation uses a standard MCPB package and native extension settings. Browser access uses the provider's secure MCP tunnel and the same registered connector used by the desktop plugin.
 
-The owner must be able to install, connect, choose access, and run a first test through supported client interfaces without editing configuration, entering commands, installing a language runtime, or keeping Terminal open. Both ChatGPT desktop and ordinary browser chats are required from the start. Manual commands remain contributor documentation only.
+## Owner installation
 
-## Installation routes to verify
+The owner's account now has a private tunnel associated with its workspace, a connected ChatGPT plugin, and an installed personal desktop plugin. An ordinary browser conversation successfully called `things_health`, reporting Things running and writes disabled. No task contents were read by that check.
 
-- Claude Desktop: package the existing server as an MCPB extension. Use the client's installation dialog and extension settings. Bundle dependencies and verify the host runtime and Automation permission identity. Leave final installation to the owner for the usability test.
-- ChatGPT desktop Work: verify the supported local plugin packaging and installation flow in the actual client. Local MCP support does not establish ordinary browser-chat support. Avoid private client APIs and hand-edited configuration.
-- ChatGPT browser: verify a supported remote connection with setup in the client's existing interfaces. Secure MCP Tunnel currently documents a tunnel identity, runtime credential, workspace association, and developer-mode access. How to package and manage that background transport without a companion app or manual commands remains unresolved. Do not describe this route as easy or complete until the owner can perform it independently. Do not expose an unauthenticated public endpoint to remove setup steps.
+The macOS background connection uses the official tunnel client, supervised by a user LaunchAgent. Its runtime credential has only tunnel Read and Use permissions and lives in the login Keychain. The launcher obtains it at startup, removes it from the MCP child's environment, and opens no public listening port. The Mac must be awake, online, and logged in with Things available. Stop and reinstall have been checked; an actual logout/login cycle remains untested.
 
-## Permissions and lifecycle
+The local extension provides two native switches, both initially off: **Allow changes** for the local connection and **Allow changes from ChatGPT** for the shared remote connector. The latter applies to desktop and browser use of that connector. Save restarts the local server and applies the selected grants. These are trusted local settings, not MCP tools.
 
-Start read-only. Use trusted client-owned configuration controls to select ordinary write access, preserving enforcement at the service boundary. Define and test how each client's control interacts with shared permission revocation before implementing it. MCP calls cannot grant themselves permission.
+All connections share the same state directory, filesystem lease, request journal, revision checks, and read-back verification. Every mutation rechecks its connection's grant. Global revocation turns every grant off and survives a restart with unchanged native settings. Reauthorization requires turning the relevant native switch off and saving, then on and saving. Installing or reconnecting never creates test data.
 
-Retain a shared state directory, filesystem lease, durable request journal, revision checks, and read-back verification across all connections. A different client package must not create an independent coordination directory for the same Things library.
+## Scope of completion
 
-Report Connected only after the actual client successfully calls a tool. Health checks must not read task contents or create tasks. A separately requested test may create and verify one labeled Inbox item. Installing the package must not enable writes or create test data silently.
+The owner can select the connected Things MCP plugin in ChatGPT and test it without editing configuration or keeping Terminal open. The local extension package contains its dependencies and uses the host's runtime. The desktop plugin references the registered account connector instead of installing a second transport.
 
-Disconnect and uninstall must preserve Things data and unrelated client settings. Keep remote credentials out of source and logs, using the platform's secure credential storage when needed. Background components may be necessary for browser access, but must be managed through supported installation and lifecycle mechanisms without a separate application UI.
+First-time provisioning on another Mac is still an operator workflow: install the provider transport, create the tunnel and restricted runtime key in its existing settings, store the key in Keychain, install the local runtime and background service, then create and connect the plugin. That workflow is documented for maintainers; it is not yet a distributed, self-service installer. No public distribution or license grant is authorized.
 
-## Acceptance
+The native package installer and client tool calls require separate verification. A standard MCP client smoke test cannot establish that every desktop application's conversation flow works. Verification records distinguish these results in `VERIFICATION.md`.
 
-1. Install through supported client controls with no configuration syntax, commands, or runtime installation.
-2. Discover all eight tools and run a read-only health check from the actual client.
-3. Select ordinary write access through a trusted existing settings surface, then request and verify one Inbox test item.
-4. Quit and reopen the client. Confirm reconnect, permission revocation, disconnect, and uninstall.
-5. Repeat independently in the other desktop client and in ordinary ChatGPT browser conversations. A desktop-only result is incomplete.
+## Maintainer lifecycle
 
-No companion-app artboard approval is pending. Public distribution and license selection still require separate authorization. The packaging and browser-connection work are not complete.
+After `npm run build` and `npm run install:local`, store the restricted runtime key as a generic password in the login Keychain with service `Things MCP Tunnel` and account `runtime`. Never pass the key on a command line or place it in a source file.
 
-## Current implementation checkpoint
+Run `npm run tunnel -- install <tunnel-id>` to configure the provider profile and install the LaunchAgent. The tunnel ID is nonsecret but machine-specific and stays outside source control. `npm run tunnel -- status` reports health and readiness without reading task contents. `npm run tunnel -- stop` disables automatic startup and stops the connection while preserving Things data and the remote tunnel. Reinstall re-enables startup. Removing an account plugin does not remove local data or the background service.
 
-The local MCPB installation preview is built with the official package validator and builder. It bundles the Node server and notices, uses the host runtime, and forces read-only access for its connection. This restriction is a per-process ceiling on shared permissions: another process enabling shared writes cannot lift it, and the preview does not modify shared settings. The existing shared lock and journal remain unchanged. Native write controls are deliberately absent until their grant and revocation behavior is implemented and tested.
+Generate the desktop package with `npm run package:plugin -- <registered-app-id>`. Output stays outside the repository. Install it through the host's supported personal plugin workflow. Registered IDs and marketplace configuration belong to the owner installation, not the source distribution.
 
-The extracted package passes tool discovery, mutation rejection with shared writes enabled, and close/reopen checks using the standard MCP client. Live health also passes without reading task contents. Actual installation, Automation consent identity, tool calls inside the client, and removal remain the owner's acceptance test.
+## References
 
-The upstream tunnel client now documents a bundled plugin and managed runtime lifecycle. That is the next candidate to verify for background transport reuse. Its macOS installation still uses Homebrew and setup still requires a tunnel identity and runtime credential. No supported command-free first-use route is established yet. Do not silently install a helper, connect a tunnel, or call this complete. See [upstream lifecycle guidance](https://github.com/openai/tunnel-client#for-codex--copilot) and [tunnel setup requirements](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels).
-
-## Sources
-
-- [Desktop extension installation](https://support.claude.com/en/articles/10949351-getting-started-with-local-mcp-servers-on-claude-desktop)
-- [MCPB packaging specification](https://github.com/modelcontextprotocol/mcpb)
-- [Local MCP in the desktop app](https://learn.chatgpt.com/docs/extend/mcp)
-- [Plugin installation](https://learn.chatgpt.com/docs/plugins)
-- [Secure MCP Tunnel requirements](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels)
+- [Native extension installation](https://support.claude.com/en/articles/10949351-getting-started-with-local-mcp-servers-on-claude-desktop)
+- [MCPB specification](https://github.com/modelcontextprotocol/mcpb)
+- [Plugins](https://developers.openai.com/plugins/build/plugins)
+- [Secure MCP tunnels](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels)
+- [Official tunnel client](https://github.com/openai/tunnel-client)

@@ -31,6 +31,24 @@ const recordSchema = z.strictObject({
   receipt: receiptSchema.optional(),
 });
 export type OperationRecord = z.infer<typeof recordSchema>;
+export const clientIdSchema = z.enum([
+  "desktop-extension",
+  "desktop-plugin",
+  "browser",
+]);
+export type ClientId = z.infer<typeof clientIdSchema>;
+const settingsSchema = z.strictObject({
+  allowWrites: z.boolean(),
+  clients: z
+    .partialRecord(
+      clientIdSchema,
+      z.strictObject({
+        configured: z.boolean(),
+        enabled: z.boolean(),
+      }),
+    )
+    .optional(),
+});
 export interface Lease {
   signal: AbortSignal;
   assertOwned(): Promise<void>;
@@ -39,6 +57,7 @@ export class State {
   constructor(
     public readonly directory: string,
     private readonly permitWrites = true,
+    private readonly clientId?: ClientId,
   ) {}
   async initialize() {
     await mkdir(this.directory, { recursive: true, mode: 0o700 });
@@ -102,18 +121,51 @@ export class State {
   }
   async writesEnabled() {
     if (!this.permitWrites) return false;
+    const settings = await this.settings();
+    return this.clientId
+      ? settings.clients?.[this.clientId]?.enabled === true
+      : settings.allowWrites;
+  }
+  private async settings() {
     const value = await this.read("settings.json");
-    if (value === undefined) return false;
-    const result = z
-      .strictObject({ allowWrites: z.boolean() })
-      .safeParse(value);
+    if (value === undefined)
+      return { allowWrites: false } as z.infer<typeof settingsSchema>;
+    const result = settingsSchema.safeParse(value);
     if (!result.success) throw new BridgeError("STATE_FAILURE");
-    return result.data.allowWrites;
+    return result.data;
+  }
+  async configureClient(enabled: boolean) {
+    if (!this.clientId) throw new BridgeError("INVALID_INPUT");
+    const id = this.clientId;
+    await this.exclusive(async (lease) => {
+      const settings = await this.settings();
+      if (settings.clients?.[id]?.configured === enabled) return;
+      await this.write(
+        "settings.json",
+        {
+          ...settings,
+          clients: {
+            ...settings.clients,
+            [id]: { configured: enabled, enabled },
+          },
+        },
+        lease,
+      );
+    });
   }
   async setWrites(enabled: boolean) {
-    await this.exclusive(async (lease) =>
-      this.write("settings.json", { allowWrites: enabled }, lease),
-    );
+    await this.exclusive(async (lease) => {
+      const settings = await this.settings();
+      if (!enabled && settings.clients) {
+        for (const grant of Object.values(settings.clients))
+          grant.enabled = false;
+      }
+      await this.write(
+        "settings.json",
+        { ...settings, allowWrites: enabled },
+        lease,
+      );
+    });
   }
   async exclusive<T>(action: (lease: Lease) => Promise<T>): Promise<T> {
     await this.initialize();

@@ -2,15 +2,15 @@
 
 Use Things 3 through local MCP tools backed by its supported macOS automation interfaces.
 
-This is an early feasibility build. Read access and single-to-do creation, editing, scheduling, and status changes have been checked against Things 3.23.3 on macOS. Project, area, and tag mutations remain unverified. Writes are off by default. Headings, checklists, deletion, recurrence, and remote HTTP are not implemented. The complete target scope is in [PLAN.md](PLAN.md).
+This is an early feasibility build. Read access and single-to-do creation, editing, scheduling, and status changes have been checked against Things 3.23.3 on macOS. Project, area, and tag mutations remain unverified. Writes are off by default. Headings, checklists, deletion, recurrence, and a standalone HTTP server are not implemented. Browser access uses the optional provider tunnel. The complete target scope is in [PLAN.md](PLAN.md).
 
-## Installation preview
+## Installation
 
-A read-only MCPB package is available for local installation testing. Open it with Claude Desktop and select **Install**, or drag it into **Settings > Extensions**. Then ask it to check the Things connection without reading or changing tasks. The client supplies its built-in runtime; there are no commands, account credentials, or configuration files for the user. See [the installation guide](packaging/INSTALL.md).
+Install the desktop extension through the client's existing extension installer. Native settings provide separate local and ChatGPT write grants, both off by default. The ChatGPT plugin uses a private tunnel to the same Mac and is available through the account's supported desktop and browser surfaces. See [the installation guide](packaging/INSTALL.md).
 
-This preview always rejects mutations, even if another connection has write permission. It is not the complete setup experience: client-owned write controls, ChatGPT desktop packaging, and ordinary browser access remain unfinished.
+The owner's remote connection has been provisioned and verified with an actual `things_health` call from an ordinary browser chat. A macOS LaunchAgent keeps the official tunnel client running without a companion app or an open Terminal. First-time provisioning on another Mac still needs the provider's account setup and the contributor installer; no public installer is distributed.
 
-Contributors build and verify the package with `npm run package:extension` and `npm run smoke:extension`. The output is `things-mcp-0.1.0.mcpb` with a SHA-256 checksum beside the regular build, outside the repository. The smoke test extracts that archive and checks its actual launch configuration, discovery, write rejection, and restart without accessing Things. `--live-health` additionally checks connection health without reading task contents. [Packaging dependencies](packaging/DEPENDENCIES.md) documents notice generation and the development-only security override.
+Contributors build and verify the extension with `npm run package:extension` and `npm run smoke:extension`. The archive and its SHA-256 checksum are written outside the repository. The smoke test extracts it, resolves native settings through the official configuration library, and checks discovery, write rejection, and restart. `--live-health` checks the real app connection without reading tasks. [Packaging dependencies](packaging/DEPENDENCIES.md) records third-party notices and the development security override.
 
 ## Developer setup
 
@@ -32,7 +32,7 @@ npm run install:local
 
 The installer prints a standard MCP configuration entry. Add it to a client's `mcpServers` configuration. Use the absolute Node executable and installed entry path it prints; MCP clients do not necessarily inherit the interactive shell environment. Start the bundled entry directly, not through `npm start`, because npm writes extra text to stdout.
 
-Local MCP hosts can launch the stdio executable. ChatGPT browser access requires a separate supported connection such as Secure MCP Tunnel; that connection has not been provisioned or verified in this build. The SDK smoke test is not a substitute for testing either application's actual UI. See the [client connection plan](PLAN.md).
+Local MCP hosts can launch the stdio executable. ChatGPT browser access uses Secure MCP Tunnel. The owner's connection is provisioned and verified; identifiers and credentials are not part of the repository. The SDK smoke test is not a substitute for testing either application's actual UI. See the [client connection plan](PLAN.md).
 
 The Mac must be awake and Things must be running. macOS may request Automation permission for the process running the bridge. `doctor` reports app version, timezone, and write permission without listing task contents.
 
@@ -57,7 +57,7 @@ To keep access read-only:
 npm start -- setup --read-only
 ```
 
-Enable ordinary writes locally with `setup --allow-writes` when ready to grant connected clients write access. Check the capability report for tested operations and remaining limitations first. No MCP tool can grant this permission. The setting applies to every local client using the same state directory; per-client grants are future work. Do not isolate each client into a different state directory, because that defeats coordination.
+Enable ordinary writes locally with `setup --allow-writes` when ready to grant connected clients write access. Check the capability report for tested operations and remaining limitations first. No MCP tool can grant this permission. The developer grant applies to legacy stdio connections. Packaged client grants are independent. `setup --read-only` revokes all grants, and an unchanged native setting cannot re-enable a revoked grant on restart. Do not isolate each client into a different state directory, because that defeats coordination.
 
 ## Safety and privacy
 

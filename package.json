@@ -19,7 +19,9 @@
     "smoke": "node scripts/smoke.mjs",
     "check": "npm run typecheck && npm run lint && npm test && npm run build",
     "package:extension": "node scripts/package-extension.mjs",
-    "smoke:extension": "node scripts/smoke-extension.mjs"
+    "smoke:extension": "node scripts/smoke-extension.mjs",
+    "package:plugin": "node scripts/package-plugin.mjs",
+    "tunnel": "node scripts/tunnel.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/client": "2.0.0",
