@@ -5,7 +5,7 @@ Start with: **Use Things MCP to check the connection without reading or changing
 | Symptom | What to do |
 |---|---|
 | The package opens in the wrong application | In Claude Desktop, use Settings > Extensions > Advanced settings > Install extension and select the `.mcpb` file. |
-| The tools do not appear | Check that Things MCP is enabled in extension settings. Start a new conversation and select the extension or plugin. |
+| The tools do not appear | Check that Things MCP is enabled in extension settings. Start a new conversation and select the extension or plugin. If only some tools load after an update, disable and re-enable this extension, then start a new conversation. |
 | `APP_UNAVAILABLE` | Open Things on the Mac running the bridge. Remote clients also need that Mac awake and online. |
 | `AUTOMATION_DENIED` | Open macOS System Settings > Privacy & Security > Automation and allow the requesting host or runtime to control Things. The process name depends on how you installed it. |
 | `READ_ONLY` | In Things MCP's native extension settings, turn on the appropriate Allow changes switch and Save. Local and remote grants are separate. Then request a fresh health check. |
