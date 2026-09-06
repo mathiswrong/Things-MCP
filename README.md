@@ -4,9 +4,9 @@ Find and manage Things 3 tasks from a conversation. Things MCP connects compatib
 
 Create Inbox tasks, edit titles and notes, set deadlines, schedule dates, move tasks, and complete or reopen them. A separate permission enables moving individual to-dos to Trash. Your Mac runs the bridge. The local connection needs no companion app or project-operated account or server.
 
-[Documentation](docs/README.md) · [Installation](packaging/INSTALL.md) · [Daily use](docs/DAILY-USE.md) · [Capabilities](docs/CAPABILITIES.md) · [Full scope](docs/FULL-SCOPE.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) · [Buy me a coffee](https://buymeacoffee.com/paul2d)
+[Documentation](docs/README.md) · [Maintainer wiki](almanac/README.md) · [Installation](packaging/INSTALL.md) · [Daily use](docs/DAILY-USE.md) · [Capabilities](docs/CAPABILITIES.md) · [Full scope](docs/FULL-SCOPE.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) · [Buy me a coffee](https://buymeacoffee.com/paul2d)
 
-Version **1.0.1** provides twenty tools. The local extension uses the client's installer. Browser setup uses a private tunnel and currently requires developer commands. See [verification coverage](VERIFICATION.md) for the tested environments and remaining platform checks.
+Version **1.0.2** provides twenty tools. The local extension uses the client's installer. Browser setup uses a private tunnel and currently requires developer commands. See [verification coverage](VERIFICATION.md) for the tested environments and remaining platform checks.
 
 ## Install
 
@@ -21,14 +21,14 @@ For **Claude Desktop on macOS**:
 For **ChatGPT browser chats**:
 
 1. Follow [ChatGPT setup](docs/CHATGPT.md) to connect a private tunnel on your Mac to your own account. First-time setup is currently an advanced installation.
-2. Enable **Allow changes from ChatGPT** in the extension settings and select **Save** if you want to manage tasks through the tunnel.
+2. Enable **Allow changes from remote connections** in the extension settings and select **Save** if you want to manage tasks through the tunnel.
 3. Start a new conversation with the connection enabled and ask it to check the Things MCP connection. After setup, the background connection starts at login and does not need an open Terminal.
 
 Other clients can use the standard local MCP transport. See [other MCP clients](docs/OTHER-CLIENTS.md). A model needs a client that supports tools; support for MCP alone does not guarantee compatibility with every host.
 
 ## What works
 
-| Operation | Version 1.0.1 |
+| Operation | Version 1.0.2 |
 |---|---|
 | Search and read to-dos, projects, areas, and tags | Available |
 | Create an Inbox to-do | Available |

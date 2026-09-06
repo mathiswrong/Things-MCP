@@ -42,11 +42,11 @@ The native extension settings separate ordinary writes from moving to Trash:
 | Switch | Connection it controls |
 |---|---|
 | **Delete projects, areas, and tags** | Container deletion by this Mac's extension; also requires Allow changes and a fresh scope preview |
-| **Delete projects, areas, and tags from ChatGPT** | Container deletion through the tunnel; also requires its Allow changes switch and a fresh scope preview |
+| **Delete projects, areas, and tags from remote connections** | Container deletion through the tunnel; also requires its Allow changes switch and a fresh scope preview |
 | **Allow changes** | This Mac's local extension |
-| **Allow changes from ChatGPT** | Your separately configured private tunnel, including clients using its account plugin |
+| **Allow changes from remote connections** | Your separately configured private tunnel, including clients using its account plugin |
 | **Allow moving to Trash** | Individual to-do removal from this Mac's local extension; also requires Allow changes |
-| **Allow moving to Trash from ChatGPT** | Individual to-do removal through the private tunnel; also requires its Allow changes switch |
+| **Allow moving to Trash from remote connections** | Individual to-do removal through the private tunnel; also requires its Allow changes switch |
 
 Changes apply after **Save** and the host's server restart. Turning a switch off denies subsequent mutations. An operation already delivered to Things cannot be rolled back by switching access off. Client tool approval prompts are an additional control; they do not replace the Mac-side grant.
 
@@ -62,7 +62,7 @@ Other MCP hosts can launch the standard local transport. Follow [other client se
 
 Install a newer `.mcpb` through the same extension installer, review its permissions, and run a health check. If your host requests removing the previous extension first, use its **Uninstall** button, then install the new package. Keep the shared Things MCP state directory so retry protection remains intact.
 
-Disable or uninstall the local extension in **Settings > Extensions**. Disconnect the remote plugin in that client's settings. These actions do not delete your Things tasks. Removing the local extension does not revoke the separate tunnel's grant or stop its service; turn **Allow changes from ChatGPT** off and save before uninstalling if you also want to revoke remote writes.
+Disable or uninstall the local extension in **Settings > Extensions**. Disconnect the remote plugin in that client's settings. These actions do not delete your Things tasks. Removing the local extension does not revoke the separate tunnel's grant or stop its service; turn **Allow changes from remote connections** off and save before uninstalling if you also want to revoke remote writes.
 
 The remote helper appears as **Things MCP** in macOS background-item notifications and Login Items. Its full retirement procedure is in the ChatGPT guide. Local receipts remain in `~/Library/Application Support/Things MCP`; they contain operation metadata, not task titles or notes.
 

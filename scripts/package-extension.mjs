@@ -79,15 +79,15 @@ try {
       },
       allow_browser_trash: {
         type: "boolean",
-        title: "Allow moving to Trash from ChatGPT",
+        title: "Allow moving to Trash from remote connections",
         description:
-          "Allow the connected tunnel to move individual to-dos and their checklists to Things Trash. Also requires Allow changes from ChatGPT. Does not allow permanent deletion.",
+          "Allow the connected tunnel to move individual to-dos and their checklists to Things Trash. Also requires Allow changes from remote connections. Does not allow permanent deletion.",
         default: false,
         required: false,
       },
       allow_browser_changes: {
         type: "boolean",
-        title: "Allow changes from ChatGPT",
+        title: "Allow changes from remote connections",
         description:
           "Allow the connected tunnel to create, edit, and schedule items. Turn off to revoke this access on the next request. The Mac must remain awake and online.",
         default: false,
@@ -116,7 +116,7 @@ try {
       const name = `allow_${browser ? "browser_" : ""}${key}`;
       manifest.user_config[name] = {
         type: "boolean",
-        title: `${title}${browser ? " from ChatGPT" : ""}`,
+        title: `${title}${browser ? " from remote connections" : ""}`,
         description,
         default: false,
         required: false,

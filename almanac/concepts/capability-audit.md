@@ -1,31 +1,24 @@
 ---
 title: "Capability Audit"
-summary: "The capability audit is the planned completeness contract that classifies each Things operation as supported, limited, unavailable, or unverified."
 topics: [capability-audit, coverage, verification]
 sources:
-  - id: plan
+  - id: registry
     type: file
-    path: PLAN.md
+    path: src/capabilities.ts
+  - id: scope
+    type: file
+    path: docs/FULL-SCOPE.md
+  - id: verification
+    type: file
+    path: VERIFICATION.md
 ---
 
 # Capability Audit
 
-The capability audit is the planned contract for saying what Things-MCP can and cannot do. The plan defines the achievable promise as every verified operation exposed by Things' supported automation interfaces, with explicit accounting for remaining app features rather than a claim of universal UI control [@plan]. The audit turns completeness into evidence: each operation must be verified, limited, unavailable, or unverified with a reason.
+The capability registry tells callers which operation families are implemented, limited or unavailable. An implemented URL operation can still provide only a dispatch receipt; availability and verified read-back are separate claims [@registry].
 
-## Completeness Means Accounted For
+## Three kinds of limit
 
-The plan says the capability table is an implementation inventory and that "target" means implement and verify, not that the operation works today [@plan]. A release must account for every public action and writable property, including unsupported combinations [@plan]. That framing prevents future agents from treating planned coverage as delivered runtime behavior.
+A missing public mechanism, a native command that failed verification, and an environment not tested are different constraints. Repeat-rule editing is excluded at the interface boundary. Direct Logbook moves failed live checks. Fresh-account consent and physical sleep/wake remain environment gaps [@scope] [@verification].
 
-The detailed lookup version belongs in [Capability Inventory](../reference/capability-inventory). The planned inventory covers discovery, retrieval, navigation lists, to-dos, dates, planning, projects, areas, headings, placement, checklists, tags, history, deletion, recovery, UI helpers, templates, repetition, ordering, type conversions, application controls, legacy surfaces, and settings or sync [@plan].
-
-## Status Values
-
-Each planned registry entry reports capability status through `things_capabilities` as `supported`, `limited`, `unavailable`, or `unverified`, with reasons [@plan]. The plan also requires entries to declare inputs, output schema, supported object types, implementation adapter, required permission, side effects, version requirements, verification method, and test coverage [@plan].
-
-Those statuses are user-facing safety data, not internal labels. If Shortcuts truncates a query, if recurrence has no documented route, or if exact ordering cannot be safely expressed, the audit must expose that state instead of substituting a hidden workaround. [Known Capability Limits](../reference/known-capability-limits) is the related reference page for limits found during the audit.
-
-## Verification Role
-
-The audit depends on runtime proof. The plan says a public dictionary declaration is evidence to investigate, not a passing runtime test, and it excludes hidden or private experimental members even if they are present in the dictionary [@plan]. It also requires mutations to read current values, apply changes, read back results, and report discrepancies because Things and sync can race outside the server [@plan].
-
-The first implementation milestone is therefore [Feasibility Audit](../guides/feasibility-audit). The plan makes that milestone responsible for proving read, create, update, checklist, heading, and trash behavior, testing the named clients, and producing the gap list that will seed the initial capability inventory [@plan].
+Update the registry, user reference and verification record together when behavior changes. Do not infer API absence merely because a tool is absent, or successful native behavior from a dictionary declaration [@scope]. See [Capability Inventory](../reference/capability-inventory.md), [Known Capability Limits](../reference/known-capability-limits.md) and [Feasibility Audit](../guides/feasibility-audit.md).

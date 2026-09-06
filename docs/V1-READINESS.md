@@ -59,3 +59,7 @@ The native extension installer upgraded the existing account to 1.0.0 and displa
 The patch adds a durable descendant summary to successful project move receipts. The 82-test suite includes large projects, full counts with bounded detail, incomplete reads, protected-field changes, old receipts, restart replay and actual MCP response encoding. Live packaged-server checks compared an open and a completed child across supported project moves, with independent read-back and saved-receipt replay.
 
 The summary counts public task observations. It does not infer hidden checklist, heading, repeat-template or inherited list changes. A zero changed count means no exposed task fields differed, not that the project move had no effect on its children. See [Project move results](CAPABILITIES.md#project-move-results) and [Verification](../VERIFICATION.md).
+
+## Version 1.0.2 documentation and capability maintenance
+
+The 82-test suite, packaging checks, native health and dependency audit passed again. Capability text now distinguishes supported restoration from unavailable permanent deletion, describes populated-project move verification and explains the optional tunnel. Remote permission labels use neutral connection terminology without changing setting keys. No mutation behavior changed, and the 1.0.1 live evidence remains applicable. The maintained wiki passed structural validation after reconciliation with current code.

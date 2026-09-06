@@ -15,10 +15,6 @@ topics:
     title: Wiki
     description: CodeAlmanac build and maintenance artifacts for this repository.
     parents: []
-  - slug: build
-    title: Build
-    description: First-wiki build planning and audit state.
-    parents: [wiki]
   - slug: orientation
     title: Orientation
     description: Entry points that route future agents through the wiki.
@@ -107,10 +103,6 @@ topics:
     title: Mutation Safety
     description: Request IDs, operation journals, stale checks, and read-back verification.
     parents: [mutations, local-service]
-  - slug: planned-tools
-    title: Planned Tools
-    description: Planned MCP tool surfaces and future capability contract entries.
-    parents: [mcp]
   - slug: tool-contracts
     title: Tool Contracts
     description: Exact tool names, schemas, result fields, and exposed operation boundaries.
@@ -121,7 +113,7 @@ topics:
     parents: [tool-contracts]
   - slug: setup
     title: Setup
-    description: Planned installation and client-connection setup flow.
+    description: Installation and client-connection setup flow.
     parents: [local-service]
   - slug: diagnostics
     title: Diagnostics
@@ -137,13 +129,9 @@ topics:
     parents: [release-boundary]
   - slug: open-source
     title: Open Source
-    description: Constraints for a possible future free open-source release.
+    description: Constraints for maintaining the public open-source release.
     parents: [release-boundary]
   - slug: things-automation
     title: Things Automation
-    description: Auditing and operating through AppleScript, Shortcuts, and Things URL commands.
+    description: Auditing public scripting and documented Things URL commands.
     parents: [things-integration]
-  - slug: milestones
-    title: Milestones
-    description: Planned implementation milestones and their exit criteria.
-    parents: [product-scope]

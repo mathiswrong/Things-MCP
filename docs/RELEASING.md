@@ -4,10 +4,10 @@ This procedure prepares a reviewable release. It does not authorize publication.
 
 ## Verify the source and assets
 
-1. Confirm the release commit, version, and pull-request state from GitHub. Check for concurrent changes and preserve them.
+1. Confirm the release commit and version from GitHub. Review every open pull request for features intended for this release; an unmerged branch is not part of the published package. Check for concurrent changes and preserve them. Match the tested source tree to the merged commit before tagging.
 2. Run `npm ci`, `npm run check`, `npm run smoke`, `npm run package:extension`, `npm run smoke:extension`, and `npm audit --audit-level=high` from a clean checkout.
 3. On a Mac, install the resulting package through the native host UI. Check health, grant ordinary writes deliberately, and create/read back one synthetic task. Verify a supported edit. Run the browser workflow separately when advertising remote support.
-4. Inspect the archive manifest, license, third-party notices, and documentation. Check its SHA-256 file against the archive. The package must contain no machine-specific configuration, account connector ID, task data, credential, or telemetry destination.
+4. Update the capability registry, user reference, verification record, maintained wiki, repository description and release notes. Inspect the archive manifest, license, third-party notices, and documentation. Check its SHA-256 file against the archive. The package must contain no machine-specific configuration, account connector ID, task data, credential, or telemetry destination.
 5. Scan all reachable Git history with a maintained secret scanner, for example `gitleaks git --redact --log-opts='--all'`. Review names, emails, file paths, comments, commit messages, PR text, and assets manually as well. Automated scans cannot prove that arbitrary private prose is absent.
 6. Keep audit reports, screenshots, and release builds in an external Downloads directory. Commit generator scripts and portable documentation only.
 

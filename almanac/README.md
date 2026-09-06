@@ -1,35 +1,17 @@
 ---
-title: CodeAlmanac Wiki
-topics: [concepts]
+title: "Things MCP Wiki"
+topics: [orientation, wiki]
 sources: []
 ---
 
-# CodeAlmanac Wiki
+# Things MCP Wiki
 
-This is the living wiki for this repository. It records the durable knowledge
-the code cannot say: decisions, flows, invariants, incidents, gotchas, and
-project context that future agents should not rediscover from scratch.
+Start with [Getting Started](getting-started.md) for the architecture, capability contract and release procedures. The wiki describes the shipped implementation; current code remains authoritative.
 
-## Notability Bar
+- [Architecture and shared state](architecture/local-mac-service.md)
+- [Project moves, descendants and durable receipts](architecture/mutation-reconciliation.md)
+- [Capabilities](reference/capability-inventory.md) and [limits](reference/known-capability-limits.md)
+- [Setup](guides/setup-and-diagnostics.md) and [release readiness](guides/release-readiness.md)
+- [Coverage map](coverage-map.md)
 
-Write a page when it preserves non-obvious knowledge that will help a future
-agent work safely in this codebase.
-
-Good pages explain:
-
-- a decision that took research or trial-and-error
-- a cross-file flow
-- an invariant or gotcha not visible from one file
-- an external dependency as this repo uses it
-- a product or operational constraint that shapes future work
-
-Do not write pages that restate nearby code.
-
-## Topic Taxonomy
-
-Topics live in `topics.yaml`. Pages are Markdown files directly under
-`almanac/`, including nested folders.
-
-## Links
-
-Use normal Markdown links between pages. Put file evidence in `sources:`.
+Wiki maintenance follows [Ingest](manual/ingest.md), [Garden](manual/garden.md) and the [writing manual](manual/how-to-write.md). Ordinary coding work treats this tree as read-only unless wiki maintenance is requested.
