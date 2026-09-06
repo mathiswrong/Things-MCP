@@ -4,7 +4,7 @@ Find and manage Things 3 tasks from a conversation. Things MCP connects compatib
 
 Create Inbox tasks, edit titles and notes, set deadlines, schedule dates, move tasks, and complete or reopen them. A separate permission enables moving individual to-dos to Trash. Your Mac runs the bridge. The local connection needs no companion app or project-operated account or server.
 
-[Installation](packaging/INSTALL.md) · [Capabilities](docs/CAPABILITIES.md) · [Full scope](docs/FULL-SCOPE.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) · [Buy me a coffee](https://buymeacoffee.com/paul2d)
+[Installation](packaging/INSTALL.md) · [Daily use](docs/DAILY-USE.md) · [Capabilities](docs/CAPABILITIES.md) · [Full scope](docs/FULL-SCOPE.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) · [Buy me a coffee](https://buymeacoffee.com/paul2d)
 
 ## Install
 

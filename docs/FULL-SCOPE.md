@@ -1,6 +1,6 @@
 # Complete operation scope
 
-Public release is on hold pending expanded capability coverage and usable installation. Keep the server lightweight and use only supported Things interfaces. Apple Shortcuts dependencies and replacement workflows are excluded. Features with no supported mechanism are omitted. This inventory separates missing implementation from missing vendor interfaces. Current runtime support is listed in [Capabilities](CAPABILITIES.md).
+Public release is on hold pending usable installation on a new Mac and license selection. Keep the server lightweight and use only supported Things interfaces. Apple Shortcuts dependencies and replacement workflows are excluded. Features with no supported mechanism are omitted. This inventory separates missing implementation from missing vendor interfaces. Current runtime support is listed in [Capabilities](CAPABILITIES.md).
 
 Things does not offer a public cloud account API. The existing server talks to the local Mac app through its supported AppleScript interface. Things itself handles cloud synchronization. A direct cloud connection would require an unofficial protocol and is outside the supported-interface boundary.
 

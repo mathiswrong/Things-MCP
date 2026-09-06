@@ -10,6 +10,7 @@ import {
 } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, isAbsolute, join } from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 
@@ -185,9 +186,18 @@ async function main() {
     await execute("/bin/launchctl", ["enable", `${domain}/${label}`], {
       env: minimalEnv,
     });
-    await execute("/bin/launchctl", ["bootstrap", domain, launchFile], {
-      env: minimalEnv,
-    });
+    for (let attempt = 0; ; attempt++) {
+      try {
+        await execute("/bin/launchctl", ["bootstrap", domain, launchFile], {
+          env: minimalEnv,
+        });
+        break;
+      } catch (error) {
+        // A replaced user agent can briefly remain unavailable after bootout.
+        if (error.code !== 5 || attempt === 4) throw error;
+        await delay(250 * (attempt + 1));
+      }
+    }
     process.stdout.write(
       "Background connection installed. Check status before reporting connected.\n",
     );

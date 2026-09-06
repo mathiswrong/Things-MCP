@@ -20,7 +20,7 @@ npm run install:local
 brew install openai/tools/tunnel-client
 ```
 
-The tunnel client is a separate upstream dependency. Review its [installation and configuration documentation](https://github.com/openai/tunnel-client). No provider binaries or credentials are included in the source repository.
+The tunnel client is a separate upstream dependency. Its official macOS installation currently uses Homebrew; upstream warns that directly downloaded release archives are not notarized. This guide does not use security bypasses or claim a command-free installation on a new Mac. Review its [installation and configuration documentation](https://github.com/openai/tunnel-client). No provider binaries or credentials are included in the source repository.
 
 ## 2. Create your tunnel and restricted credential
 
@@ -55,7 +55,7 @@ macOS may notify you that **Things MCP** can run in the background. The service 
 
 In ChatGPT's plugin settings, create a custom plugin named **Things MCP**. Choose the **Tunnel** connection type and select the tunnel you created. The local stdio server does not implement a second authentication layer; the secure tunnel and its workspace association provide access control. Follow the provider's current form labels if they differ.
 
-Create the plugin, verify that its ten tools are listed, and select **Connect**. An existing connection may retain an older tool catalog. If move and Trash are missing and its management screen has no Refresh action, the client update is unresolved; a healthy tunnel alone does not establish that the new tools are available. In a new conversation, select Things MCP and ask:
+Create the plugin, verify that its ten tools are listed, and select **Connect**. An existing connection may retain an older tool catalog. Reload the Plugins page, choose **Personal**, then **Things MCP > Manage**. Select **Refresh** near the bottom of the action list. Verify that `things_move_item` and `things_trash_item` appear before starting a new conversation. A stale page can hide Refresh even when the account has permission to use it. In a new conversation, select Things MCP and ask:
 
 > Use Things MCP to check the connection without reading or changing tasks.
 
@@ -77,13 +77,13 @@ The registered account connector can also be referenced by a desktop plugin. Gen
 npm run package:plugin -- <registered-app-id>
 ```
 
-The result contains `.codex-plugin/plugin.json` and `.app.json` outside the repository. Install it using the host's supported personal plugin workflow, as described in [the plugin documentation](https://developers.openai.com/plugins/build/plugins). It references the same tunnel, state, and remote grant; it does not install a second server. The ordinary browser conversation flow is verified. A separate conversation flow in the desktop plugin host remains to be verified.
+The result contains `.codex-plugin/plugin.json` and `.app.json` outside the repository. Install it using the host's supported personal plugin workflow, as described in [the plugin documentation](https://developers.openai.com/plugins/build/plugins). It references the same tunnel, state, and remote grant; it does not install a second server. Ordinary browser Chat and the desktop plugin host have both completed health and capability calls through the same account connection. A running conversation can retain its earlier tool definitions; start a new conversation after a catalog refresh.
 
 ## Diagnose, update, and disconnect
 
 `npm run tunnel -- status` reports transport health without reading task content. If it is unavailable, check the Mac's network, login Keychain, provider key, and Login Items permission. Check the plugin's workspace and tunnel association too. Do not post raw provider logs; they can contain task data.
 
-For an update, build the new source, run `npm run install:local`, and repeat the tunnel install command. Then check status. If tools changed, open the connection in ChatGPT plugin settings and use **Refresh** when available, review the new tool list, and start a new conversation for the health check. See the [connection update guide](https://developers.openai.com/plugins/deploy/connect-chatgpt). Updating the local `.mcpb` alone does not update the tunnel's installed runtime.
+For an update, build the new source, run `npm run install:local`, and repeat the tunnel install command. Then check status. If tools changed, reload ChatGPT Plugins, choose **Personal**, open **Things MCP > Manage**, and select **Refresh** near the bottom. Review the new tool list and start a new conversation for the health check. See the [connection update guide](https://developers.openai.com/plugins/deploy/connect-chatgpt). Updating the local `.mcpb` alone does not update the tunnel's installed runtime.
 
 To stop the connection and disable future automatic startup:
 

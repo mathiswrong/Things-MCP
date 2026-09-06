@@ -75,3 +75,13 @@ The updated native extension was installed through the host's package installer.
 A fresh browser Work conversation called health and capabilities without reading task content. Ordinary writes were enabled and Trash was disabled. It reported move and Trash as implemented but not callable because the saved account tool catalog still contained eight tools. The connection's visible management screen did not offer Refresh. The expanded ChatGPT tool catalog remains an unresolved client acceptance check, not a completed verification.
 
 The updated source and reachable commit messages contained no generation-credit signatures, automated co-author trailers, private fixture IDs, or owner-specific paths. The maintained secret scanner reported no leaks in ten reachable commits. Functional compatibility names and third-party legal notices remain.
+
+## Refreshed account catalog and desktop verification
+
+On September 5, 2026, reloading the plugin directory refreshed stale account state and restored the Refresh control in the personal plugin management screen. Refresh discovered all ten tools, including move and Trash, and the updated list/parent search schema. No replacement account connection was needed. This resolves the earlier missing-control and eight-tool-catalog findings.
+
+A fresh ordinary browser Chat called health and capabilities and confirmed that both new tools were callable. The desktop plugin also successfully called health and capabilities from its actual conversation tools. Both reported Things 3.23.3 running, ordinary writes enabled, and Trash disabled. These checks did not retrieve task contents or change tasks. Existing conversations may retain old descriptors and should be replaced with a new conversation after refresh.
+
+The fresh browser Chat then invoked both newly exposed tools using a deliberately nonexistent synthetic identifier. Move returned `ITEM_NOT_FOUND`; Trash returned `TRASH_DISABLED`. The client presented a one-time approval for the Trash call, its exact arguments were reviewed, and no blanket permission was granted. Neither request created a mutation journal record or changed an item.
+
+The tunnel installer now retries macOS bootstrap error 5 at most four times after the initial attempt, with bounded delays totaling 2.5 seconds. Other errors still fail immediately. A real reinstall completed successfully; transport health and readiness were true and a subsequent desktop plugin health call succeeded. Lint passed. The transient failure itself was not reproduced in this verification.
