@@ -43,7 +43,7 @@ export const capabilities = [
     adapter: "applescript",
     validation: "todo_and_empty_project_moves_live_verified_3.23.4",
     limitation:
-      "To-do Inbox, Today, Anytime, Someday, project placement and detachment verified. Area placement/detachment and empty-project Today/Someday verified. Project Anytime and direct Logbook moves are rejected after failed native verification. Populated-project area movement and descendant preservation passed native checks. No headings, reordering, or Trash restoration.",
+      "To-do Inbox, Today, Anytime, Someday, project placement and detachment verified. Area placement/detachment and empty-project Today/Someday verified. Project Anytime and direct Logbook moves are rejected after failed native verification. Populated-project area movement and descendant preservation passed native checks. Project move receipts include descendantImpact counts and up to 20 changed task IDs with exposed field names; unchanged fields do not prove no inherited effect. No headings, reordering, or Trash restoration.",
   },
   {
     operation: "trash_item",

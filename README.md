@@ -6,7 +6,7 @@ Create Inbox tasks, edit titles and notes, set deadlines, schedule dates, move t
 
 [Documentation](docs/README.md) · [Installation](packaging/INSTALL.md) · [Daily use](docs/DAILY-USE.md) · [Capabilities](docs/CAPABILITIES.md) · [Full scope](docs/FULL-SCOPE.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) · [Buy me a coffee](https://buymeacoffee.com/paul2d)
 
-Version **1.0** provides twenty tools. The local extension uses the client's installer. Browser setup uses a private tunnel and currently requires developer commands. See [verification coverage](VERIFICATION.md) for the tested environments and remaining platform checks.
+Version **1.0.1** provides twenty tools. The local extension uses the client's installer. Browser setup uses a private tunnel and currently requires developer commands. See [verification coverage](VERIFICATION.md) for the tested environments and remaining platform checks.
 
 ## Install
 
@@ -28,7 +28,7 @@ Other clients can use the standard local MCP transport. See [other MCP clients](
 
 ## What works
 
-| Operation | Version 1.0 |
+| Operation | Version 1.0.1 |
 |---|---|
 | Search and read to-dos, projects, areas, and tags | Available |
 | Create an Inbox to-do | Available |
@@ -51,6 +51,8 @@ Other clients can use the standard local MCP transport. See [other MCP clients](
 | Counts, selection, date filters and resumable searches | Available |
 | Edit section headings inside a project | Not available |
 | Create or change repeating schedules | Not available |
+
+Project moves return task counts and observed descendant changes in the same receipt. See [project move results](docs/CAPABILITIES.md#project-move-results) for the counts, changed-task details and read-back limits.
 
 URL operations require [one-time local setup](docs/URL-OPERATIONS.md) for edits and duplication. Their receipts say **“Sent to Things; result not verified”** because Things does not expose complete read-back for those fields.
 

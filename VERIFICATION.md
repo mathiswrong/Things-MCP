@@ -1,6 +1,16 @@
 # Verification record
 
-Version **1.0.0** was checked on September 6, 2026. It exposes twenty tools. The detailed [acceptance record](docs/V1-READINESS.md) separates observed native behavior from verification and environment limits.
+Version **1.0.1** was checked on September 6, 2026. It exposes twenty tools. The detailed [acceptance record](docs/V1-READINESS.md) separates observed native behavior from verification and environment limits.
+
+## Version 1.0.1 checks
+
+- The automatic suite passed **82 tests**, typecheck, lint, runtime build, stdio smoke, extension packaging, extracted-package smoke and native health. The dependency audit reported zero vulnerabilities.
+- Project move regression checks cover 1,205 descendants, a 20-entry detail limit with full counts, open/completed tasks, empty projects, unchanged exposed fields, tag ordering, membership changes, read failures, uncertain-outcome protection, old receipts and replay after restart.
+- The official MCP client received the same descendant summary in structured content and JSON text from the packaged server. Live Things 3.23.4 checks used one labeled project with one open and one completed child. Area placement/detachment, Today and Someday moves returned complete two-task comparisons and survived request replay without another mutation. Independent native reads matched the returned summary. Both children retained their exposed fields; the receipt explicitly does not claim inherited list effects were unchanged.
+- The existing native extension upgraded through its installer to 1.0.1. The installed browser tunnel passed healthy/ready checks, and the connected MCP tool returned the new two-child summary for an actual project move. A separate connected read confirmed its area placement; the shared journal retained the same summary. Ordinary grants remained enabled and Trash/container grants remained off. The full create/read/edit/read client acceptance from 1.0.0 remains recorded below.
+- Redacted scans passed for reachable history and the current source tree. No provenance signatures were found in the patch.
+- Cleanup passed after detaching the fixture project: its three-object scope moved to recoverable Trash, then the empty one-object fixture area was removed. No unrelated item appeared in either scope preview.
+- Version 1.0.0 did not include descendant summaries. Existing receipts remain readable, and individual to-do receipts are unchanged.
 
 ## Version 1.0 checks
 

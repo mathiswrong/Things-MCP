@@ -1725,3 +1725,233 @@ test("URL templates validate parents and payload size without dispatching", asyn
     assert.equal(sent, 0);
   });
 });
+
+function projectFixture(adapter: MemoryAdapter, count: number) {
+  const target = { kind: "project" as const, id: "impact-project" };
+  adapter.items.set(target.id, {
+    ...target,
+    title: "Private project",
+    status: "open",
+  });
+  for (let i = 0; i < count; i++) {
+    const id = `impact-child-${String(i).padStart(4, "0")}`;
+    adapter.items.set(id, {
+      kind: "todo",
+      id,
+      projectId: target.id,
+      title: "Private child title",
+      notes: "Private child notes",
+      status: i % 2 ? "completed" : "open",
+      areaId: null,
+      scheduledDate: null,
+      tagIds: ["tag-a", "tag-b"],
+    });
+  }
+  return target;
+}
+
+test("project move receipts report all compared tasks, bound changed details and survive restart without content", async () => {
+  await fixture(async ({ adapter, service, state, directory }) => {
+    const target = projectFixture(adapter, 25);
+    adapter.items.set("destination-area", {
+      kind: "area",
+      id: "destination-area",
+      title: "Destination",
+    });
+    const move = adapter.move.bind(adapter);
+    adapter.move = async (input) => {
+      const result = await move(input);
+      for (const item of await adapter.children(target))
+        adapter.items.set(item.id, { ...item, areaId: "destination-area" });
+      return result;
+    };
+    const request = {
+      requestId: randomUUID(),
+      target,
+      expectedRevision: (await service.get(target)).revision,
+      destination: { kind: "area", id: "destination-area" },
+    };
+    const result = await service.move(request);
+    const impact = result.descendantImpact;
+    assert.ok(impact);
+    assert.equal(impact.beforeCount, 25);
+    assert.equal(impact.afterCount, 25);
+    assert.equal(impact.beforeComplete, true);
+    assert.equal(impact.afterComplete, true);
+    assert.equal(impact.comparedCount, 25);
+    assert.equal(impact.changedCount, 25);
+    assert.equal(impact.unchangedExposedFieldsCount, 0);
+    assert.equal(impact.notComparedCount, 0);
+    assert.equal(impact.changes.length, 20);
+    assert.equal(impact.changesTruncated, true);
+    assert.ok(
+      impact.changes.every(
+        (item) => JSON.stringify(item.changedFields) === '["areaId"]',
+      ),
+    );
+    assert.ok(!JSON.stringify(result).includes("Private"));
+    const savedReceipt = (await state.operation(request.requestId))?.receipt;
+    assert.ok(savedReceipt && savedReceipt.verification !== "url_dispatched");
+    assert.deepEqual(savedReceipt.descendantImpact, impact);
+    adapter.get = async () => {
+      throw new Error("Replay must not read Things");
+    };
+    const replay = await new ThingsService(adapter, new State(directory)).move(
+      request,
+    );
+    assert.deepEqual(replay, { ...result, replayed: true });
+    assert.equal(adapter.moved, 1);
+  });
+});
+
+test("project move comparison includes tasks beyond 1000 and compares array contents", async () => {
+  await fixture(async ({ adapter, service }) => {
+    const target = projectFixture(adapter, 1205);
+    const move = adapter.move.bind(adapter);
+    adapter.move = async (input) => {
+      const result = await move(input);
+      for (const item of await adapter.children(target))
+        adapter.items.set(item.id, {
+          ...item,
+          tagIds: [...(item.tagIds ?? [])].reverse(),
+          ...(item.id === "impact-child-1204"
+            ? { scheduledDate: "2026-10-01" }
+            : {}),
+        });
+      return result;
+    };
+    const result = await service.move({
+      requestId: randomUUID(),
+      target,
+      expectedRevision: (await service.get(target)).revision,
+      destination: { kind: "list", list: "today" },
+    });
+    assert.equal(result.descendantImpact?.comparedCount, 1205);
+    assert.equal(result.descendantImpact?.changedCount, 1);
+    assert.equal(result.descendantImpact?.unchangedExposedFieldsCount, 1204);
+    assert.deepEqual(result.descendantImpact?.changes, [
+      { id: "impact-child-1204", changedFields: ["scheduledDate"] },
+    ]);
+  });
+});
+
+test("empty and unchanged project descendants remain distinct from inherited move effects", async () => {
+  for (const count of [0, 2]) {
+    await fixture(async ({ adapter, service }) => {
+      const target = projectFixture(adapter, count);
+      for (const destination of [
+        { kind: "list", list: "today" },
+        { kind: "list", list: "someday" },
+        { kind: "detach", parent: "area" },
+      ]) {
+        const result = await service.move({
+          requestId: randomUUID(),
+          target,
+          expectedRevision: (await service.get(target)).revision,
+          destination,
+        });
+        assert.equal(result.descendantImpact?.comparedCount, count);
+        assert.equal(result.descendantImpact?.changedCount, 0);
+        assert.equal(
+          result.descendantImpact?.unchangedExposedFieldsCount,
+          count,
+        );
+        assert.deepEqual(result.descendantImpact?.changes, []);
+        assert.equal(result.descendantImpact?.changesTruncated, false);
+        assert.match(
+          result.descendantImpact?.limitations ?? "",
+          /Unchanged exposed fields do not mean unaffected/,
+        );
+      }
+    });
+  }
+});
+
+test("project child read failures prevent a move or leave it uncertain without replay", async () => {
+  for (const failBefore of [true, false]) {
+    await fixture(async ({ adapter, service, state }) => {
+      const target = projectFixture(adapter, 2);
+      const request = {
+        requestId: randomUUID(),
+        target,
+        expectedRevision: (await service.get(target)).revision,
+        destination: { kind: "list", list: "today" },
+      };
+      const children = adapter.children.bind(adapter);
+      adapter.children = async (reference) => {
+        if (failBefore || adapter.moved)
+          throw new BridgeError("NATIVE_FAILURE");
+        return children(reference);
+      };
+      await assert.rejects(service.move(request));
+      assert.equal(adapter.moved, failBefore ? 0 : 1);
+      const recorded = await state.operation(request.requestId);
+      if (failBefore) assert.equal(recorded, undefined);
+      else {
+        assert.equal(recorded?.state, "unknown");
+        assert.equal(recorded?.receipt, undefined);
+        await assert.rejects(service.move(request), code("OUTCOME_UNKNOWN"));
+        assert.equal(adapter.moved, 1);
+      }
+    });
+  }
+});
+
+test("changed project membership or protected child content cannot produce an impact success receipt", async () => {
+  for (const change of ["add", "remove", "notes"]) {
+    await fixture(async ({ adapter, service, state }) => {
+      const target = projectFixture(adapter, 2);
+      const move = adapter.move.bind(adapter);
+      adapter.move = async (input) => {
+        const result = await move(input);
+        const child = adapter.items.get("impact-child-0000");
+        assert.ok(child);
+        if (change === "remove") adapter.items.delete(child.id);
+        else if (change === "add")
+          adapter.items.set("new-child", { ...child, id: "new-child" });
+        else
+          adapter.items.set(child.id, {
+            ...child,
+            notes: "Unexpected content change",
+          });
+        return result;
+      };
+      const request = {
+        requestId: randomUUID(),
+        target,
+        expectedRevision: (await service.get(target)).revision,
+        destination: { kind: "list", list: "today" },
+      };
+      await assert.rejects(service.move(request), code("VERIFICATION_FAILED"));
+      assert.equal(
+        (await state.operation(request.requestId))?.state,
+        "unknown",
+      );
+      await assert.rejects(service.move(request), code("OUTCOME_UNKNOWN"));
+      assert.equal(adapter.moved, 1);
+    });
+  }
+});
+
+test("individual task moves and existing receipts retain their original shape", async () => {
+  await fixture(async ({ adapter, service, state }) => {
+    const item = seed(adapter);
+    const request = {
+      requestId: randomUUID(),
+      target: { kind: item.kind, id: item.id },
+      expectedRevision: fingerprint(item),
+      destination: { kind: "list", list: "today" },
+    };
+    const result = await service.move(request);
+    assert.equal("descendantImpact" in result, false);
+    assert.equal(
+      "descendantImpact" in
+        ((await state.operation(request.requestId))?.receipt ?? {}),
+      false,
+    );
+    assert.deepEqual(await service.move(request), {
+      ...result,
+      replayed: true,
+    });
+  });
+});

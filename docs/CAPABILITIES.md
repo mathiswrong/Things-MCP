@@ -1,6 +1,6 @@
 # Capability reference
 
-Version 1.0 exposes twenty MCP tools using supported AppleScript/JXA and Things URLs. It does not accept caller scripts, access the Things database, or use Apple Shortcuts. [Verification](../VERIFICATION.md) records the evidence and environment limits.
+Version 1.0.1 exposes twenty MCP tools using supported AppleScript/JXA and Things URLs. It does not accept caller scripts, access the Things database, or use Apple Shortcuts. [Verification](../VERIFICATION.md) records the evidence and environment limits.
 
 | Tool | Behavior |
 |---|---|
@@ -13,7 +13,7 @@ Version 1.0 exposes twenty MCP tools using supported AppleScript/JXA and Things 
 | `things_create_item` | Create a to-do, project, area or tag with supported initial properties. |
 | `things_update_item` | Replace or increment supported fields using the current revision. |
 | `things_schedule_item` | Set a to-do or project's calendar start date. |
-| `things_move_item` | Move to supported lists or parents, or detach a parent. |
+| `things_move_item` | Move to supported lists or parents, or detach a parent. Project receipts include descendant counts and observed field changes. |
 | `things_restore_item` | Restore an open to-do to Inbox or an open project to Today, with current revision, normal writes and verified root read-back. |
 | `things_trash_item` | Move one open to-do and its checklist to Trash, with the separate Trash grant. |
 | `things_navigate` | Show an item/list, open an item for editing, or open Quick Entry on the Mac. |
@@ -38,6 +38,28 @@ Creation accepts initial status, deadline, supported timestamps, tags and either
 Titles are trimmed, nonempty and limited to 4,000 characters; notes to 10,000 characters; tag lists to 100 unique IDs. Calendar dates use `YYYY-MM-DD` in the Mac's timezone. Timestamps require an explicit timezone and are normalized to UTC. Scheduling does not set a reminder, choose Evening, clear a start date or create a repeat rule.
 
 Completing or canceling a project closes its open children. Reopening the project leaves completed/canceled children closed. The service checks exposed child content and status after project mutations. Public automation is not transactional: a failed read-back can follow a successful change and does not mean it was undone.
+
+## Project move results
+
+Starting in 1.0.1, a successful project move includes `descendantImpact` in its receipt and saved request status. The summary uses the same child-task reads as the move's verification. Individual to-do moves keep their original receipt shape.
+
+| Field | Meaning |
+|---|---|
+| `beforeCount`, `afterCount` | Task counts in the public project child collection before and after the move, including logged children. |
+| `comparedCount` | Tasks compared by stable ID. Successful moves compare every returned task. |
+| `changedCount` | Tasks with at least one observed field difference. |
+| `unchangedExposedFieldsCount` | Compared tasks whose exposed fields did not change. This does not mean the move had no inherited effect on them. |
+| `changes` | Up to 20 changed task IDs, each with its `changedFields` list. No titles, notes or before/after field values are included. |
+| `changesTruncated` | True when additional changed tasks are counted but omitted from the detail list. |
+| `beforeComplete`, `afterComplete` | Coverage of the public child collection. These are true for successful 1.0.1 moves; native timeouts or failed reads cannot produce a success receipt. |
+| `notComparedCount` | Zero for a successful move. Unexpected membership changes fail verification. |
+| `scope`, `limitations` | The summary covers exposed task fields. It cannot establish every inherited list effect, checklist, heading or repeating-template change. |
+
+A client can say, for example, “The project contains 42 tasks. Three had observed field changes; 39 retained their exposed fields.” It must not turn the latter count into “39 tasks were unaffected.” Moving a project can affect inherited placement without changing any exposed child field.
+
+Counts cover all tasks returned by the successful reads, including projects above 1,000 tasks; only the changed-task detail list is capped. Large reads can still exceed native time or output limits. The snapshots are not atomic, and concurrent edits may contribute to differences. Changed tag ordering alone is not counted as an assignment change.
+
+The summary is stored in the request journal. Repeating the same request ID returns that same summary without moving or rereading the project. Existing receipts without a summary remain readable. Fetch the project separately for its current location and revision.
 
 ## Search and count limits
 

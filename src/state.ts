@@ -16,6 +16,28 @@ import { z } from "zod";
 import type { DestructiveAction } from "./domain.js";
 import { BridgeError } from "./errors.js";
 
+export const descendantImpactSchema = z.strictObject({
+  scope: z.literal("exposed_task_fields"),
+  beforeCount: z.number().int().nonnegative(),
+  afterCount: z.number().int().nonnegative(),
+  beforeComplete: z.boolean(),
+  afterComplete: z.boolean(),
+  comparedCount: z.number().int().nonnegative(),
+  changedCount: z.number().int().nonnegative(),
+  unchangedExposedFieldsCount: z.number().int().nonnegative(),
+  notComparedCount: z.number().int().nonnegative(),
+  changes: z
+    .array(
+      z.strictObject({
+        id: z.string(),
+        changedFields: z.array(z.string()),
+      }),
+    )
+    .max(20),
+  changesTruncated: z.boolean(),
+  limitations: z.string(),
+});
+
 export const receiptSchema = z.strictObject({
   requestId: z.uuid(),
   target: z.strictObject({
@@ -24,6 +46,7 @@ export const receiptSchema = z.strictObject({
   }),
   changedFields: z.array(z.string()),
   verification: z.enum(["read_back", "command_accepted"]),
+  descendantImpact: descendantImpactSchema.optional(),
 });
 export type Receipt = z.infer<typeof receiptSchema>;
 export const urlReceiptSchema = z.strictObject({

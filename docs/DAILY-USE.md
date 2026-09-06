@@ -52,3 +52,5 @@ See [Capabilities](CAPABILITIES.md) for exact fields and [Full scope](FULL-SCOPE
 Prompts are examples, not exact commands. Clients may ask you to clarify a target or approve a tool call. The bridge receives structured fields and does not interpret natural language itself. Start with one task when trying a new workflow.
 
 For checklists, headings, reminders and duplication, follow [URL setup](URL-OPERATIONS.md). Those receipts report dispatch, not complete read-back. Inspect Things before another change. For container deletion, enable its separate grant and review the scope preview. Native repeat-rule editing remains unavailable.
+
+When moving a project, ask for the descendant summary: “Move this project to Work and tell me how many tasks were compared and which exposed fields changed.” The receipt includes counts and up to 20 changed task IDs. Unchanged fields do not rule out inherited placement effects.

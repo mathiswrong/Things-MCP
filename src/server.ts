@@ -155,7 +155,7 @@ export function createServer(service: ThingsService) {
   );
   register(
     "things_move_item",
-    "Move a to-do to a project or area, a project to an area, detach a parent, or move a to-do to Inbox, Today, Anytime, or Someday. Projects support Today and Someday. Project Anytime and direct Logbook moves are unavailable. Moving projects can affect descendants. Requires the latest revision and write permission. Does not reorder items, address headings, or restore Trash.",
+    "Move a to-do to a project or area, a project to an area, detach a parent, or move a to-do to Inbox, Today, Anytime, or Someday. Projects support Today and Someday. Project Anytime and direct Logbook moves are unavailable. Project moves return descendantImpact with compared/changed task counts and up to 20 changed IDs with field names. Counts describe exposed fields, not every inherited effect. Requires the latest revision and write permission. Does not reorder items, address headings, or restore Trash.",
     moveSchema,
     false,
     (input) => service.move(input),

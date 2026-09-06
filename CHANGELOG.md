@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.1
+
+- Project move receipts now include descendant task counts, observed changed/unchanged counts, and up to 20 changed task IDs with field names. Version 1.0.0 returned only the project move receipt.
+- Summaries use the existing child verification reads and survive request replay and process restart. They contain no task titles, notes or field values.
+- Added coverage for large projects, unchanged array values, empty projects, failed reads, membership changes and delivery through the MCP client.
+- Clarified that unchanged exposed child fields do not mean the project move had no inherited effect.
+
 ## 1.0.0
 
 - Twenty tools covering native task and project edits, tags, counts, filters, navigation, restoration and container deletion.

@@ -137,3 +137,109 @@ test("native mutation response corruption is an uncertain outcome", async () => 
       error instanceof BridgeError && error.code === "OUTCOME_UNKNOWN",
   );
 });
+
+test("the official MCP client receives and replays the project descendant summary", async () => {
+  const parent = join(homedir(), "Downloads", "Things-MCP-tests");
+  await mkdir(parent, { recursive: true });
+  const directory = await mkdtemp(join(parent, "project-impact-protocol-"));
+  let areaId: string | null = null;
+  let mutations = 0;
+  const project = { kind: "project" as const, id: "protocol-project" };
+  const child = () => ({
+    kind: "todo",
+    id: "protocol-child",
+    title: "Private task",
+    notes: "Private notes",
+    projectId: project.id,
+    areaId,
+    status: "open",
+  });
+  const adapter = new NativeAdapter(async (operation, input) => {
+    const value = input as { id: string; kind: string };
+    if (operation === "children") return [child()];
+    if (operation === "get") {
+      if (value.kind === "project")
+        return { ...project, title: "Private project", status: "open", areaId };
+      if (value.kind === "area")
+        return { kind: "area", id: "protocol-area", title: "Private area" };
+      return child();
+    }
+    if (operation === "move") {
+      mutations++;
+      areaId = "protocol-area";
+      return project;
+    }
+    throw new Error("Unexpected native operation");
+  });
+  const state = new State(directory);
+  await state.setWrites(true);
+  const server = createServer(new ThingsService(adapter, state));
+  const client = new Client({ name: "project-impact-test", version: "1.0.0" });
+  const [clientTransport, serverTransport] =
+    InMemoryTransport.createLinkedPair();
+  try {
+    await Promise.all([
+      server.connect(serverTransport),
+      client.connect(clientTransport),
+    ]);
+    const tools = await client.listTools();
+    assert.match(
+      tools.tools.find((item) => item.name === "things_move_item")
+        ?.description ?? "",
+      /descendantImpact/,
+    );
+    const read = await client.callTool({
+      name: "things_get_item",
+      arguments: project,
+    });
+    assert.ok(read.structuredContent);
+    const request = {
+      requestId: "719b8d71-2c79-4b7a-80ae-1ca9499e9914",
+      target: project,
+      expectedRevision: (
+        read.structuredContent as { result: { revision: string } }
+      ).result.revision,
+      destination: { kind: "area", id: "protocol-area" },
+    };
+    const response = await client.callTool({
+      name: "things_move_item",
+      arguments: request,
+    });
+    assert.equal(response.isError, undefined);
+    const result = (
+      response.structuredContent as {
+        result: {
+          descendantImpact: {
+            comparedCount: number;
+            changedCount: number;
+            changes: unknown[];
+          };
+          replayed: boolean;
+        };
+      }
+    ).result;
+    assert.equal(result.descendantImpact.comparedCount, 1);
+    assert.equal(result.descendantImpact.changedCount, 1);
+    assert.deepEqual(result.descendantImpact.changes, [
+      { id: "protocol-child", changedFields: ["areaId"] },
+    ]);
+    assert.ok(!JSON.stringify(response).includes("Private"));
+    assert.deepEqual(
+      JSON.parse((response.content[0] as { text: string }).text),
+      result,
+    );
+    const replay = await client.callTool({
+      name: "things_move_item",
+      arguments: request,
+    });
+    assert.deepEqual((replay.structuredContent as { result: unknown }).result, {
+      ...result,
+      replayed: true,
+    });
+    assert.equal(mutations, 1);
+  } finally {
+    await client.close();
+    await server.close();
+    await rm(directory, { recursive: true, force: true });
+  }
+});

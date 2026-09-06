@@ -53,3 +53,9 @@ These observations establish native behavior on this Mac. The API still cannot p
 The release suite passed 75 tests, typecheck, lint, build, stdio smoke, extracted-package discovery/rejection/restart and dependency audit. No dependency vulnerabilities were reported. Redacted secret scans passed for source, reachable history and the extracted archive.
 
 The native extension installer upgraded the existing account to 1.0.0 and displayed twenty tools and six permission switches. The tunnel update passed healthy/ready status and an actual browser create/read/edit/read sequence. Work and the installed desktop plugin passed health calls. A stale desktop chat catalogue required an extension restart and a new conversation, which then passed create/read/edit/read. Both client fixtures and both URL test projects were cleaned up to recoverable Trash; verification details are maintained in [Verification](../VERIFICATION.md).
+
+## Version 1.0.1 project move receipts
+
+The patch adds a durable descendant summary to successful project move receipts. The 82-test suite includes large projects, full counts with bounded detail, incomplete reads, protected-field changes, old receipts, restart replay and actual MCP response encoding. Live packaged-server checks compared an open and a completed child across supported project moves, with independent read-back and saved-receipt replay.
+
+The summary counts public task observations. It does not infer hidden checklist, heading, repeat-template or inherited list changes. A zero changed count means no exposed task fields differed, not that the project move had no effect on its children. See [Project move results](CAPABILITIES.md#project-move-results) and [Verification](../VERIFICATION.md).

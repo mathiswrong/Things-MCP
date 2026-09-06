@@ -561,6 +561,56 @@ export class ThingsService {
       value,
     );
   }
+  private projectMoveImpact(
+    before: Item[],
+    after: Item[],
+  ): NonNullable<Receipt["descendantImpact"]> {
+    const current = new Map(after.map((item) => [item.id, item]));
+    const changes: { id: string; changedFields: string[] }[] = [];
+    let changedCount = 0;
+    for (const previous of [...before].sort((a, b) =>
+      a.id.localeCompare(b.id),
+    )) {
+      const item = current.get(previous.id);
+      if (!item) throw new BridgeError("VERIFICATION_FAILED");
+      const comparable = (value: unknown, field: string) =>
+        fingerprint({
+          value:
+            field === "tagIds" && Array.isArray(value)
+              ? [...value].sort()
+              : value,
+        });
+      const changedFields = [
+        ...new Set([...Object.keys(previous), ...Object.keys(item)]),
+      ]
+        .filter(
+          (field) =>
+            comparable(previous[field as keyof Item], field) !==
+            comparable(item[field as keyof Item], field),
+        )
+        .sort();
+      if (changedFields.length) {
+        changedCount++;
+        if (changes.length < 20)
+          changes.push({ id: previous.id, changedFields });
+      }
+    }
+    return {
+      scope: "exposed_task_fields",
+      beforeCount: before.length,
+      afterCount: after.length,
+      beforeComplete: true,
+      afterComplete: true,
+      comparedCount: before.length,
+      changedCount,
+      unchangedExposedFieldsCount: before.length - changedCount,
+      notComparedCount: 0,
+      changes,
+      changesTruncated: changedCount > changes.length,
+      limitations:
+        "Counts cover the project tasks returned by Things' public child collection, including logged children. All returned tasks are compared; changed-task details are limited to 20 IDs. Unchanged exposed fields do not mean unaffected: inherited list effects, checklists, headings and repeat templates are not observed. Concurrent edits may contribute to differences; snapshots are not atomic. A failed or incomplete child read cannot produce a successful move receipt.",
+    };
+  }
   private parse<T>(schema: z.ZodType<T>, input: unknown): T {
     const result = schema.safeParse(input);
     if (!result.success) throw new BridgeError("INVALID_INPUT");
@@ -665,6 +715,7 @@ export class ThingsService {
       );
       try {
         const result = await action(lease);
+        let descendantImpact: Receipt["descendantImpact"];
         if (children && precondition) {
           const afterChildren = await this.adapter.children(
             precondition.target,
@@ -679,8 +730,10 @@ export class ThingsService {
             operation === "update"
               ? (input as Update).changes.status
               : undefined;
+          const verifiedChildren: Item[] = [];
           for (const before of children) {
             const after = await this.adapter.get(before, lease.signal);
+            verifiedChildren.push(after);
             this.verify(after, {
               title: before.title,
               notes: before.notes,
@@ -695,11 +748,17 @@ export class ThingsService {
                   : before.status,
             });
           }
+          if (operation === "move")
+            descendantImpact = this.projectMoveImpact(
+              children,
+              verifiedChildren,
+            );
         }
         const receipt: Receipt = {
           requestId: input.requestId,
           ...result,
           verification: result.verification ?? "read_back",
+          ...(descendantImpact ? { descendantImpact } : {}),
         };
         await lease.assertOwned();
         await this.state.record(
