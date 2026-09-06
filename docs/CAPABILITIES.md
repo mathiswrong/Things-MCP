@@ -51,4 +51,17 @@ Missing operations fall into three groups:
 | Available through a route this server excludes | Full checklist and heading queries via Shortcuts; limited checklist and structured-project writes via URL scheme | Things supports parts of these workflows, but this server does not use Shortcuts or provide URL writes without verifiable read-back. |
 | Supported by Things, not implemented or not sufficiently verified here | Tag assignment and hierarchy, duplication, navigation, reminders via URL scheme, container deletion, project Anytime and direct Logbook moves | These are server limitations. They must not be described as missing Things features. |
 
-The [full-scope inventory](FULL-SCOPE.md) lists the remaining operations and their individual reasons. Populated-project cascades, hidden checklist changes, and repeating templates are outside the verified coverage. Completing or moving a project can affect its descendants even though the receipt only verifies exposed project fields.
+The [full-scope inventory](FULL-SCOPE.md) lists the remaining operations and their individual reasons. Populated-project cascades, hidden checklist changes, and repeating templates are outside the verified coverage. Completing a project can affect its descendants even though the completion receipt only verifies exposed project fields. Project moves additionally return the bounded observations described below.
+
+
+### Project move impact
+
+`things_move_item` includes `descendantImpact` when moving a project. It reads non-Trash tasks in that project before and after the move through the supported parent query, with up to 1,000 tasks per snapshot. Individual to-do move receipts are unchanged.
+
+- `beforeCount` and `afterCount` count unique tasks observed in each snapshot. `beforeComplete` and `afterComplete` indicate whether each query exhausted the collection within the read limits. Incomplete counts are lower bounds, not project totals.
+- `comparedCount` counts tasks present in both snapshots. `changedCount` counts those with observed changes to exposed fields; `unchangedExposedFieldsCount` counts those without such differences.
+- `notComparedCount` counts observed task IDs present in only one snapshot. They are not assumed deleted, added, unchanged, or successfully moved.
+- `changes` lists up to 20 changed task IDs and their changed field names. `changesTruncated` indicates more changed tasks than the list includes. Counts still cover all compared tasks, up to the snapshot limit.
+- `limitations` explains that inherited list behavior, hidden checklists, and concurrent edits prevent treating this as an exhaustive or atomic account of the move's effects. Zero exposed-field changes does not mean no descendants were affected.
+
+The journal retains this summary for request-status lookup and replay without saving task titles, notes, or field values. A failed pre-move snapshot prevents the move. A failed post-move snapshot leaves the outcome unknown and blocks automatic retry with the same request ID. Existing receipts remain readable and do not gain a retroactive summary. Populated-project behavior has synthetic test coverage; live cascade behavior remains unverified.

@@ -188,7 +188,10 @@ export const healthSchema = z.strictObject({
 export interface Adapter {
   health(): Promise<z.infer<typeof healthSchema>>;
   get(reference: Reference, signal?: AbortSignal): Promise<Item>;
-  find(query: Query): Promise<z.infer<typeof queryResultSchema>>;
+  find(
+    query: Query,
+    signal?: AbortSignal,
+  ): Promise<z.infer<typeof queryResultSchema>>;
   create(input: Create, signal?: AbortSignal): Promise<Reference>;
   update(input: Update, signal?: AbortSignal): Promise<Reference>;
   schedule(input: Schedule, signal?: AbortSignal): Promise<Reference>;

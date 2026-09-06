@@ -6,7 +6,7 @@ import { test } from "node:test";
 import { Client } from "@modelcontextprotocol/client";
 import { InMemoryTransport } from "@modelcontextprotocol/server";
 import { NativeAdapter } from "../src/adapter.js";
-import type { Adapter } from "../src/domain.js";
+import { type Adapter, querySchema } from "../src/domain.js";
 import { BridgeError } from "../src/errors.js";
 import { createServer } from "../src/server.js";
 import { ThingsService } from "../src/service.js";
@@ -119,5 +119,26 @@ test("native mutation response corruption is an uncertain outcome", async () => 
     }),
     (error: unknown) =>
       error instanceof BridgeError && error.code === "OUTCOME_UNKNOWN",
+  );
+});
+
+test("native descendant reads receive the shared lease cancellation signal", async () => {
+  const controller = new AbortController();
+  const adapter = new NativeAdapter(
+    async (operation, _input, mutation, signal) => {
+      assert.equal(operation, "find");
+      assert.equal(mutation, false);
+      assert.equal(signal, controller.signal);
+      return {
+        items: [],
+        hasMore: false,
+        scanComplete: true,
+        nextOffset: null,
+      };
+    },
+  );
+  await adapter.find(
+    querySchema.parse({ parent: { kind: "project", id: "synthetic-project" } }),
+    controller.signal,
   );
 });

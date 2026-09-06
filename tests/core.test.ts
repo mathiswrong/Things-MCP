@@ -56,7 +56,11 @@ class MemoryAdapter implements Adapter {
       (item) =>
         item.kind === query.kind &&
         item.title.includes(query.text) &&
-        (!query.status || item.status === query.status),
+        (!query.status || item.status === query.status) &&
+        (!query.parent ||
+          (query.parent.kind === "project" ? item.projectId : item.areaId) ===
+            query.parent.id) &&
+        (query.list === "trash" || !item.inTrash),
     );
     const next = query.offset + query.limit;
     const hasMore = matches.length > next;
@@ -975,4 +979,201 @@ test("missing or trashed move destinations fail before journaling or applying a 
     assert.equal(await state.operation(request.requestId), undefined);
     assert.equal(adapter.moved, 0);
   });
+});
+
+function projectMoveFixture(adapter: MemoryAdapter, count: number) {
+  const project: Item = {
+    kind: "project",
+    id: "project",
+    title: "Synthetic project",
+    areaId: null,
+  };
+  adapter.items.set(project.id, project);
+  for (let i = 0; i < count; i++) {
+    adapter.items.set(`child-${i}`, {
+      kind: "todo",
+      id: `child-${i}`,
+      title: "Synthetic child",
+      notes: "Synthetic private note",
+      projectId: project.id,
+      areaId: null,
+    });
+  }
+  return {
+    requestId: randomUUID(),
+    target: { kind: "project", id: project.id },
+    expectedRevision: fingerprint(project),
+    destination: { kind: "list", list: "someday" },
+  };
+}
+
+test("project moves compare paginated descendants and persist a bounded summary for replay", async () => {
+  await fixture(async ({ adapter, service, directory }) => {
+    const request = projectMoveFixture(adapter, 125);
+    adapter.items.set("unrelated", {
+      kind: "todo",
+      id: "unrelated",
+      title: "Synthetic unrelated task",
+    });
+    const move = adapter.move.bind(adapter);
+    adapter.move = async (input) => {
+      const result = await move(input);
+      for (let i = 0; i < 25; i++) {
+        const child = adapter.items.get(`child-${i}`);
+        assert.ok(child);
+        child.scheduledDate = "2026-09-07";
+      }
+      return result;
+    };
+    const receipt = await service.move(request);
+    const impact = receipt.descendantImpact;
+    assert.ok(impact);
+    assert.equal(impact.beforeCount, 125);
+    assert.equal(impact.afterCount, 125);
+    assert.equal(impact.beforeComplete, true);
+    assert.equal(impact.afterComplete, true);
+    assert.equal(impact.comparedCount, 125);
+    assert.equal(impact.changedCount, 25);
+    assert.equal(impact.unchangedExposedFieldsCount, 100);
+    assert.equal(impact.notComparedCount, 0);
+    assert.equal(impact.changes.length, 20);
+    assert.equal(impact.changesTruncated, true);
+    assert.deepEqual(impact.changes[0], {
+      id: "child-0",
+      changedFields: ["scheduledDate"],
+    });
+    assert.ok(!JSON.stringify(receipt).includes("Synthetic private note"));
+    adapter.find = async () => {
+      throw new Error("Replay must not query descendants");
+    };
+    const restarted = new ThingsService(adapter, new State(directory));
+    assert.deepEqual(await restarted.move(request), {
+      ...receipt,
+      replayed: true,
+    });
+    assert.deepEqual(
+      (await restarted.requestStatus({ requestId: request.requestId })).receipt
+        ?.descendantImpact,
+      impact,
+    );
+    assert.equal(adapter.moved, 1);
+  });
+});
+
+test("empty, capped and incomplete project reads report their coverage", async () => {
+  for (const count of [0, 1000, 1001]) {
+    await fixture(async ({ adapter, service }) => {
+      const request = projectMoveFixture(adapter, count);
+      const impact = (await service.move(request)).descendantImpact;
+      assert.ok(impact);
+      assert.equal(impact.beforeCount, Math.min(count, 1000));
+      assert.equal(impact.beforeComplete, count <= 1000);
+      assert.equal(impact.afterComplete, count <= 1000);
+      assert.equal(impact.changedCount, 0);
+      assert.equal(impact.comparedCount, Math.min(count, 1000));
+    });
+  }
+  await fixture(async ({ adapter, service }) => {
+    const request = projectMoveFixture(adapter, 1);
+    const find = adapter.find.bind(adapter);
+    adapter.find = async (query) => ({
+      ...(await find(query)),
+      scanComplete: false,
+    });
+    assert.equal(
+      (await service.move(request)).descendantImpact?.beforeComplete,
+      false,
+    );
+  });
+});
+
+test("descendants missing from either snapshot are not called unchanged or verified changes", async () => {
+  await fixture(async ({ adapter, service }) => {
+    const request = projectMoveFixture(adapter, 2);
+    const move = adapter.move.bind(adapter);
+    adapter.move = async (input) => {
+      const result = await move(input);
+      adapter.items.delete("child-0");
+      adapter.items.set("new-child", {
+        kind: "todo",
+        id: "new-child",
+        title: "Synthetic new child",
+        projectId: "project",
+      });
+      return result;
+    };
+    const impact = (await service.move(request)).descendantImpact;
+    assert.ok(impact);
+    assert.equal(impact.notComparedCount, 2);
+    assert.equal(impact.comparedCount, 1);
+    assert.equal(impact.changedCount, 0);
+    assert.equal(impact.unchangedExposedFieldsCount, 1);
+  });
+});
+
+test("snapshot failure before a move does not journal; failure afterward prevents retries", async () => {
+  for (const failAfter of [false, true]) {
+    await fixture(async ({ adapter, service }) => {
+      const request = projectMoveFixture(adapter, 1);
+      const find = adapter.find.bind(adapter);
+      adapter.find = async (query) => {
+        if (!failAfter || adapter.moved)
+          throw new BridgeError("NATIVE_FAILURE");
+        return find(query);
+      };
+      await assert.rejects(
+        service.move(request),
+        code(failAfter ? "OUTCOME_UNKNOWN" : "NATIVE_FAILURE"),
+      );
+      assert.equal(adapter.moved, failAfter ? 1 : 0);
+      assert.equal(
+        (await service.requestStatus({ requestId: request.requestId })).state,
+        failAfter ? "unknown" : "not_seen",
+      );
+      if (failAfter) {
+        await assert.rejects(service.move(request), code("OUTCOME_UNKNOWN"));
+        assert.equal(adapter.moved, 1);
+      }
+    });
+  }
+});
+
+test("a project edited during the descendant snapshot is rejected before moving", async () => {
+  await fixture(async ({ adapter, service }) => {
+    const request = projectMoveFixture(adapter, 1);
+    const find = adapter.find.bind(adapter);
+    adapter.find = async (query) => {
+      const project = adapter.items.get("project");
+      assert.ok(project);
+      project.title = "Synthetic concurrent edit";
+      return find(query);
+    };
+    await assert.rejects(service.move(request), code("STALE_ITEM"));
+    assert.equal(adapter.moved, 0);
+    assert.equal(
+      (await service.requestStatus({ requestId: request.requestId })).state,
+      "not_seen",
+    );
+  });
+});
+
+test("project area, detach and Today moves also include descendant observations", async () => {
+  for (const destination of [
+    { kind: "area", id: "area" },
+    { kind: "detach", parent: "area" },
+    { kind: "list", list: "today" },
+  ]) {
+    await fixture(async ({ adapter, service }) => {
+      const request = projectMoveFixture(adapter, 1);
+      adapter.items.set("area", {
+        kind: "area",
+        id: "area",
+        title: "Synthetic area",
+      });
+      const impact = (await service.move({ ...request, destination }))
+        .descendantImpact;
+      assert.equal(impact?.comparedCount, 1);
+      assert.equal(impact?.changedCount, 0);
+    });
+  }
 });

@@ -111,6 +111,7 @@ export class ThingsService {
   }
   async move(input: unknown) {
     const value = this.parse(moveSchema, input);
+    let before: Awaited<ReturnType<ThingsService["projectTasks"]>> | undefined;
     return this.mutate(
       "move",
       value,
@@ -135,7 +136,17 @@ export class ThingsService {
           !(await this.adapter.inList(target, destination.list, lease.signal))
         )
           throw new BridgeError("VERIFICATION_FAILED");
-        return { target, changedFields: ["placement"] };
+        const descendantImpact = before
+          ? this.compareProjectTasks(
+              before,
+              await this.projectTasks(value.target.id, lease),
+            )
+          : undefined;
+        return {
+          target,
+          changedFields: ["placement"],
+          ...(descendantImpact ? { descendantImpact } : {}),
+        };
       },
       value,
       false,
@@ -145,8 +156,77 @@ export class ThingsService {
           const parent = await this.adapter.get(destination, lease.signal);
           if (parent.inTrash) throw new BridgeError("INVALID_INPUT");
         }
+        if (value.target.kind === "project") {
+          before = await this.projectTasks(value.target.id, lease);
+          const current = await this.adapter.get(value.target, lease.signal);
+          if (fingerprint(current) !== value.expectedRevision)
+            throw new BridgeError("STALE_ITEM");
+        }
       },
     );
+  }
+  private async projectTasks(id: string, lease: Lease) {
+    const items = new Map<string, Item>();
+    for (let offset = 0; offset < 1000; offset += 100) {
+      await lease.assertOwned();
+      const page = await this.adapter.find(
+        querySchema.parse({
+          kind: "todo",
+          parent: { kind: "project", id },
+          limit: 100,
+          offset,
+          includeNotes: true,
+        }),
+        lease.signal,
+      );
+      await lease.assertOwned();
+      for (const item of page.items) items.set(item.id, item);
+      if (!page.hasMore) return { items, complete: page.scanComplete };
+    }
+    return { items, complete: false };
+  }
+  private compareProjectTasks(
+    before: { items: Map<string, Item>; complete: boolean },
+    after: { items: Map<string, Item>; complete: boolean },
+  ): NonNullable<Receipt["descendantImpact"]> {
+    let comparedCount = 0;
+    let changedCount = 0;
+    const changes: { id: string; changedFields: string[] }[] = [];
+    for (const [id, previous] of before.items) {
+      const current = after.items.get(id);
+      if (!current) continue;
+      comparedCount++;
+      const fields = new Set([
+        ...Object.keys(previous),
+        ...Object.keys(current),
+      ]);
+      const changedFields = [...fields]
+        .filter(
+          (field) =>
+            previous[field as keyof Item] !== current[field as keyof Item],
+        )
+        .sort();
+      if (changedFields.length) {
+        changedCount++;
+        if (changes.length < 20) changes.push({ id, changedFields });
+      }
+    }
+    return {
+      scope: "exposed_task_fields",
+      beforeCount: before.items.size,
+      afterCount: after.items.size,
+      beforeComplete: before.complete,
+      afterComplete: after.complete,
+      comparedCount,
+      changedCount,
+      unchangedExposedFieldsCount: comparedCount - changedCount,
+      notComparedCount:
+        before.items.size + after.items.size - 2 * comparedCount,
+      changes,
+      changesTruncated: changedCount > changes.length,
+      limitations:
+        "Counts cover observed non-Trash project tasks, up to 1000 per snapshot. Incomplete counts are lower bounds. Only tasks present in both snapshots are compared. Unchanged exposed fields do not mean unaffected: inherited list behavior and hidden checklists are not verified. Concurrent edits may contribute to observed differences; snapshots are not atomic.",
+    };
   }
   async trash(input: unknown) {
     const value = this.parse(trashSchema, input);
@@ -184,7 +264,7 @@ export class ThingsService {
     input: { requestId: string },
     action: (
       lease: Lease,
-    ) => Promise<{ target: Reference; changedFields: string[] }>,
+    ) => Promise<Omit<Receipt, "requestId" | "verification">>,
     precondition?: { target: Reference; expectedRevision: string },
     requiresTrash = false,
     beforeWrite?: (lease: Lease) => Promise<void>,

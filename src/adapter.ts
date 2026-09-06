@@ -159,8 +159,8 @@ export class NativeAdapter implements Adapter {
   get(input: Reference, signal?: AbortSignal) {
     return this.call("get", input, itemSchema, false, signal);
   }
-  find(input: Query) {
-    return this.call("find", input, queryResultSchema);
+  find(input: Query, signal?: AbortSignal) {
+    return this.call("find", input, queryResultSchema, false, signal);
   }
   create(input: Create, signal?: AbortSignal) {
     return this.call("create", input, referenceSchema, true, signal);
