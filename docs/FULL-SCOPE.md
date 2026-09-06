@@ -1,5 +1,7 @@
 # Complete operation scope
 
+This inventory records the published 0.83 baseline. The [1.0 acceptance record](V1-READINESS.md) tracks progress against it. Tag assignment and hierarchy, public timestamps, initial placement, append/prepend text, area collapse, selected-item reads, counts, existence, sorting and resumable scans are now implemented in the development branch. Navigation and container-operation controls are also being verified. These additions have not been released.
+
 Version 0.83 uses supported Things interfaces and documents its remaining installation and feature limits. Apple Shortcuts dependencies and replacement workflows are excluded. Features with no supported mechanism are omitted. This inventory separates missing implementation from missing vendor interfaces. Current runtime support is listed in [Capabilities](CAPABILITIES.md).
 
 Things does not offer a public cloud account API. The existing server talks to the local Mac app through its supported AppleScript interface. Things itself handles cloud synchronization. A direct cloud connection would require an unofficial protocol and is outside the supported-interface boundary.

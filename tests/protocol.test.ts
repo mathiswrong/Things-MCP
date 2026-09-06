@@ -28,6 +28,21 @@ test("MCP initialization, discovery, reads, and write rejection work through the
     throw new Error("Unexpected mutation");
   };
   const adapter: Adapter = {
+    destructiveVerified: {
+      todo: false,
+      project: false,
+      area: false,
+      tag: false,
+      empty_trash: false,
+      log_completed: false,
+    },
+    children: async () => [],
+    scope: async () => [],
+    destructive: async () => true,
+    count: async () => ({ count: 0, scanComplete: true, nextScanOffset: null }),
+    navigate: async () => {
+      throw new Error("not called");
+    },
     health: async () => ({ version: "test", running: true, timezone: "UTC" }),
     get: async () => fixture,
     find: async () => ({
@@ -41,6 +56,7 @@ test("MCP initialization, discovery, reads, and write rejection work through the
     schedule: forbidden,
     move: forbidden,
     trash: forbidden,
+    restore: forbidden,
     inList: async () => false,
   };
   const server = createServer(new ThingsService(adapter, new State(directory)));
@@ -53,7 +69,7 @@ test("MCP initialization, discovery, reads, and write rejection work through the
       client.connect(clientTransport),
     ]);
     const tools = await client.listTools();
-    assert.equal(tools.tools.length, 10);
+    assert.equal(tools.tools.length, 16);
     assert.equal(
       tools.tools.find((tool) => tool.name === "things_find_items")?.annotations
         ?.readOnlyHint,

@@ -129,7 +129,8 @@ try {
         stderr: "pipe",
       }),
     );
-    assert.equal((await client.listTools()).tools.length, 10);
+    assert.equal((await client.listTools()).tools.length, 16);
+    assert.equal(client.getServerVersion()?.version, manifest.version);
     assert.ok(
       !(await client.callTool({ name: "things_capabilities", arguments: {} }))
         .isError,
@@ -166,11 +167,14 @@ try {
     },
   );
   assert.deepEqual(await readdir(state), [
+    "delete_container-settings.json",
+    "empty_trash-settings.json",
+    "log_completed-settings.json",
     "settings.json",
     "trash-settings.json",
   ]);
   process.stdout.write(
-    "Packaged extension: checksum, extraction, portable launch, ten tools, write rejection, and restart passed.\n",
+    "Packaged extension: checksum, extraction, portable launch, sixteen tools, write rejection, and restart passed.\n",
   );
   if (process.argv.includes("--live-health"))
     process.stdout.write("Live health passed without reading task contents.\n");

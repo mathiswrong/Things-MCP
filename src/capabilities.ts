@@ -10,7 +10,7 @@ export const capabilities = [
     state: "implemented",
     adapter: "applescript",
     limitation:
-      "Built-in list and project/area filters supported. Project Inbox/Anytime queries and project parents for projects are rejected. Trash excluded by default. Bounded scan of 5000 objects; pagination is not a snapshot.",
+      "Built-in list and project/area filters supported. Project Inbox/Anytime queries and project parents for projects are rejected. Trash excluded by default. Each scan examines up to 5000 objects. Follow nextScanOffset to continue. Tag/date filters, selection, sorting, counts and existence are implemented; pagination is not a snapshot.",
   },
   { operation: "get_item", state: "implemented", adapter: "applescript" },
   {
@@ -27,7 +27,7 @@ export const capabilities = [
     adapter: "applescript",
     validation: "native_write_verified_3.23.4",
     limitation:
-      "To-do and empty-project title, notes, status and deadline set/clear verified; area and tag renaming verified. Populated-project cascades are unverified. Read revision required.",
+      "Title/notes replacement and increments, status, deadlines, public timestamps, tag assignment, tag hierarchy/shortcuts and area collapse are implemented. Project revisions include exposed child fields. Completing or canceling a project closes open children; reopening does not reopen them. Read revision required.",
   },
   {
     operation: "schedule_item",
@@ -35,7 +35,7 @@ export const capabilities = [
     adapter: "applescript",
     validation: "native_write_verified_3.23.4",
     limitation:
-      "To-do and empty-project calendar-date scheduling verified. Clearing, Evening and reminders are not implemented.",
+      "To-do and populated-project calendar-date scheduling verified. Clearing, Evening and reminders are not implemented.",
   },
   {
     operation: "move_item",
@@ -43,7 +43,7 @@ export const capabilities = [
     adapter: "applescript",
     validation: "todo_and_empty_project_moves_live_verified_3.23.4",
     limitation:
-      "To-do Inbox, Today, Anytime, Someday, project placement and detachment verified. Area placement/detachment and empty-project Today/Someday verified. Project Anytime and direct Logbook moves are rejected after failed native verification. Populated-project effects remain unverified. No headings, reordering, or Trash restoration.",
+      "To-do Inbox, Today, Anytime, Someday, project placement and detachment verified. Area placement/detachment and empty-project Today/Someday verified. Project Anytime and direct Logbook moves are rejected after failed native verification. Populated-project area movement and descendant preservation passed native checks. No headings, reordering, or Trash restoration.",
   },
   {
     operation: "trash_item",
@@ -51,12 +51,48 @@ export const capabilities = [
     adapter: "applescript",
     validation: "single_native_write_verified_3.23.4",
     limitation:
-      "Requires separate per-connection Trash permission plus ordinary writes. Moves one to-do and its checklist to Trash. No container deletion, permanent deletion, or restore.",
+      "Requires separate per-connection Trash permission plus ordinary writes. Moves one open to-do and its checklist to Trash. Closed-task deletion failed native checks and is rejected before writing. Container deletion is a separate development operation. No per-item permanent deletion is enabled; restore is a separate tool.",
+  },
+  {
+    operation: "restore_item",
+    state: "implemented",
+    adapter: "applescript",
+    limitation:
+      "Open to-do restoration to Inbox passed native read-back. Requires normal writes and the current revision. Open projects restore to Today. Both routes passed native read-back. Closed items are not enabled; trashed project child enumeration is unavailable before restoration.",
   },
   {
     operation: "request_status",
     state: "implemented",
     adapter: "local_journal",
+  },
+  {
+    operation: "count_items",
+    state: "implemented",
+    adapter: "applescript",
+    limitation:
+      "Count each scan segment and follow nextScanOffset until scanComplete. Not an atomic library snapshot.",
+  },
+  { operation: "item_exists", state: "implemented", adapter: "applescript" },
+  {
+    operation: "navigate",
+    state: "implemented",
+    adapter: "applescript",
+    limitation:
+      "Show an item/list, edit an item, or open Quick Entry on this Mac. Requires writes and a request ID. Receipt means command accepted, not that a task was created or a remote device changed view. Show/edit and selected-item read-back were native checked. Quick Entry opening and dismissal were checked in the UI; Things may retain a previous draft.",
+  },
+  {
+    operation: "preview_destructive",
+    state: "development",
+    adapter: "applescript",
+    limitation:
+      "Reads affected exposed objects and returns a scope revision. Native completeness checks are in progress.",
+  },
+  {
+    operation: "apply_destructive",
+    state: "development",
+    adapter: "applescript",
+    limitation:
+      "Open-project, area and tag-hierarchy deletion passed native checks. Requires the separate container grant and a current scope preview. Area previews distinguish Trash movement from archived projects retained in Logbook. Whole-library commands remain disabled pending their checks. Health reports each native gate independently.",
   },
   {
     operation: "headings",
@@ -73,17 +109,18 @@ export const capabilities = [
       "Full checklist queries and checked-row editing are unavailable without Apple Shortcuts, which is excluded. URL writes do not supply a read-back interface.",
   },
   {
-    operation: "duplicate_tags_history",
-    state: "unavailable",
-    adapter: "applescript",
-    limitation: "Public routes identified; implementation pending.",
-  },
-  {
-    operation: "container_delete_permanent_delete_restore",
+    operation: "duplicate",
     state: "unavailable",
     adapter: "applescript",
     limitation:
-      "Cascades and permanent area deletion require explicit safety controls.",
+      "The native command returned -1717 and is not registered as a tool. The documented URL duplication route remains implementation work.",
+  },
+  {
+    operation: "permanent_delete_restore",
+    state: "unavailable",
+    adapter: "applescript",
+    limitation:
+      "Open to-dos restore to Inbox and open projects restore to Today. Closed-item restoration remains under investigation. The public whole-library empty Trash command is distinct from per-item permanent deletion.",
   },
   {
     operation: "repeat_rules",

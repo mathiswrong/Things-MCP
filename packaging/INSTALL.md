@@ -1,5 +1,7 @@
 # Install Things MCP
 
+These instructions describe the published 0.83 package. The 1.0 development package has additional permission controls. Open-project and tag-hierarchy deletion are verified; the remaining native destructive gates are disabled while verification is in progress. Do not use it as a completed release.
+
 ## Before you start
 
 You need a Mac with Things 3 installed, signed in, and running. The local package also needs a current Claude Desktop version that supports MCPB extensions and Node.js 24 or later in its bundled runtime. You do not need to install Node separately for that route.
@@ -8,7 +10,7 @@ Things MCP is independent of Things and the client vendors. Their apps, accounts
 
 ## Claude Desktop
 
-1. Download `things-mcp-0.83.0.mcpb` from the repository's [Releases page](https://github.com/mathiswrong/Things-MCP/releases). Choose the `.mcpb` asset, not GitHub's source ZIP. If no release has been published, developers can build it using CONTRIBUTING.md.
+1. Download the versioned `things-mcp-<version>.mcpb` from the repository's [Releases page](https://github.com/mathiswrong/Things-MCP/releases). Choose the `.mcpb` asset, not GitHub's source ZIP. If no release has been published, developers can build it using CONTRIBUTING.md.
 2. Open Things 3.
 3. Open the downloaded package with Claude Desktop and choose **Install**. If the file opens elsewhere, use **Settings > Extensions > Advanced settings > Install extension** and select it there.
 4. Open **Settings > Extensions > Things MCP > Configure**. Keep write access off for the first health check, or turn on **Allow changes** if you want to manage tasks immediately. Select **Save** after changing a setting.

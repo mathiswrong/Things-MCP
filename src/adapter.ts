@@ -5,15 +5,22 @@ import { z } from "zod";
 import {
   type Adapter,
   type Create,
+  countResultSchema,
+  type Destructive,
+  type DestructiveScope,
+  fingerprint,
   healthSchema,
   itemSchema,
   type List,
   type Move,
+  type Navigate,
   type Query,
   queryResultSchema,
   type Reference,
+  type Restore,
   referenceSchema,
   type Schedule,
+  scopeItemSchema,
   type Trash,
   type Update,
 } from "./domain.js";
@@ -52,12 +59,32 @@ export function nativeExecutor(
       throw new BridgeError("PLATFORM_UNSUPPORTED");
     const payload = JSON.stringify({ operation, input });
     const readsLogbook =
-      (operation === "inList" || operation === "find") &&
-      (input as { list?: string }).list === "logbook";
+      operation === "children" ||
+      operation === "scope" ||
+      ((operation === "find" || operation === "count") &&
+        (input as Query).parent?.kind === "project") ||
+      ((operation === "inList" ||
+        operation === "find" ||
+        operation === "count") &&
+        (input as { list?: string }).list === "logbook");
     if (Buffer.byteLength(payload) > 262144)
       throw new BridgeError("INVALID_INPUT");
     return new Promise((resolve, reject) => {
-      const move = operation === "moveList" ? (input as Move) : undefined;
+      const move =
+        operation === "restore"
+          ? {
+              ...(input as Restore),
+              destination: {
+                kind: "list" as const,
+                list:
+                  (input as Restore).target.kind === "project"
+                    ? ("today" as const)
+                    : ("inbox" as const),
+              },
+            }
+          : operation === "moveList"
+            ? (input as Move)
+            : undefined;
       const arguments_ =
         move && move.destination.kind === "list"
           ? [
@@ -65,6 +92,7 @@ export function nativeExecutor(
               move.target.kind,
               move.target.id,
               move.destination.list,
+              ...(operation === "restore" ? ["restore"] : []),
             ]
           : ["-l", "JavaScript", script];
       const child = runtime.launch
@@ -138,6 +166,14 @@ export function nativeExecutor(
   };
 }
 export class NativeAdapter implements Adapter {
+  readonly destructiveVerified = Object.freeze({
+    todo: false,
+    project: true,
+    area: true,
+    tag: true,
+    empty_trash: false,
+    log_completed: false,
+  });
   constructor(private readonly execute: Executor = nativeExecutor()) {}
   private async call<T>(
     operation: string,
@@ -156,8 +192,38 @@ export class NativeAdapter implements Adapter {
   health() {
     return this.call("health", {}, healthSchema);
   }
-  get(input: Reference, signal?: AbortSignal) {
-    return this.call("get", input, itemSchema, false, signal);
+  navigate(input: Navigate, signal?: AbortSignal) {
+    return this.call("navigate", input, z.boolean(), true, signal);
+  }
+  children(input: Reference, signal?: AbortSignal) {
+    return this.call("children", input, z.array(itemSchema), false, signal);
+  }
+  async get(input: Reference, signal?: AbortSignal) {
+    const item = await this.call("get", input, itemSchema, false, signal);
+    if (input.kind === "project" && !item.inTrash) {
+      const children = await this.children(input, signal);
+      item.childRevision = fingerprint(
+        children.sort((a, b) => a.id.localeCompare(b.id)),
+      );
+      item.childCount = children.length;
+    }
+    return item;
+  }
+  scope(input: DestructiveScope, signal?: AbortSignal) {
+    return this.call("scope", input, z.array(scopeItemSchema), false, signal);
+  }
+  async destructive(
+    input: Destructive,
+    signal?: AbortSignal,
+  ): Promise<boolean> {
+    const key =
+      input.action === "delete_container" ? input.target?.kind : input.action;
+    if (!key || !this.destructiveVerified[key])
+      throw new BridgeError("VERIFICATION_UNAVAILABLE");
+    return this.call("destructive", input, z.boolean(), true, signal);
+  }
+  count(input: Query) {
+    return this.call("count", input, countResultSchema);
   }
   find(input: Query) {
     return this.call("find", input, queryResultSchema);
@@ -180,6 +246,10 @@ export class NativeAdapter implements Adapter {
   }
   trash(input: Trash, signal?: AbortSignal) {
     return this.call("trash", input, referenceSchema, true, signal);
+  }
+  async restore(input: Restore, signal?: AbortSignal) {
+    await this.call("restore", input, z.literal(true), true, signal);
+    return input.target;
   }
   inList(target: Reference, list: List, signal?: AbortSignal) {
     return this.call("inList", { target, list }, z.boolean(), false, signal);
