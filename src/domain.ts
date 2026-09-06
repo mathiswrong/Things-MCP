@@ -34,6 +34,27 @@ export const listSchema = z.enum([
   "trash",
 ]);
 export type List = z.infer<typeof listSchema>;
+export const timestampSchema = z.iso
+  .datetime({ offset: true })
+  .transform((value) => new Date(value).toISOString());
+const tagIdsSchema = z
+  .array(idSchema)
+  .max(100)
+  .refine((ids) => new Set(ids).size === ids.length, "Do not repeat tag IDs.");
+const editableFields = {
+  title: z.string().trim().min(1).max(4000).optional(),
+  notes: z.string().max(10000).optional(),
+  status: statusSchema.optional(),
+  deadline: dateSchema.nullable().optional(),
+  tagIds: tagIdsSchema.optional(),
+  parentTagId: idSchema.nullable().optional(),
+  keyboardShortcut: z.string().max(1).optional(),
+  collapsed: z.boolean().optional(),
+  creationDate: timestampSchema.optional(),
+  modificationDate: timestampSchema.optional(),
+  completionDate: timestampSchema.nullable().optional(),
+  cancellationDate: timestampSchema.nullable().optional(),
+};
 export const itemSchema = z.strictObject({
   kind: kindSchema,
   id: idSchema,
@@ -45,9 +66,20 @@ export const itemSchema = z.strictObject({
   projectId: idSchema.nullable().optional(),
   areaId: idSchema.nullable().optional(),
   tagNames: z.string().optional(),
+  tagIds: z.array(idSchema).optional(),
+  collapsed: z.boolean().optional(),
+  creationDate: timestampSchema.nullable().optional(),
+  modificationDate: timestampSchema.nullable().optional(),
+  completionDate: timestampSchema.nullable().optional(),
+  cancellationDate: timestampSchema.nullable().optional(),
   parentTagId: idSchema.nullable().optional(),
   keyboardShortcut: z.string().optional(),
   inTrash: z.boolean().optional(),
+  childRevision: z
+    .string()
+    .regex(/^[a-f0-9]{64}$/)
+    .optional(),
+  childCount: z.number().int().nonnegative().optional(),
 });
 export type Item = z.infer<typeof itemSchema>;
 export const querySchema = z
@@ -58,6 +90,23 @@ export const querySchema = z
     limit: z.number().int().min(1).max(100).default(25),
     offset: z.number().int().min(0).max(4999).default(0),
     includeNotes: z.boolean().default(false),
+    scanOffset: z.number().int().min(0).max(1_000_000_000).optional(),
+    tagId: idSchema.optional(),
+    deadlineFrom: dateSchema.optional(),
+    deadlineThrough: dateSchema.optional(),
+    scheduledFrom: dateSchema.optional(),
+    scheduledThrough: dateSchema.optional(),
+    selected: z.boolean().optional(),
+    sortBy: z
+      .enum([
+        "title",
+        "deadline",
+        "scheduledDate",
+        "creationDate",
+        "modificationDate",
+      ])
+      .optional(),
+    sortOrder: z.enum(["ascending", "descending"]).default("ascending"),
     list: listSchema.optional(),
     parent: z
       .strictObject({ kind: z.enum(["project", "area"]), id: idSchema })
@@ -65,6 +114,26 @@ export const querySchema = z
   })
   .superRefine((value, context) => {
     if (
+      (value.selected &&
+        (value.list ||
+          value.parent ||
+          !["todo", "project"].includes(value.kind))) ||
+      (value.scanOffset !== undefined && value.offset !== 0) ||
+      (value.sortBy &&
+        value.sortBy !== "title" &&
+        !["todo", "project"].includes(value.kind)) ||
+      (value.deadlineFrom &&
+        value.deadlineThrough &&
+        value.deadlineFrom > value.deadlineThrough) ||
+      (value.scheduledFrom &&
+        value.scheduledThrough &&
+        value.scheduledFrom > value.scheduledThrough) ||
+      ((value.tagId ||
+        value.deadlineFrom ||
+        value.deadlineThrough ||
+        value.scheduledFrom ||
+        value.scheduledThrough) &&
+        !["todo", "project"].includes(value.kind)) ||
       (value.list && value.parent) ||
       (value.kind === "project" &&
         (value.parent?.kind === "project" ||
@@ -83,14 +152,17 @@ export const createSchema = z
   .strictObject({
     requestId: z.uuid(),
     kind: z.enum(["todo", "project", "area", "tag"]),
+    ...editableFields,
     title: z.string().trim().min(1).max(4000),
-    notes: z.string().max(10000).optional(),
+    projectId: idSchema.optional(),
+    areaId: idSchema.optional(),
+    scheduledDate: dateSchema.optional(),
   })
   .superRefine((value, context) => {
-    if (
-      (value.kind === "area" || value.kind === "tag") &&
-      value.notes !== undefined
-    ) {
+    const fields = Object.keys(value).filter(
+      (key) => !["kind", "requestId"].includes(key),
+    );
+    if (!validFields(value.kind, fields) || (value.projectId && value.areaId)) {
       context.addIssue({
         code: "custom",
         message: "Only to-dos and projects have notes.",
@@ -98,6 +170,32 @@ export const createSchema = z
     }
   });
 export type Create = z.infer<typeof createSchema>;
+function validFields(kind: Kind, fields: string[]) {
+  const titles = ["title", "appendTitle", "prependTitle"];
+  const tags = ["tagIds", "addTagIds", "removeTagIds"];
+  const allowed =
+    kind === "tag"
+      ? [...titles, "parentTagId", "keyboardShortcut"]
+      : kind === "area"
+        ? [...titles, ...tags, "collapsed"]
+        : [
+            ...titles,
+            ...tags,
+            "notes",
+            "appendNotes",
+            "prependNotes",
+            "status",
+            "deadline",
+            "creationDate",
+            "modificationDate",
+            "completionDate",
+            "cancellationDate",
+            "scheduledDate",
+            "areaId",
+            ...(kind === "todo" ? ["projectId"] : []),
+          ];
+  return fields.every((field) => allowed.includes(field));
+}
 export const updateSchema = z
   .strictObject({
     requestId: z.uuid(),
@@ -105,10 +203,13 @@ export const updateSchema = z
     expectedRevision: z.string().regex(/^[a-f0-9]{64}$/),
     changes: z
       .strictObject({
-        title: z.string().trim().min(1).max(4000).optional(),
-        notes: z.string().max(10000).optional(),
-        status: statusSchema.optional(),
-        deadline: dateSchema.nullable().optional(),
+        ...editableFields,
+        appendTitle: z.string().max(4000).optional(),
+        prependTitle: z.string().max(4000).optional(),
+        appendNotes: z.string().max(10000).optional(),
+        prependNotes: z.string().max(10000).optional(),
+        addTagIds: tagIdsSchema.optional(),
+        removeTagIds: tagIdsSchema.optional(),
       })
       .refine(
         (value) => Object.keys(value).length > 0,
@@ -116,9 +217,18 @@ export const updateSchema = z
       ),
   })
   .superRefine((value, context) => {
+    const fields = Object.keys(value.changes);
     if (
-      (value.target.kind === "area" || value.target.kind === "tag") &&
-      Object.keys(value.changes).some((key) => key !== "title")
+      !validFields(value.target.kind, fields) ||
+      (value.changes.title !== undefined &&
+        (value.changes.appendTitle !== undefined ||
+          value.changes.prependTitle !== undefined)) ||
+      (value.changes.notes !== undefined &&
+        (value.changes.appendNotes !== undefined ||
+          value.changes.prependNotes !== undefined)) ||
+      (value.changes.tagIds !== undefined &&
+        (value.changes.addTagIds !== undefined ||
+          value.changes.removeTagIds !== undefined))
     ) {
       context.addIssue({
         code: "custom",
@@ -168,17 +278,78 @@ export const moveSchema = z
       });
   });
 export type Move = z.infer<typeof moveSchema>;
+export const destructiveActionSchema = z.enum([
+  "delete_container",
+  "empty_trash",
+  "log_completed",
+]);
+export type DestructiveAction = z.infer<typeof destructiveActionSchema>;
+export const destructiveScopeSchema = z
+  .strictObject({
+    action: destructiveActionSchema,
+    target: referenceSchema.optional(),
+  })
+  .superRefine((value, context) => {
+    if (
+      (value.action === "delete_container" &&
+        (!value.target || value.target.kind === "todo")) ||
+      (value.action !== "delete_container" && value.target)
+    )
+      context.addIssue({
+        code: "custom",
+        message:
+          "Container deletion requires a project, area, or tag. Library commands have no target.",
+      });
+  });
+export type DestructiveScope = z.infer<typeof destructiveScopeSchema>;
+export const destructiveSchema = destructiveScopeSchema.safeExtend({
+  requestId: z.uuid(),
+  expectedScopeRevision: z.string().regex(/^[a-f0-9]{64}$/),
+});
+export type Destructive = z.infer<typeof destructiveSchema>;
+export const navigateSchema = z
+  .strictObject({
+    requestId: z.uuid(),
+    action: z.enum(["show", "edit", "quick_entry"]),
+    target: referenceSchema.optional(),
+    list: listSchema.optional(),
+  })
+  .superRefine((value, context) => {
+    if (
+      (value.action === "quick_entry" && (value.target || value.list)) ||
+      (value.action !== "quick_entry" &&
+        Boolean(value.target) === Boolean(value.list)) ||
+      (value.action === "edit" &&
+        (!value.target || !["todo", "project"].includes(value.target.kind))) ||
+      value.target?.kind === "tag"
+    )
+      context.addIssue({
+        code: "custom",
+        message: "Choose a supported item or list.",
+      });
+  });
+export type Navigate = z.infer<typeof navigateSchema>;
 export const trashSchema = z.strictObject({
   requestId: z.uuid(),
   target: z.strictObject({ kind: z.literal("todo"), id: idSchema }),
   expectedRevision: z.string().regex(/^[a-f0-9]{64}$/),
 });
 export type Trash = z.infer<typeof trashSchema>;
+export const restoreSchema = trashSchema.extend({
+  target: z.strictObject({ kind: z.enum(["todo", "project"]), id: idSchema }),
+});
+export type Restore = z.infer<typeof restoreSchema>;
+export const countResultSchema = z.strictObject({
+  count: z.number().int().nonnegative(),
+  scanComplete: z.boolean(),
+  nextScanOffset: z.number().int().nonnegative().nullable(),
+});
 export const queryResultSchema = z.strictObject({
   items: z.array(itemSchema),
   hasMore: z.boolean(),
   scanComplete: z.boolean(),
   nextOffset: z.number().int().nonnegative().nullable(),
+  nextScanOffset: z.number().int().nonnegative().nullable().optional(),
 });
 export const healthSchema = z.strictObject({
   version: z.string(),
@@ -186,6 +357,14 @@ export const healthSchema = z.strictObject({
   timezone: z.string(),
 });
 export interface Adapter {
+  readonly destructiveVerified: Readonly<
+    Record<Kind | "empty_trash" | "log_completed", boolean>
+  >;
+  scope(input: DestructiveScope, signal?: AbortSignal): Promise<Item[]>;
+  destructive(input: Destructive, signal?: AbortSignal): Promise<boolean>;
+  count(query: Query): Promise<z.infer<typeof countResultSchema>>;
+  navigate(input: Navigate, signal?: AbortSignal): Promise<boolean>;
+  children(reference: Reference, signal?: AbortSignal): Promise<Item[]>;
   health(): Promise<z.infer<typeof healthSchema>>;
   get(reference: Reference, signal?: AbortSignal): Promise<Item>;
   find(query: Query): Promise<z.infer<typeof queryResultSchema>>;
@@ -194,6 +373,7 @@ export interface Adapter {
   schedule(input: Schedule, signal?: AbortSignal): Promise<Reference>;
   move(input: Move, signal?: AbortSignal): Promise<Reference>;
   trash(input: Trash, signal?: AbortSignal): Promise<Reference>;
+  restore(input: Restore, signal?: AbortSignal): Promise<Reference>;
   inList(target: Reference, list: List, signal?: AbortSignal): Promise<boolean>;
 }
 export function fingerprint(value: unknown): string {

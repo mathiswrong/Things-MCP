@@ -10,13 +10,14 @@ import { homedir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { build } from "esbuild";
+import metadata from "../package.json" with { type: "json" };
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 export const defaultBuildDirectory = join(
   homedir(),
   "Downloads",
   "Things-MCP-builds",
-  "0.83.0",
+  metadata.version,
 );
 
 export async function externalDirectory(directory) {

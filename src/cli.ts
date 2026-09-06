@@ -3,6 +3,7 @@ import { isAbsolute, join } from "node:path";
 import { parseArgs } from "node:util";
 import { serveStdio } from "@modelcontextprotocol/server/stdio";
 import { NativeAdapter } from "./adapter.js";
+import type { DestructiveAction } from "./domain.js";
 import { publicError } from "./errors.js";
 import { createServer } from "./server.js";
 import { ThingsService } from "./service.js";
@@ -17,6 +18,9 @@ async function main() {
       "allow-writes": { type: "boolean" },
       "read-only": { type: "boolean" },
       "allow-trash": { type: "boolean" },
+      "allow-container-delete": { type: "boolean" },
+      "allow-empty-trash": { type: "boolean" },
+      "allow-log-completed": { type: "boolean" },
       client: { type: "string" },
       "managed-client": { type: "string" },
       help: { type: "boolean" },
@@ -34,6 +38,10 @@ async function main() {
     !["stdio", "doctor", "setup"].includes(command) ||
     (command !== "setup" && values["allow-writes"]) ||
     (command !== "setup" && values["allow-trash"]) ||
+    ((values["allow-container-delete"] ||
+      values["allow-empty-trash"] ||
+      values["allow-log-completed"]) &&
+      (command !== "setup" || !values["allow-writes"])) ||
     (values["allow-trash"] && !values["allow-writes"]) ||
     (command !== "stdio" && values.client !== undefined) ||
     (command !== "stdio" && values["managed-client"] !== undefined) ||
@@ -67,6 +75,13 @@ async function main() {
     !["true", "false"].includes(browserWrites)
   )
     throw new Error("Invalid browser write setting");
+  const localAdvanced = values.client
+    ? advancedEnvironment("THINGS_MCP_ALLOW_")
+    : undefined;
+  const remoteAdvanced =
+    values.client === "desktop-extension"
+      ? advancedEnvironment("THINGS_MCP_BROWSER_ALLOW_")
+      : undefined;
   const state = new State(
     directory,
     !values["read-only"] &&
@@ -86,6 +101,27 @@ async function main() {
       browserTrash === "true",
     );
   }
+  function advancedEnvironment(
+    prefix: string,
+  ): Record<DestructiveAction, boolean> {
+    const result = {} as Record<DestructiveAction, boolean>;
+    for (const [action, suffix] of [
+      ["delete_container", "CONTAINER_DELETE"],
+      ["empty_trash", "EMPTY_TRASH"],
+      ["log_completed", "LOG_COMPLETED"],
+    ] as const) {
+      const setting = process.env[`${prefix}${suffix}`] ?? "false";
+      if (!["true", "false"].includes(setting))
+        throw new Error("Invalid advanced permission setting");
+      result[action] = setting === "true";
+    }
+    return result;
+  }
+  if (localAdvanced) await state.configureAdvanced(localAdvanced);
+  if (remoteAdvanced)
+    await new State(directory, true, "browser").configureAdvanced(
+      remoteAdvanced,
+    );
   const service = new ThingsService(new NativeAdapter(), state);
   if (command === "setup") {
     if (!values["allow-writes"] && !values["read-only"]) {
@@ -95,8 +131,14 @@ async function main() {
       return;
     }
     await state.setWrites(Boolean(values["allow-writes"]));
-    if (values["allow-writes"])
+    if (values["allow-writes"]) {
       await state.setTrash(Boolean(values["allow-trash"]));
+      await state.configureAdvanced({
+        delete_container: Boolean(values["allow-container-delete"]),
+        empty_trash: Boolean(values["allow-empty-trash"]),
+        log_completed: Boolean(values["allow-log-completed"]),
+      });
+    }
     process.stdout.write(
       values["allow-writes"]
         ? "Ordinary writes enabled locally. Read capabilities for verified operations and limits.\n"

@@ -22,6 +22,7 @@ import {
   type Move,
   type Query,
   type Reference,
+  type Restore,
   type Schedule,
   type Trash,
   type Update,
@@ -31,6 +32,14 @@ import { ThingsService } from "../src/service.js";
 import { type Lease, State } from "../src/state.js";
 
 class MemoryAdapter implements Adapter {
+  readonly destructiveVerified = {
+    todo: false,
+    project: true,
+    area: true,
+    tag: true,
+    empty_trash: true,
+    log_completed: true,
+  };
   items = new Map<string, Item>();
   mutations = { create: 0, update: 0, schedule: 0 };
   reads = 0;
@@ -39,6 +48,23 @@ class MemoryAdapter implements Adapter {
   discardWrites = false;
   onRead?: (signal?: AbortSignal) => Promise<void>;
 
+  async scope(): Promise<Item[]> {
+    return [];
+  }
+  async destructive() {
+    return true;
+  }
+  async count() {
+    return { count: 0, scanComplete: true, nextScanOffset: null };
+  }
+  async navigate() {
+    return true;
+  }
+  async children(reference: Reference) {
+    return [...this.items.values()]
+      .filter((item) => item.projectId === reference.id)
+      .map((item) => ({ ...item }));
+  }
   async health() {
     return { version: "fixture", running: true, timezone: "UTC" };
   }
@@ -49,6 +75,16 @@ class MemoryAdapter implements Adapter {
     const item = this.items.get(reference.id);
     if (!item || item.kind !== reference.kind)
       throw new BridgeError("NOT_FOUND");
+    if (item.kind === "project" && !item.inTrash) {
+      const children = await this.children(reference);
+      return {
+        ...item,
+        childRevision: fingerprint(
+          children.sort((a, b) => a.id.localeCompare(b.id)),
+        ),
+        childCount: children.length,
+      };
+    }
     return { ...item };
   }
   async find(query: Query) {
@@ -126,6 +162,19 @@ class MemoryAdapter implements Adapter {
       const item = await this.get(input.target);
       this.items.set(item.id, { ...item, inTrash: true });
       this.membership.set(item.id, "trash");
+    }
+    return input.target;
+  }
+  restored = 0;
+  async restore(input: Restore) {
+    this.restored++;
+    if (!this.discardWrites) {
+      const item = await this.get(input.target);
+      this.items.set(item.id, { ...item, inTrash: false });
+      this.membership.set(
+        item.id,
+        input.target.kind === "project" ? "today" : "inbox",
+      );
     }
     return input.target;
   }
@@ -974,5 +1023,447 @@ test("missing or trashed move destinations fail before journaling or applying a 
     await assert.rejects(service.move(request), code("INVALID_INPUT"));
     assert.equal(await state.operation(request.requestId), undefined);
     assert.equal(adapter.moved, 0);
+  });
+});
+
+test("tag replacement and incremental edits preserve unrelated fields and replay once", async () => {
+  await fixture(async ({ adapter, service }) => {
+    const item = seed(adapter);
+    adapter.items.set(item.id, { ...item, tagIds: ["tag-a"] });
+    adapter.items.set("tag-a", { kind: "tag", id: "tag-a", title: "A" });
+    adapter.items.set("tag-b", { kind: "tag", id: "tag-b", title: "B" });
+    const current = await service.get({ kind: item.kind, id: item.id });
+    const input = {
+      requestId: randomUUID(),
+      target: { kind: item.kind, id: item.id },
+      expectedRevision: current.revision,
+      changes: { addTagIds: ["tag-b"], removeTagIds: ["tag-a"] },
+    };
+    input.target = { kind: item.kind, id: item.id };
+    await service.update(input);
+    assert.deepEqual(
+      (await service.get({ kind: item.kind, id: item.id })).tagIds,
+      ["tag-b"],
+    );
+    assert.equal(
+      (await service.get({ kind: item.kind, id: item.id })).title,
+      item.title,
+    );
+    assert.equal((await service.update(input)).replayed, true);
+    assert.equal(adapter.mutations.update, 1);
+  });
+});
+
+test("tag hierarchy cycles fail before a write receipt", async () => {
+  await fixture(async ({ adapter, service }) => {
+    adapter.items.set("tag-a", {
+      kind: "tag",
+      id: "tag-a",
+      title: "A",
+      parentTagId: null,
+    });
+    adapter.items.set("tag-b", {
+      kind: "tag",
+      id: "tag-b",
+      title: "B",
+      parentTagId: "tag-a",
+    });
+    const target = { kind: "tag", id: "tag-a" };
+    const current = await service.get(target);
+    const requestId = randomUUID();
+    await assert.rejects(
+      service.update({
+        target,
+        expectedRevision: current.revision,
+        requestId,
+        changes: { parentTagId: "tag-b" },
+      }),
+      code("INVALID_INPUT"),
+    );
+    assert.equal(
+      (await service.requestStatus({ requestId })).state,
+      "not_seen",
+    );
+    assert.equal(adapter.mutations.update, 0);
+  });
+});
+
+test("restoration requires writes, an open trashed item and its current revision", async () => {
+  await fixture(async ({ adapter, service, state }) => {
+    const item = { ...seed(adapter), inTrash: true };
+    adapter.items.set(item.id, item);
+    const input = {
+      target: { kind: "todo", id: item.id },
+      requestId: randomUUID(),
+      expectedRevision: fingerprint(item),
+    };
+    await state.setWrites(false);
+    await assert.rejects(service.restore(input), code("READ_ONLY"));
+    await state.setWrites(true);
+    await assert.rejects(
+      service.restore({ ...input, expectedRevision: "0".repeat(64) }),
+      code("STALE_ITEM"),
+    );
+    assert.equal(adapter.restored, 0);
+    assert.equal(
+      (await service.requestStatus({ requestId: input.requestId })).state,
+      "not_seen",
+    );
+  });
+});
+
+test("restoration verifies content and Inbox membership, replays once, and preserves uncertainty", async () => {
+  await fixture(async ({ adapter, service }) => {
+    const item = { ...seed(adapter), inTrash: true };
+    adapter.items.set(item.id, item);
+    const input = {
+      target: { kind: "todo", id: item.id },
+      requestId: randomUUID(),
+      expectedRevision: fingerprint(item),
+    };
+    adapter.discardWrites = true;
+    await assert.rejects(service.restore(input), code("VERIFICATION_FAILED"));
+    await assert.rejects(service.restore(input), code("OUTCOME_UNKNOWN"));
+    assert.equal(adapter.restored, 1);
+    adapter.discardWrites = false;
+    const next = { ...input, requestId: randomUUID() };
+    assert.equal((await service.restore(next)).verification, "read_back");
+    assert.equal((await service.restore(next)).replayed, true);
+    assert.equal(adapter.restored, 2);
+    assert.equal(adapter.items.get(item.id)?.notes, item.notes);
+    const active = {
+      ...next,
+      requestId: randomUUID(),
+      expectedRevision: fingerprint(adapter.items.get(item.id)),
+    };
+    await assert.rejects(service.restore(active), code("INVALID_INPUT"));
+    adapter.items.set(item.id, { ...item, status: "completed" });
+    await assert.rejects(
+      service.restore({
+        ...active,
+        expectedRevision: fingerprint(adapter.items.get(item.id)),
+      }),
+      code("INVALID_INPUT"),
+    );
+  });
+});
+
+test("append edits enforce final limits and reject a concurrent change before writing", async () => {
+  await fixture(async ({ adapter, service }) => {
+    const item = seed(adapter);
+    const current = await service.get({ kind: item.kind, id: item.id });
+    const target = { kind: item.kind, id: item.id };
+    await assert.rejects(
+      service.update({
+        target,
+        requestId: randomUUID(),
+        expectedRevision: current.revision,
+        changes: { appendTitle: "x".repeat(4000) },
+      }),
+      code("INVALID_INPUT"),
+    );
+    assert.equal(adapter.mutations.update, 0);
+    let reads = 0;
+    adapter.onRead = async () => {
+      if (++reads === 2)
+        adapter.items.set(item.id, { ...item, title: "Concurrent edit" });
+    };
+    await assert.rejects(
+      service.update({
+        target,
+        requestId: randomUUID(),
+        expectedRevision: current.revision,
+        changes: { appendNotes: "new" },
+      }),
+      code("STALE_ITEM"),
+    );
+    assert.equal(adapter.mutations.update, 0);
+  });
+});
+
+test("timestamp offsets normalize and type-specific fields stay restricted", async () => {
+  await fixture(async ({ adapter, service }) => {
+    const item = seed(adapter);
+    const current = await service.get({ kind: item.kind, id: item.id });
+    const target = { kind: item.kind, id: item.id };
+    await service.update({
+      target,
+      requestId: randomUUID(),
+      expectedRevision: current.revision,
+      changes: { creationDate: "2026-09-01T05:00:00-07:00" },
+    });
+    assert.equal(
+      (await service.get(target)).creationDate,
+      "2026-09-01T12:00:00.000Z",
+    );
+    await assert.rejects(
+      service.create({
+        kind: "tag",
+        title: "x",
+        tagIds: [],
+        requestId: randomUUID(),
+      }),
+      code("INVALID_INPUT"),
+    );
+    await assert.rejects(
+      service.create({
+        kind: "project",
+        title: "x",
+        projectId: item.id,
+        requestId: randomUUID(),
+      }),
+      code("INVALID_INPUT"),
+    );
+  });
+});
+
+test("advanced actions require separate grants and reject changed scope before mutation", async () => {
+  await fixture(async ({ adapter, state, service }) => {
+    let applied = 0;
+    const target = { kind: "area" as const, id: "area-scope" };
+    adapter.items.set(target.id, { ...target, title: "Synthetic area" });
+    adapter.scope = async () => [
+      { ...target, title: adapter.items.get(target.id)?.title ?? "" },
+    ];
+    adapter.destructive = async () => {
+      applied++;
+      adapter.items.delete(target.id);
+      return true;
+    };
+    const preview = await service.previewDestructive({
+      action: "delete_container",
+      target,
+    });
+    const input = {
+      action: "delete_container",
+      target,
+      expectedScopeRevision: preview.scopeRevision,
+      requestId: randomUUID(),
+    };
+    await assert.rejects(service.destructive(input), code("ADVANCED_DISABLED"));
+    await state.configureAdvanced({
+      delete_container: true,
+      empty_trash: false,
+      log_completed: false,
+    });
+    adapter.items.set(target.id, { ...target, title: "Changed scope" });
+    await assert.rejects(service.destructive(input), code("STALE_ITEM"));
+    assert.equal(applied, 0);
+    assert.equal(
+      (await service.requestStatus({ requestId: input.requestId })).state,
+      "not_seen",
+    );
+    const updated = await service.previewDestructive({
+      action: "delete_container",
+      target,
+    });
+    const ready = { ...input, expectedScopeRevision: updated.scopeRevision };
+    await service.destructive(ready);
+    assert.equal(applied, 1);
+    assert.equal((await service.destructive(ready)).replayed, true);
+    assert.equal(applied, 1);
+  });
+});
+
+test("advanced grant revocation survives restart and never grants another connection", async () => {
+  await fixture(async ({ directory, state }) => {
+    const local = new State(directory, true, "desktop-extension");
+    const remote = new State(directory, true, "browser");
+    await local.configureClient(true);
+    await remote.configureClient(true);
+    const grants = {
+      delete_container: true,
+      empty_trash: false,
+      log_completed: false,
+    };
+    await local.configureAdvanced(grants);
+    assert.equal(await local.advancedEnabled("delete_container"), true);
+    assert.equal(await remote.advancedEnabled("delete_container"), false);
+    await state.setWrites(false);
+    await local.configureClient(true);
+    await local.configureAdvanced(grants);
+    assert.equal(await local.advancedEnabled("delete_container"), false);
+    await local.configureClient(false);
+    await local.configureClient(true);
+    assert.equal(await local.advancedEnabled("delete_container"), false);
+    await local.configureAdvanced({ ...grants, delete_container: false });
+    await local.configureAdvanced(grants);
+    assert.equal(await local.advancedEnabled("delete_container"), true);
+    assert.equal(
+      await new State(directory, false, "desktop-extension").advancedEnabled(
+        "delete_container",
+      ),
+      false,
+    );
+  });
+});
+
+test("native action gates and unsupported deletion states reject before journaling", async () => {
+  await fixture(async ({ adapter, state, service }) => {
+    await state.configureAdvanced({
+      delete_container: true,
+      empty_trash: true,
+      log_completed: true,
+    });
+    adapter.destructiveVerified.empty_trash = false;
+    const requestId = randomUUID();
+    await assert.rejects(
+      service.destructive({
+        action: "empty_trash",
+        requestId,
+        expectedScopeRevision: "0".repeat(64),
+      }),
+      code("VERIFICATION_UNAVAILABLE"),
+    );
+    assert.equal(
+      (await service.requestStatus({ requestId })).state,
+      "not_seen",
+    );
+    const target = { kind: "project" as const, id: "trashed-project" };
+    adapter.items.set(target.id, {
+      ...target,
+      title: "Synthetic",
+      status: "open",
+      inTrash: true,
+    });
+    await assert.rejects(
+      service.previewDestructive({ action: "delete_container", target }),
+      code("INVALID_INPUT"),
+    );
+    const child = { ...seed(adapter), inTrash: true, projectId: target.id };
+    adapter.items.set(child.id, child);
+    await assert.rejects(
+      service.restore({
+        target: { kind: "todo", id: child.id },
+        requestId: randomUUID(),
+        expectedRevision: fingerprint(child),
+      }),
+      code("INVALID_INPUT"),
+    );
+    const closed = { ...seed(adapter), status: "completed" as const };
+    adapter.items.set(closed.id, closed);
+    await state.setTrash(true);
+    await assert.rejects(
+      service.trash({
+        target: { kind: "todo", id: closed.id },
+        requestId: randomUUID(),
+        expectedRevision: fingerprint(closed),
+      }),
+      code("VERIFICATION_UNAVAILABLE"),
+    );
+    assert.equal(adapter.trashed + adapter.restored, 0);
+  });
+});
+
+test("project deletion never reports verified if unrelated content changes", async () => {
+  await fixture(async ({ adapter, state, service }) => {
+    const project: Item = {
+      kind: "project",
+      id: "project-delete",
+      title: "Synthetic project",
+      status: "open",
+      tagIds: ["tag-keep"],
+    };
+    adapter.items.set(project.id, project);
+    adapter.scope = async () => {
+      const current = adapter.items.get(project.id);
+      assert.ok(current);
+      return [{ ...current }];
+    };
+    adapter.destructive = async () => {
+      adapter.items.set(project.id, { ...project, inTrash: true, tagIds: [] });
+      return true;
+    };
+    await state.configureAdvanced({
+      delete_container: true,
+      empty_trash: false,
+      log_completed: false,
+    });
+    const target = { kind: project.kind, id: project.id };
+    const preview = await service.previewDestructive({
+      action: "delete_container",
+      target,
+    });
+    const requestId = randomUUID();
+    const input = {
+      action: "delete_container",
+      target,
+      requestId,
+      expectedScopeRevision: preview.scopeRevision,
+    };
+    await assert.rejects(
+      service.destructive(input),
+      code("VERIFICATION_FAILED"),
+    );
+    await assert.rejects(service.destructive(input), code("OUTCOME_UNKNOWN"));
+    assert.equal((await service.requestStatus({ requestId })).state, "unknown");
+  });
+});
+
+test("project revisions reject changed child content and failed cascades remain uncertain", async () => {
+  await fixture(async ({ adapter, service }) => {
+    const target = { kind: "project" as const, id: "project-scope" };
+    adapter.items.set(target.id, {
+      ...target,
+      title: "Project",
+      status: "open",
+    });
+    adapter.items.set("child", {
+      kind: "todo",
+      id: "child",
+      title: "Child",
+      status: "open",
+      projectId: target.id,
+    });
+    const old = await service.get(target);
+    const changedChild = adapter.items.get("child");
+    assert.ok(changedChild);
+    adapter.items.set("child", {
+      ...changedChild,
+      title: "Edited child",
+    });
+    const requestId = randomUUID();
+    await assert.rejects(
+      service.update({
+        target,
+        requestId,
+        expectedRevision: old.revision,
+        changes: { status: "completed" },
+      }),
+      code("STALE_ITEM"),
+    );
+    assert.equal(adapter.mutations.update, 0);
+    const fresh = await service.get(target);
+    await assert.rejects(
+      service.update({
+        target,
+        requestId,
+        expectedRevision: fresh.revision,
+        changes: { status: "completed" },
+      }),
+      code("VERIFICATION_FAILED"),
+    );
+    assert.equal((await service.requestStatus({ requestId })).state, "unknown");
+    assert.equal(adapter.mutations.update, 1);
+  });
+});
+
+test("navigation is permission checked and reports acceptance rather than a task mutation", async () => {
+  await fixture(async ({ service, state }) => {
+    const request = { requestId: randomUUID(), action: "quick_entry" };
+    await state.setWrites(false);
+    await assert.rejects(service.navigate(request), code("READ_ONLY"));
+    await state.setWrites(true);
+    const receipt = await service.navigate(request);
+    assert.equal(receipt.verification, "command_accepted");
+    assert.equal((await service.navigate(request)).replayed, true);
+    await assert.rejects(
+      service.navigate({
+        requestId: randomUUID(),
+        action: "show",
+        url: "file:///tmp",
+      }),
+      code("INVALID_INPUT"),
+    );
   });
 });

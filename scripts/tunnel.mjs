@@ -13,6 +13,7 @@ import { dirname, isAbsolute, join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
+import metadata from "../package.json" with { type: "json" };
 
 const execute = promisify(execFile);
 const root = join(homedir(), "Library", "Application Support", "Things MCP");
@@ -121,7 +122,7 @@ async function main() {
     const config = {
       tunnelId,
       node: await nodeBinary(),
-      entry: join(root, "runtime", "0.83.0", "cli.mjs"),
+      entry: join(root, "runtime", metadata.version, "cli.mjs"),
     };
     await access(config.entry);
     await key();

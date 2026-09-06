@@ -1,5 +1,7 @@
 # Use your installed Things connection
 
+These examples describe the published 0.83 release. For additions under development, see [1.0 readiness](V1-READINESS.md).
+
 These steps are for a Mac where the extension and optional private tunnel are already installed. For a new Mac, start with [Installation](../packaging/INSTALL.md).
 
 ## Start a conversation

@@ -6,7 +6,7 @@ Create Inbox tasks, edit titles and notes, set deadlines, schedule dates, move t
 
 [Documentation](docs/README.md) · [Installation](packaging/INSTALL.md) · [Daily use](docs/DAILY-USE.md) · [Capabilities](docs/CAPABILITIES.md) · [Full scope](docs/FULL-SCOPE.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) · [Buy me a coffee](https://buymeacoffee.com/paul2d)
 
-Version 0.83 is an early release. The local extension installs through its host. First-time browser setup is an advanced installation, and fresh-Mac consent and sleep/wake recovery still need wider testing. See [verification coverage](VERIFICATION.md).
+This branch develops version 1.0.0-dev.0. It is not a 1.0 release candidate. See the [acceptance record](docs/V1-READINESS.md) for implementation and testing still in progress. The published version remains 0.83, and the installation steps and table below describe that release. Version 0.83 is an early release. The local extension installs through its host. First-time browser setup is an advanced installation, and fresh-Mac consent and sleep/wake recovery still need wider testing. See [verification coverage](VERIFICATION.md).
 
 ## Install
 
