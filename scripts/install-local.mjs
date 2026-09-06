@@ -6,10 +6,10 @@ if (process.platform !== "darwin")
   throw new Error("Local installation requires macOS.");
 const build =
   process.env.THINGS_MCP_BUILD_DIR ??
-  join(homedir(), "Downloads", "Things-MCP-builds", "0.1.0");
+  join(homedir(), "Downloads", "Things-MCP-builds", "0.83.0");
 const root = join(homedir(), "Library", "Application Support", "Things MCP");
 await mkdir(root, { recursive: true, mode: 0o700 });
-const destination = join(root, "runtime", "0.1.0");
+const destination = join(root, "runtime", "0.83.0");
 await mkdir(join(destination, "native"), { recursive: true, mode: 0o700 });
 for (const filename of [
   "cli.mjs",

@@ -16,7 +16,7 @@ export const defaultBuildDirectory = join(
   homedir(),
   "Downloads",
   "Things-MCP-builds",
-  "0.1.0",
+  "0.83.0",
 );
 
 export async function externalDirectory(directory) {

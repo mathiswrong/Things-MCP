@@ -7,7 +7,7 @@ import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
 
 const entry = resolve(
   process.env.THINGS_MCP_BUILD_DIR ??
-    join(homedir(), "Downloads", "Things-MCP-builds", "0.1.0"),
+    join(homedir(), "Downloads", "Things-MCP-builds", "0.83.0"),
   "cli.mjs",
 );
 const parent = join(homedir(), "Downloads", "Things-MCP-tests");

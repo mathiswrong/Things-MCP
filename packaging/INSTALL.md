@@ -8,7 +8,7 @@ Things MCP is independent of Things and the client vendors. Their apps, accounts
 
 ## Claude Desktop
 
-1. Download `things-mcp-0.1.0.mcpb` from the repository's [Releases page](https://github.com/mathiswrong/Things-MCP/releases). Choose the `.mcpb` asset, not GitHub's source ZIP. If no release has been published, developers can build it using CONTRIBUTING.md.
+1. Download `things-mcp-0.83.0.mcpb` from the repository's [Releases page](https://github.com/mathiswrong/Things-MCP/releases). Choose the `.mcpb` asset, not GitHub's source ZIP. If no release has been published, developers can build it using CONTRIBUTING.md.
 2. Open Things 3.
 3. Open the downloaded package with Claude Desktop and choose **Install**. If the file opens elsewhere, use **Settings > Extensions > Advanced settings > Install extension** and select it there.
 4. Open **Settings > Extensions > Things MCP > Configure**. Keep write access off for the first health check, or turn on **Allow changes** if you want to manage tasks immediately. Select **Save** after changing a setting.

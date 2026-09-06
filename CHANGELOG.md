@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.83
+
+Published as package version `0.83.0`.
+
+- Simplified the capability table and explained task Trash permissions in plain language.
+- Numbered the installation steps and made support and contribution links easier to scan.
+- Highlighted optional support through Buy Me a Coffee.
+- Updated runtime and package version metadata. Supported operations and permission defaults are unchanged.
+
 ## 0.1.0
 
 First public preview of the Things MCP server for macOS, released under the MIT License.

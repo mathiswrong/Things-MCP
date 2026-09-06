@@ -1,5 +1,7 @@
 # Verification record
 
+Version 0.83 (package `0.83.0`) passed typechecking, lint, all 42 synthetic tests, runtime and extension builds, stdio and packaged-extension smoke checks, and extracted-package native health on September 6, 2026. The dependency audit reported zero vulnerabilities. This release changes documentation and version metadata; supported operations and permission defaults are unchanged. Native mutation evidence below comes from the preceding 0.1.0 checks, not a new mutation run.
+
 Version 0.1.0 was checked on September 5 and 6, 2026. The current source exposes ten tools. Automatic checks and native checks establish different kinds of evidence; neither proves every Things operation or every client environment works.
 
 ## Automated checks

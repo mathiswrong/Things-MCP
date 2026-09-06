@@ -121,7 +121,7 @@ async function main() {
     const config = {
       tunnelId,
       node: await nodeBinary(),
-      entry: join(root, "runtime", "0.1.0", "cli.mjs"),
+      entry: join(root, "runtime", "0.83.0", "cli.mjs"),
     };
     await access(config.entry);
     await key();
