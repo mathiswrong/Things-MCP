@@ -114,6 +114,9 @@ async function main() {
   if (process.platform !== "darwin")
     throw new Error("Tunnel installation requires macOS.");
   if (command === "install") {
+    const { default: metadata } = await import("../package.json", {
+      with: { type: "json" },
+    });
     const tunnelId = process.argv[3];
     if (!/^tunnel_[a-f0-9]{32}$/.test(tunnelId ?? ""))
       throw new Error("A valid tunnel ID is required.");
@@ -121,7 +124,7 @@ async function main() {
     const config = {
       tunnelId,
       node: await nodeBinary(),
-      entry: join(root, "runtime", "0.83.0", "cli.mjs"),
+      entry: join(root, "runtime", metadata.version, "cli.mjs"),
     };
     await access(config.entry);
     await key();

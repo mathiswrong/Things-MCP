@@ -1,67 +1,96 @@
 # Capability reference
 
-Version 0.83 exposes ten MCP tools. The server uses Things' supported AppleScript interface through fixed JXA and AppleScript files. It does not use a private database API.
+Version 1.0.1 exposes twenty MCP tools using supported AppleScript/JXA and Things URLs. It does not accept caller scripts, access the Things database, or use Apple Shortcuts. [Verification](../VERIFICATION.md) records the evidence and environment limits.
 
-| Tool | Inputs and behavior |
+| Tool | Behavior |
 |---|---|
-| `things_health` | App version, running status, Mac timezone, and this connection's ordinary-write and Trash permissions. Does not read tasks. |
-| `things_capabilities` | Implementation and verification status for each operation family. |
-| `things_find_items` | Item kind, case-insensitive text in title or notes, optional status, built-in list or project/area parent, offset, and limit. Notes are omitted from results by default. |
-| `things_get_item` | One kind and stable ID. Returns fields, revision, and a Things link. |
-| `things_create_item` | Kind, title, optional notes, and unique UUID request ID. Creation of all four kinds is native verified. |
-| `things_update_item` | Kind and ID, current revision, unique request ID, and supported changed fields. |
-| `things_schedule_item` | To-do or project ID, current revision, unique request ID, and a calendar date. |
-| `things_move_item` | Move a to-do/project to a supported list or parent, or detach its parent. Requires current revision and a unique request ID. |
-| `things_trash_item` | Move one to-do and its checklist to Trash. Requires current revision, a unique request ID, ordinary writes and the separate Trash grant. Never permanently deletes. |
-| `things_request_status` | A mutation's UUID request ID. Returns its durable local receipt or pending/unknown status. |
+| `things_health` | App version, running status, Mac timezone, connection grants and native verification gates. Does not read tasks. |
+| `things_capabilities` | Implementation and verification status of each operation family. |
+| `things_find_items` | Search by kind, title/notes text, status, tag ID, deadline or scheduled-date range, selected items, built-in list or parent. Optional result sorting. Notes omitted by default. |
+| `things_get_item` | Read one kind and stable ID, with exposed fields, revision and Things link. Active-project revisions include exposed child snapshots. A trashed project cannot enumerate its children and omits child count/revision. A known child of a trashed project reports inherited Trash membership through its live parent reference. |
+| `things_count_items` | Count matching objects within a scan segment. Continue until `scanComplete` for a full count. |
+| `things_exists` | Check a kind and ID. A missing item returns false; permission or native failures remain errors. |
+| `things_create_item` | Create a to-do, project, area or tag with supported initial properties. |
+| `things_update_item` | Replace or increment supported fields using the current revision. |
+| `things_schedule_item` | Set a to-do or project's calendar start date. |
+| `things_move_item` | Move to supported lists or parents, or detach a parent. Project receipts include descendant counts and observed field changes. |
+| `things_restore_item` | Restore an open to-do to Inbox or an open project to Today, with current revision, normal writes and verified root read-back. |
+| `things_trash_item` | Move one open to-do and its checklist to Trash, with the separate Trash grant. |
+| `things_navigate` | Show an item/list, open an item for editing, or open Quick Entry on the Mac. |
+| `things_preview_destructive` | Preview of exposed objects affected by a container deletion or global maintenance command. Returns a scope revision. |
+| `things_apply_destructive` | Implementation with independent grants and stale-scope checks. Open-project, area and tag-hierarchy deletion are native verified. Global-command gates remain disabled pending separate checks. |
+| `things_create_from_template` | Create one structured to-do or project with checklist rows and initial headings; unverified URL dispatch. |
+| `things_edit_extras` | Checklist replacement/clear/append/prepend, heading placement, reminders, Evening and When clearing; unverified URL dispatch. |
+| `things_duplicate_item` | Duplicate a to-do or project; receipt identifies the source and does not return a copy ID. |
+| `things_show_view` | Open Things search or built-in views, with optional tag filters; URL dispatch only. |
+| `things_request_status` | Read a durable mutation receipt or pending/unknown status by request ID. |
 
-## Item fields
+## Fields and edits
 
-To-dos and projects expose title, notes, status, deadline, scheduled date, area membership, and tag names. To-dos also expose project membership. Both expose whether they are in Trash. Areas expose title and tag names. Tags expose title, parent tag ID, and keyboard shortcut. Exposing a field for reading does not make it writable.
+To-dos and projects expose title, notes, status, deadline, scheduled date, area, tag names/IDs, creation/modification/completion/cancellation timestamps and Trash membership. To-dos expose project membership. Areas expose title, tag names/IDs and collapsed state. Tags expose title, parent tag ID and keyboard shortcut.
 
-To-do and project updates accept title, notes, status, and deadline. Area and tag updates accept title only. Renaming a tag changes that shared tag wherever it is used. Omitted fields remain unchanged; a deadline of `null` clears that deadline. Status is `open`, `completed`, or `canceled`. A create cannot set a project, area, tags, dates, or status in the same request.
+Updates accept fields appropriate to the kind. Use `appendTitle`, `prependTitle`, `appendNotes` or `prependNotes` for text increments. Replacement and increment modes cannot be combined for the same field. Use `tagIds` to replace or clear assignments, or `addTagIds`/`removeTagIds` for incremental changes. Tag IDs must exist; names that the public tag-name setter cannot represent unambiguously are rejected. This does not claim a separate inherited-tag editing API.
 
-Titles are trimmed, nonempty, and limited to 4,000 characters. Notes are limited to 10,000 characters. Areas and tags cannot have notes. Dates must be real calendar dates in `YYYY-MM-DD` format and are interpreted in the Mac's timezone. Scheduling does not set a reminder, choose Evening, clear a scheduled date, or create a repeat rule.
+Use `parentTagId: null` to detach a tag, `keyboardShortcut: ""` to clear its shortcut, and `deadline: null` to clear a deadline. Completion and cancellation timestamps accept null. Creation and modification timestamps cannot be cleared. Renaming a tag changes the shared object wherever it is used. Hierarchy cycles are rejected.
 
-## Search limits
+Creation accepts initial status, deadline, supported timestamps, tags and either a project or area placement where applicable. A project cannot belong to another project. Area and tag creation accept only their own supported properties.
 
-The default page size is 25, with a maximum of 100. Offsets range from 0 through 4,999. Text filters are limited to 500 characters. A search considers at most 5,000 objects, although Things may materialize its full collection before filtering. Logbook queries allow up to 60 seconds for large histories; other native calls allow 20 seconds. A large library can still exceed those bounds. `scanComplete: false` means it stopped after filling a page or reaching that cap. Follow `nextOffset` only when provided; otherwise narrow the query. The search is not a snapshot: concurrent edits can change the order between pages.
+Titles are trimmed, nonempty and limited to 4,000 characters; notes to 10,000 characters; tag lists to 100 unique IDs. Calendar dates use `YYYY-MM-DD` in the Mac's timezone. Timestamps require an explicit timezone and are normalized to UTC. Scheduling does not set a reminder, choose Evening, clear a start date or create a repeat rule.
 
-Search can match notes while omitting notes from returned content. Always fetch the chosen item before editing it. Search accepts a built-in `list` (Inbox, Today, Anytime, Upcoming, Someday, Logbook, or Trash), or a `parent` reference for an area or project. These filters apply to to-dos and projects and cannot be combined. Projects accept an area parent, not a project parent. Project queries for Inbox or Anytime are rejected; the public Anytime collection did not return the verified fixture project. Use an unscoped project query or area filter to find it. Unscoped searches exclude Trash. Deadline and tag filters are not implemented.
+Completing or canceling a project closes its open children. Reopening the project leaves completed/canceled children closed. The service checks exposed child content and status after project mutations. Public automation is not transactional: a failed read-back can follow a successful change and does not mean it was undone.
 
-## Verification and unavailable operations
+## Project move results
 
-Live checks cover creation and renaming of all four kinds. To-dos and empty projects passed notes edits, deadline set and clear, scheduling, completion, cancellation, and reopening. To-do moves to Inbox, Today, Anytime, Someday, into a project and out of a project are verified. To-dos and empty projects passed area placement and detachment; empty projects passed Today and Someday moves. Individual to-do Trash was verified on Things 3.23.3 and 3.23.4. See [the verification record](../VERIFICATION.md) for evidence and limits.
+Starting in 1.0.1, a successful project move includes `descendantImpact` in its receipt and saved request status. The summary uses the same child-task reads as the move's verification. Individual to-do moves keep their original receipt shape.
 
-Moves and individual to-do Trash are implemented. Projects can move into areas but not other projects or Inbox. To-do list moves support Inbox, Today, Anytime, and Someday. Projects support Today and Someday. Direct Logbook moves failed native checks and are rejected before writing. Use completion/cancellation for lifecycle changes; Things controls logging according to its own settings. Project moves to Anytime are rejected before writing: the public list collection did not expose the project for destination verification in native checks. Upcoming requires the scheduling tool. Existing Trash items cannot be edited, moved, or trashed again through these tools. Revisions cover exposed fields; they do not cover hidden checklist content or native repeat templates.
+| Field | Meaning |
+|---|---|
+| `beforeCount`, `afterCount` | Task counts in the public project child collection before and after the move, including logged children. |
+| `comparedCount` | Tasks compared by stable ID. Successful moves compare every returned task. |
+| `changedCount` | Tasks with at least one observed field difference. |
+| `unchangedExposedFieldsCount` | Compared tasks whose exposed fields did not change. This does not mean the move had no inherited effect on them. |
+| `changes` | Up to 20 changed task IDs, each with its `changedFields` list. No titles, notes or before/after field values are included. |
+| `changesTruncated` | True when additional changed tasks are counted but omitted from the detail list. |
+| `beforeComplete`, `afterComplete` | Coverage of the public child collection. These are true for successful 1.0.1 moves; native timeouts or failed reads cannot produce a success receipt. |
+| `notComparedCount` | Zero for a successful move. Unexpected membership changes fail verification. |
+| `scope`, `limitations` | The summary covers exposed task fields. It cannot establish every inherited list effect, checklist, heading or repeating-template change. |
 
-Container deletion, permanent deletion, empty Trash, restoration, duplication, tag assignment/hierarchy editing, history navigation, type conversion, reminders, batch changes, and general undo are not implemented. Full heading/checklist access requires Apple Shortcuts, which is excluded. The URL scheme offers narrower checklist writes without a read-back query. Native repeat-rule editing and arbitrary ordering have no established supported route and are excluded. See [Full scope](FULL-SCOPE.md) for the complete inventory.
+A client can say, for example, “The project contains 42 tasks. Three had observed field changes; 39 retained their exposed fields.” It must not turn the latter count into “39 tasks were unaffected.” Moving a project can affect inherited placement without changing any exposed child field.
 
-The service exposes local stdio. The optional secure tunnel carries that protocol for remote clients; there is no standalone public HTTP server or generic OAuth endpoint in this release.
+Counts cover all tasks returned by the successful reads, including projects above 1,000 tasks; only the changed-task detail list is capped. Large reads can still exceed native time or output limits. The snapshots are not atomic, and concurrent edits may contribute to differences. Changed tag ordering alone is not counted as an assignment change.
 
-## Why these actions are available
+The summary is stored in the request journal. Repeating the same request ID returns that same summary without moving or rereading the project. Existing receipts without a summary remain readable. Fetch the project separately for its current location and revision.
 
-The ten tools use public item collections, properties, and commands from Things' [AppleScript interface](https://culturedcode.com/things/support/articles/4562654/). Fixed scripts receive validated data; callers cannot submit scripts. Creation and editing verify exposed fields. Scheduling verifies the returned calendar date. Parent moves verify membership fields, and list moves and Trash verify collection membership. Health reads app metadata; request status reads the local journal. The capability tool reports this server's supported scope.
+## Search and count limits
 
-Missing operations fall into three groups:
+The default page size is 25, maximum 100. Each segment examines at most 5,000 objects and yields a continuation after approximately five seconds of item processing. Materializing native collections can take additional time. Follow `nextScanOffset`, with `offset` left at zero, until `scanComplete` is true. An empty page can still have a continuation. The older `offset`/`nextOffset` interface remains available within its 0 through 4,999 window. Count results apply to one segment; sum them while following continuations.
 
-| Reason | Examples | What it means |
-|---|---|---|
-| No supported route identified | Native repeat-rule editing, lossless type conversion, arbitrary ordering, general undo, Things Cloud account access | The server cannot provide these through its supported interfaces. |
-| Available through a route this server excludes | Full checklist and heading queries via Shortcuts; limited checklist and structured-project writes via URL scheme | Things supports parts of these workflows, but this server does not use Shortcuts or provide URL writes without verifiable read-back. |
-| Supported by Things, not implemented or not sufficiently verified here | Tag assignment and hierarchy, duplication, navigation, reminders via URL scheme, container deletion, project Anytime and direct Logbook moves | These are server limitations. They must not be described as missing Things features. |
+Sorting changes response order, not Things order. Title sorting works for all kinds; date sorting applies to to-dos and projects. Null dates sort last. Pagination and counts are not snapshots; native edits between requests can shift results. Things may materialize or sort a full collection before the bounded scan. Large histories can exceed the 60-second native read allowance or output-size limit.
 
-The [full-scope inventory](FULL-SCOPE.md) lists the remaining operations and their individual reasons. Populated-project cascades, hidden checklist changes, and repeating templates are outside the verified coverage. Completing a project can affect its descendants even though the completion receipt only verifies exposed project fields. Project moves additionally return the bounded observations described below.
+Choose one scope: a built-in list, project/area parent, or current selection. Project children include logged completed items that the normal open-project collection omits. Project Inbox/Anytime queries are rejected because the destination collection does not provide the required verified membership. Unscoped searches use the active native collection and exclude Trash. Use the explicit Logbook scope for history; completed projects are identified by typed ID lookup because the active project collection omits them. Fetch the selected result before editing it.
 
+## Writes and verification
 
-### Project move impact
+Every mutation needs normal local authorization and a unique UUID request ID. Item edits require a current revision. Shared locking, persistent receipts and precondition checks apply across clients. Never retry an uncertain mutation under a new request ID until its result has been inspected.
 
-`things_move_item` includes `descendantImpact` when moving a project. It reads non-Trash tasks in that project before and after the move through the supported parent query, with up to 1,000 tasks per snapshot. Individual to-do move receipts are unchanged.
+Native task-changing tools verify the affected exposed fields or list membership. URL tools instead return `verification: "url_dispatched"` with journal state `dispatched`; macOS accepted delivery, but Things has not supplied a complete result. See [URL operations](URL-OPERATIONS.md) for Keychain setup, examples and exact limits. `things_navigate` instead returns `verification: "command_accepted"`: Things accepted a UI command. It does not certify that a task was created, the user submitted Quick Entry, or a remote screen changed.
 
-- `beforeCount` and `afterCount` count unique tasks observed in each snapshot. `beforeComplete` and `afterComplete` indicate whether each query exhausted the collection within the read limits. Incomplete counts are lower bounds, not project totals.
-- `comparedCount` counts tasks present in both snapshots. `changedCount` counts those with observed changes to exposed fields; `unchangedExposedFieldsCount` counts those without such differences.
-- `notComparedCount` counts observed task IDs present in only one snapshot. They are not assumed deleted, added, unchanged, or successfully moved.
-- `changes` lists up to 20 changed task IDs and their changed field names. `changesTruncated` indicates more changed tasks than the list includes. Counts still cover all compared tasks, up to the snapshot limit.
-- `limitations` explains that inherited list behavior, hidden checklists, and concurrent edits prevent treating this as an exhaustive or atomic account of the move's effects. Zero exposed-field changes does not mean no descendants were affected.
+Quick Entry opening and dismissal were checked in the native UI. Things can retain a prior draft; the tool does not clear it or submit it.
 
-The journal retains this summary for request-status lookup and replay without saving task titles, notes, or field values. A failed pre-move snapshot prevents the move. A failed post-move snapshot leaves the outcome unknown and blocks automatic retry with the same request ID. Existing receipts remain readable and do not gain a retroactive summary. Populated-project behavior has synthetic test coverage; live cascade behavior remains unverified.
+Area deletion previews label each effect. Open projects and their children move to Trash. Already logged projects and their children stay in Logbook with their area association removed. The area itself is deleted. Project restoration recovers its children; it does not recreate a deleted area.
+
+Individual to-do Trash requires its own grant. Container deletion has its own independent grant, default off. Global maintenance is disabled and its switches are omitted from the installer. Native gates are independent: open-project, area and tag-hierarchy deletion passed, while global commands remain disabled until their own checks pass. Global commands affect the whole library; they are not substitutes for a targeted fixture test.
+
+## Remaining limits
+
+To-dos can move to Inbox, Today, Anytime, Someday, projects and areas. Projects can move to Today, Someday and areas. Upcoming uses scheduling. Project Anytime and direct Logbook moves previously failed verification and remain rejected. Existing Trash items cannot be edited. Closed-task deletion returned -1728 in native checks and is rejected before writing. The restore tool supports open to-dos returning to Inbox; open projects restore to Today. Closed items remain under investigation.
+
+URL operations provide duplication, reminders, Evening, When clearing, structured project templates, checklist replacement and incremental checklist text, and task placement under an existing heading. Initial checklist rows can be open, completed or canceled. Existing checklist rows and heading internals cannot be fully queried through the selected interfaces. Editing a single existing row by stable ID, editing headings in place and native repeat-rule changes remain unavailable. These are different limits from the supported URL writes.
+
+Native repeat-rule editing, general undo, lossless type conversion, arbitrary reordering and direct Things Cloud account access have no established supported route. Private experimental commands and substitute schedulers are excluded. Missing server work is recorded separately from vendor limits in [Full scope](FULL-SCOPE.md).
+
+## Supported interfaces
+
+The [Things AppleScript interface](https://culturedcode.com/things/support/articles/4562654/) supplies the collections, properties and commands used here. The [documented URL interface](https://culturedcode.com/things/support/articles/2803573/) supplies the additional URL operations. Things itself handles cloud synchronization.
+
+The server uses standard local MCP stdio. An optional private tunnel carries it to the configured account. No standalone public HTTP listener or generic OAuth endpoint is included. Client installation and wider environment verification are separate from native command verification.

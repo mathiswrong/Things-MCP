@@ -1,5 +1,7 @@
 # Use your installed Things connection
 
+These examples describe version 1.0.
+
 These steps are for a Mac where the extension and optional private tunnel are already installed. For a new Mac, start with [Installation](../packaging/INSTALL.md).
 
 ## Start a conversation
@@ -30,7 +32,7 @@ The two **Allow moving to Trash** switches are separate and default to off. Turn
 
 ## After an update
 
-Start a new conversation. For ChatGPT, reload **Plugins**, select **Personal**, open **Things MCP > Manage**, and use **Refresh** near the bottom. The action list should contain ten tools, including `things_move_item` and `things_trash_item`. Reloading the page can restore a missing Refresh control.
+Start a new conversation. For ChatGPT, reload **Plugins**, select **Personal**, open **Things MCP > Manage**, and use **Refresh** near the bottom. The action list should contain twenty tools, including `things_edit_extras` and `things_create_from_template`. Reloading the page can restore a missing Refresh control.
 
 See [Capabilities](CAPABILITIES.md) for exact fields and [Full scope](FULL-SCOPE.md) for omissions. Native repeating rules and full checklist/headings access are outside this build's supported interface boundary.
 
@@ -43,10 +45,12 @@ See [Capabilities](CAPABILITIES.md) for exact fields and [Full scope](FULL-SCOPE
 | “Give that task a deadline of October 8, 2026.” | Set a deadline. This does not set the task's start date or a reminder. |
 | “Schedule that task for October 7, 2026.” | Set its calendar start date in the Mac's timezone. |
 | “Move that task into my Weekend project.” | Resolve both items by ID, check the revision, and verify the parent. |
-| “Move that task to Trash.” | Requires ordinary writes and the separate Trash grant. The task can be restored manually in Things. |
+| “Move that task to Trash.” | Requires ordinary writes and the separate Trash grant. Open tasks can be restored to Inbox through the restore tool. |
 | “Create an area named Learning.” | Create one area and verify its name. |
-| “Create a tag named Errands.” | Create a shared library tag. Assigning it to tasks is not implemented. |
+| “Create a tag named Errands.” | Create a shared library tag. Use its ID to assign it to tasks or projects. |
 
 Prompts are examples, not exact commands. Clients may ask you to clarify a target or approve a tool call. The bridge receives structured fields and does not interpret natural language itself. Start with one task when trying a new workflow.
 
-Do not request repeating rules, checklist edits, or multi-item deletion through this version. Read [why actions are unavailable](CAPABILITIES.md#why-these-actions-are-available) to distinguish vendor limits from unimplemented server features.
+For checklists, headings, reminders and duplication, follow [URL setup](URL-OPERATIONS.md). Those receipts report dispatch, not complete read-back. Inspect Things before another change. For container deletion, enable its separate grant and review the scope preview. Native repeat-rule editing remains unavailable.
+
+When moving a project, ask for the descendant summary: “Move this project to Work and tell me how many tasks were compared and which exposed fields changed.” The receipt includes counts and up to 20 changed task IDs. Unchanged fields do not rule out inherited placement effects.

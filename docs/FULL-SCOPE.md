@@ -1,56 +1,53 @@
-# Complete operation scope
+# Operation scope
 
-Version 0.83 uses supported Things interfaces and documents its remaining installation and feature limits. Apple Shortcuts dependencies and replacement workflows are excluded. Features with no supported mechanism are omitted. This inventory separates missing implementation from missing vendor interfaces. Current runtime support is listed in [Capabilities](CAPABILITIES.md).
+This is the version 1.0 scope. Availability follows the current code, the installed Things public scripting dictionary and the [documented Things URL commands](https://culturedcode.com/things/support/articles/2803573/). A command appearing in a dictionary is not proof that it executes successfully.
 
-Things does not offer a public cloud account API. The existing server talks to the local Mac app through its supported AppleScript interface. Things itself handles cloud synchronization. A direct cloud connection would require an unofficial protocol and is outside the supported-interface boundary.
+## Implemented native operations
 
-## Requested additions
+- Read/search to-dos, projects, areas and tags; read selection; count and test existence; filter by parent, built-in list, tags and dates; sort returned results; continue scans beyond 5,000 objects.
+- Create to-dos, projects, areas and tags. Set supported initial placement, status, deadlines, tags and timestamps.
+- Edit or increment title and notes; complete, cancel or reopen; schedule calendar dates; clear deadlines; set exposed timestamps; assign/remove tags; manage tag hierarchy and shortcuts; collapse/expand areas.
+- Move to supported lists or parents and detach parents. To-dos support Inbox, Today, Anytime and Someday. Projects support Today, Someday and areas.
+- Move an open to-do to Trash. Restore open to-dos to Inbox and open projects to Today.
+- Preview and delete open projects, areas and tag hierarchies with separate permission and scope checks. Area deletion keeps archived projects in Logbook while clearing their area association.
+- Show/edit items and open Quick Entry. Navigation receipts acknowledge a command, not a newly created task.
 
-| Operation | Supported route and remaining work |
+Native mutations verify exposed fields. Project revisions include exposed child snapshots. Things' UI and sync can still change data between reads; this is not a transaction or an automatic undo facility.
+
+## Implemented URL operations
+
+- Create structured projects with initial headings and to-dos, or individual to-dos with checklist rows. Initial checklist rows can carry completion/cancellation state.
+- Replace/clear checklist rows, append/prepend checklist text, move a task to an existing heading, set reminders and Evening, or clear When.
+- Duplicate a non-repeating task or project, optionally naming the copy.
+- Open additional built-in views and search, optionally filtering views by tags.
+
+These use typed fields, the shared permissions and journal, and Keychain authorization where required. Their receipts confirm **dispatch only**. They do not return newly created IDs or verify hidden fields. See [URL operations](URL-OPERATIONS.md).
+
+## Things interface limits
+
+| Operation | Reason it is unavailable |
 |---|---|
-| Read and edit checklists | Full checklist access is excluded under the no-Shortcuts constraint. The URL scheme can create, replace, append and prepend checklist text, but provides no checklist query. Do not claim checked-row editing or verified lossless round trips. URL write-only support remains a separate possible addition requiring secure token handling and an honest unverified outcome. |
-| Move items | Implemented: AppleScript supports moving to-dos into projects/areas, projects into areas, detaching parents, and moving to built-in lists. The URL scheme can place to-dos under headings, but heading queries are unavailable without Shortcuts. Verify destination and preserve unrelated properties. |
-| Delete items | Individual to-do Trash is implemented with a separate grant. Project deletion, which cascades to its children, is not implemented. Immediate per-item deletion through Shortcuts is excluded. Area deletion permanently removes the area and trashes its children. Tag deletion removes a shared library object. These require distinct permissions, exact scope previews, stale-preview rejection, and cascade verification. |
-| Native recurrence | Excluded. No repeat-rule creation/editing action is present in the documented public interfaces reviewed on September 6, 2026. Do not use private APIs, database changes, simulated copies, a manual handoff feature, or a separate scheduler to claim support. |
+| Create or edit native repeat rules | No supported public editing mechanism in the selected interfaces. No replacement scheduler is included. |
+| Full checklist/heading reads or editing an existing row by stable ID | Not exposed by AppleScript or the documented URL read surface. Apple Shortcuts is excluded from this product. |
+| Create a heading independently or edit it in place | Documented heading creation is part of a new project template. |
+| Arbitrary native ordering, lossless task/project conversion, general undo | No established supported mechanism; private experimental commands are excluded. |
+| Direct Things Cloud account integration | No public account API used here. The installed Things app owns cloud synchronization. |
 
-## Every other known gap
+## Verification limits retained in the server
 
-| Family | Operations still requiring implementation or verification |
-|---|---|
-| Retrieval | Built-in lists and project/area contents are implemented. Remaining: heading contents; tag, date, start-state and logged-state filters; counts; existence; selected items; sorting; full-library traversal beyond the 5,000-object search cap. |
-| To-dos | Duplication; creation with initial placement, tags, checklist, status and dates in one request; append/prepend title or notes. |
-| Projects | Creation, title/notes/status/deadline edits, scheduling, and area placement of an empty project are verified. Remaining: populated-project cascade accounting; verified Anytime placement; duplication including headings and children; structured project templates. Completing or canceling a project needs explicit cascade accounting too. |
-| Areas | Creation and rename verified. Remaining: tags; collapsed state; deletion semantics. Area duplication is not exposed by Things Shortcuts. |
-| Headings | Read/find/create/rename; completion/cancellation; duplication; deletion with child scope. Movement between projects needs a separately verified route. |
-| Scheduling | Today, Anytime and Someday are supported through moves. Remaining: This Evening, explicit start-date clearing, reminders and clearing reminders; creation, modification, completion and cancellation timestamps where publicly writable. |
-| Tags | Creation and rename verified. Remaining: assignment add/remove/replace/clear; direct versus inherited tags; hierarchy changes; keyboard shortcuts; deletion and hierarchy effects. |
-| History | Logbook queries are implemented. Direct Logbook moves failed native verification and are rejected. Completion and cancellation work; Things controls logging according to its settings. Global log-completed must disclose its whole-library effect. |
-| Recovery | Trash queries and individual to-do Trash are implemented. Remaining: explicit restore behavior; permanent delete; whole-library empty Trash; field restoration. There is no established general-purpose undo API. |
-| Ordering | Read order where the public collection preserves it; checklists need round-trip verification. Arbitrary task/sidebar reordering has no established supported public route; private experimental reorder commands are excluded. |
-| Conversions | To-do to project, project to to-do, checklist row to to-do. No supported lossless automation route established; delete/recreate is not equivalent. |
-| Navigation | Reveal an item or list, in-app search, Quick Entry, and opening an item for editing. Navigation on the Mac does not display the item on a remote device. |
-| Bulk and templates | Bounded multi-item previews, per-item outcomes, interrupted-operation reconciliation, and nested project creation. No promise of transactions or atomic rollback. |
-| Application controls | Window state, close, print, and quit where in the public dictionary. These are outside task management and remain separately opt-in scope. |
-| Legacy interfaces | Contacts/assignment and Quicksilver parsing appear in the dictionary but need current support verification. They do not establish collaborative task sharing. |
-| Settings and sync | App settings, accounts, Things Cloud, sync controls, and attachments have no established supported automation route. Never collect Things Cloud credentials. |
+These are server limitations, not claims that Things' own UI cannot do the operation.
 
-## Connection and safety gaps
+- **Project Anytime membership:** the native command cleared the start date, but its destination collection did not expose the project. Verified native moves/queries remain rejected. URL scheduling is a separately labeled dispatch route.
+- **Direct Logbook movement and closed-task deletion:** native commands failed live checks. Complete/cancel and let Things apply its normal logging behavior; the server does not recreate that behavior.
+- **Closed-item restoration:** only open to-dos and open projects passed targeted restoration checks.
+- **Empty Trash and Log Completed Now:** public commands exist, but affect the whole library. Execution remains disabled because targeted fixtures cannot verify them safely in a nonempty library. Their installer switches are omitted.
+- **Trashed project child enumeration:** the selected collections cannot enumerate these children. Known child IDs report inherited Trash membership; restoration recovers the children through Things.
+- **Very large collections:** bounded native reads can time out or exceed output limits. Scan continuations are not stable snapshots across external edits.
 
-The core and native extension work locally. The optional private tunnel works for ordinary browser Chat and the desktop plugin, but its initial installation requires an operator. A command-free browser installation on a new Mac is not delivered in version 0.83. General compatible remote clients need a supported transport and authentication route, not a promise that all clients accept the same installer.
+Printing, window geometry, app quitting and legacy contact commands are outside task management scope. The bridge does not automate these application controls.
 
-Separate individual to-do Trash permission is implemented. Bulk and container/permanent-deletion permissions, optional project/area allowlists, descendant-aware scope enforcement, and trusted approval for destructive previews remain implementation work. A model-supplied confirmation flag is not a trusted permission grant. Read and ordinary write permission must be independently revocable for each connection.
+## Installation limits
 
-## Funding
+The local MCPB extension uses native host installation and settings. Browser access needs an account-owned private tunnel; first-time setup requires developer commands. Other MCP clients use standard local stdio but their installation flows vary. There is no companion app or project-operated service.
 
-`.github/FUNDING.yml` already uses GitHub's built-in `buy_me_a_coffee` provider. This adds the Buy Me a Coffee destination to the repository Sponsor button once the file is on the default branch and sponsorship display is enabled. The README link remains a convenient second entry point.
-
-GitHub Sponsors is a separate service with GitHub-hosted sponsorship tiers and one-time or monthly payments. It requires enrollment and payout setup. Both destinations can coexist in the Sponsor button. Do not add an unconfigured GitHub Sponsors profile or enroll the maintainer without authorization.
-
-## Source references
-
-- [Things API availability](https://culturedcode.com/things/support/articles/2967034/)
-- [Things AppleScript commands](https://culturedcode.com/things/support/articles/4562654/)
-- [Things Shortcuts actions](https://culturedcode.com/things/support/articles/9596775/)
-- [Things URL scheme](https://culturedcode.com/things/support/articles/2803573/)
-- [GitHub Sponsor button configuration](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/displaying-a-sponsor-button-in-your-repository)
-- [GitHub Sponsors for contributors](https://docs.github.com/en/sponsors/receiving-sponsorships-through-github-sponsors/about-github-sponsors-for-open-source-contributors)
+Current verification covers the tested Mac and packaged/runtime processes. Fresh-account consent, every client version, physical sleep/wake and actual logout/login are not certified. The Mac must be awake, online and signed in for remote access. See [Verification](../VERIFICATION.md).

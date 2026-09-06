@@ -1,8 +1,38 @@
 # Verification record
 
+Version **1.0.1** was checked on September 6, 2026. It exposes twenty tools. The detailed [acceptance record](docs/V1-READINESS.md) separates observed native behavior from verification and environment limits.
+
+## Version 1.0.1 checks
+
+- The automatic suite passed **82 tests**, typecheck, lint, runtime build, stdio smoke, extension packaging, extracted-package smoke and native health. The dependency audit reported zero vulnerabilities.
+- Project move regression checks cover 1,205 descendants, a 20-entry detail limit with full counts, open/completed tasks, empty projects, unchanged exposed fields, tag ordering, membership changes, read failures, uncertain-outcome protection, old receipts and replay after restart.
+- The official MCP client received the same descendant summary in structured content and JSON text from the packaged server. Live Things 3.23.4 checks used one labeled project with one open and one completed child. Area placement/detachment, Today and Someday moves returned complete two-task comparisons and survived request replay without another mutation. Independent native reads matched the returned summary. Both children retained their exposed fields; the receipt explicitly does not claim inherited list effects were unchanged.
+- The existing native extension upgraded through its installer to 1.0.1. The installed browser tunnel passed healthy/ready checks, and the connected MCP tool returned the new two-child summary for an actual project move. A separate connected read confirmed its area placement; the shared journal retained the same summary. Ordinary grants remained enabled and Trash/container grants remained off. The full create/read/edit/read client acceptance from 1.0.0 remains recorded below.
+- Redacted scans passed for reachable history and the current source tree. No provenance signatures were found in the patch.
+- Cleanup passed after detaching the fixture project: its three-object scope moved to recoverable Trash, then the empty one-object fixture area was removed. No unrelated item appeared in either scope preview.
+- Version 1.0.0 did not include descendant summaries. Existing receipts remain readable, and individual to-do receipts are unchanged.
+
+## Version 1.0 checks
+
+- `npm ci`, typecheck, lint, **75 tests**, runtime build, stdio smoke, extension packaging, extracted-package smoke and dependency audit passed. The audit reported zero vulnerabilities.
+- Package checks covered checksum, manifest validation, MIT license, dependency notices, portable launch from a path with spaces, twenty-tool discovery, read-only rejection and process restart. Native health passed on Things 3.23.4.
+- Native fixture checks covered richer task/tag editing, hierarchical tags, populated projects and descendants, supported moves, targeted project/area/tag deletion, open-item restoration, retrieval filters and continuations. The acceptance record identifies failed commands that remain gated.
+- Things UI checks passed structured projects with headings and checklist states, checklist append/prepend/replacement/clearing, reminder time, Evening, When clearing, heading placement, task/project duplication and search navigation. These tools retain unverified `url_dispatched` receipts because complete read-back is unavailable. The two labeled URL test projects and their four child tasks were moved to recoverable Trash with verified scope checks.
+- The existing desktop extension upgraded through its native installer to 1.0.0 and discovered all twenty tools. Ordinary local/remote grants were preserved; Trash and container grants remained off. Health/capabilities passed. A stale chat tool catalogue required an extension restart and a new chat. That chat then passed native create/read/edit/read on one labeled Inbox task. Independent native reads and both durable receipts confirmed the results. Both client test tasks were subsequently moved to recoverable Trash with verified individual operations.
+- The installed tunnel upgraded to the 1.0.0 runtime and reported healthy/ready. Refreshing the account connection exposed twenty actions. A fresh ordinary browser Chat created one labeled task, read it, edited only its notes, then read it again. Independent native reads and both durable receipts confirmed these results. Work and the installed desktop plugin also passed health calls through the upgraded connection.
+- Redacted secret scans passed for the current tree, reachable history and extracted package. Source, commit messages, public prose and archive contents were reviewed for provenance signatures and private configuration. Required client compatibility names and dependency notices remain.
+
+## Version 1.0 boundaries
+
+Fresh-Mac consent, a separate macOS account, physical sleep/wake, actual logout/login, every host/runtime version and a command-free browser installation are not certified. Empty Trash and Log Completed remain disabled; direct Logbook movement, closed-item Trash/restoration and verified project Anytime membership remain restricted. See [Full scope](docs/FULL-SCOPE.md) for whether each limit comes from the Things interfaces or this server.
+
+## Earlier releases
+
+The remaining sections preserve historical checks. Their test/tool counts and unverified operations describe those earlier versions, not the 1.0 scope.
+
 Version 0.83 (package `0.83.0`) passed typechecking, lint, all 42 synthetic tests, runtime and extension builds, stdio and packaged-extension smoke checks, and extracted-package native health on September 6, 2026. The dependency audit reported zero vulnerabilities. This release changes documentation and version metadata; supported operations and permission defaults are unchanged. Native mutation evidence below comes from the preceding 0.1.0 checks, not a new mutation run.
 
-Version 0.1.0 was checked on September 5 and 6, 2026. The current source exposes ten tools. Automatic checks and native checks establish different kinds of evidence; neither proves every Things operation or every client environment works.
+Version 0.1.0 was checked on September 5 and 6, 2026. That source exposes ten tools. Automatic checks and native checks establish different kinds of evidence; neither proves every Things operation or every client environment works.
 
 ## Automated checks
 

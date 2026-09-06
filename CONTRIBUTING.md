@@ -27,7 +27,7 @@ On a Mac with Things running, `npm start -- doctor` checks app health. `npm run 
 
 Use supported Things interfaces and maintained dependencies. Never add database access, private app APIs, arbitrary script execution, or automatic retries of uncertain writes. Inputs must remain bounded and validated. Keep every connection to a library on the same state directory.
 
-New mutations need permission enforcement, failure-path tests, shared locking, durable request handling, revision checks where applicable, and verified read-back. Every advertised capability needs evidence or a clear limitation. Public automation is not transactional; report uncertainty instead of claiming rollback.
+New mutations need permission enforcement, failure-path tests, shared locking, durable request handling, revision checks where applicable, and verified read-back. URL-only fields cannot supply complete read-back. Those tools record a distinct dispatched receipt, never a verified mutation, and retain the same permission, locking, request-ID and uncertain-outcome controls. Every advertised capability needs evidence or a clear limitation. Public automation is not transactional; report uncertainty instead of claiming rollback.
 
 Real write tests belong in a disposable Things library by default. A library owner may explicitly authorize single-item checks in their library. Use a clearly labeled synthetic item, perform one mutation at a time, and read it back before continuing. Ordinary client write grants require their own explicit authorization. Never test destructive operations on a personal library.
 

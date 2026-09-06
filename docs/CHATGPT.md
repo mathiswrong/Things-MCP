@@ -55,7 +55,7 @@ macOS may notify you that **Things MCP** can run in the background. The service 
 
 In ChatGPT's plugin settings, create a custom plugin named **Things MCP**. Choose the **Tunnel** connection type and select the tunnel you created. The local stdio server does not implement a second authentication layer; the secure tunnel and its workspace association provide access control. Follow the provider's current form labels if they differ.
 
-Create the plugin, verify that its ten tools are listed, and select **Connect**. An existing connection may retain an older tool catalog. Reload the Plugins page, choose **Personal**, then **Things MCP > Manage**. Select **Refresh** near the bottom of the action list. Verify that `things_move_item` and `things_trash_item` appear before starting a new conversation. A stale page can hide Refresh even when the account has permission to use it. In a new conversation, select Things MCP and ask:
+Create the plugin, verify that its twenty tools are listed, and select **Connect**. An existing connection may retain an older tool catalog. Reload the Plugins page, choose **Personal**, then **Things MCP > Manage**. Select **Refresh** near the bottom of the action list. Verify that all twenty actions appear, including `things_create_from_template`, `things_edit_extras`, `things_duplicate_item` and `things_show_view` before starting a new conversation. A stale page can hide Refresh even when the account has permission to use it. In a new conversation, select Things MCP and ask:
 
 > Use Things MCP to check the connection without reading or changing tasks.
 
@@ -68,6 +68,10 @@ On the Mac, open **Claude Desktop > Settings > Extensions > Things MCP > Configu
 For individual to-do deletion, also enable **Allow moving to Trash from ChatGPT** and save. This separate permission defaults to off and never allows permanent deletion or container deletion.
 
 Test one labeled Inbox task, then read it back. You may still see ChatGPT tool approval prompts. Do not bypass them or change unrelated plugin permissions.
+
+For project, area and tag deletion, enable the separate **Delete projects, areas, and tags from ChatGPT** switch. The server requires a fresh scope preview before applying the operation.
+
+Checklist and reminder edits and duplication also use the [Things URL token](URL-OPERATIONS.md) stored on this Mac. The tunnel credential and Things token are different secrets.
 
 ## Desktop plugin packaging
 

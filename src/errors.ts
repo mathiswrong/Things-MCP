@@ -1,7 +1,10 @@
 export type ErrorCode =
+  | "URL_AUTH_REQUIRED"
   | "INVALID_INPUT"
   | "READ_ONLY"
   | "TRASH_DISABLED"
+  | "ADVANCED_DISABLED"
+  | "VERIFICATION_UNAVAILABLE"
   | "NOT_FOUND"
   | "AUTOMATION_DENIED"
   | "APP_UNAVAILABLE"
@@ -16,9 +19,15 @@ export type ErrorCode =
   | "STATE_FAILURE";
 
 const messages: Record<ErrorCode, string> = {
+  URL_AUTH_REQUIRED:
+    "Store the Things URL token in the login Keychain as Things MCP URLs, account default. See the URL setup guide. Never send a token through a tool or chat.",
   INVALID_INPUT: "The request contains invalid or unsupported fields.",
   READ_ONLY:
     "Writes are disabled. Open Things MCP extension settings, enable Allow changes for this connection, and save.",
+  VERIFICATION_UNAVAILABLE:
+    "This operation has not passed complete scope and native verification. It remains disabled in this release.",
+  ADVANCED_DISABLED:
+    "This operation requires its separate owner-controlled permission in the extension settings.",
   TRASH_DISABLED:
     "Moving items to Trash is disabled for this connection. Enable Allow moving to Trash in the extension settings and save.",
   NOT_FOUND: "The requested item was not found. Find it again before retrying.",

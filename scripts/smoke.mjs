@@ -4,10 +4,11 @@ import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 import { Client } from "@modelcontextprotocol/client";
 import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
+import metadata from "../package.json" with { type: "json" };
 
 const entry = resolve(
   process.env.THINGS_MCP_BUILD_DIR ??
-    join(homedir(), "Downloads", "Things-MCP-builds", "0.83.0"),
+    join(homedir(), "Downloads", "Things-MCP-builds", metadata.version),
   "cli.mjs",
 );
 const parent = join(homedir(), "Downloads", "Things-MCP-tests");
@@ -23,7 +24,7 @@ const client = new Client({ name: "local-smoke-test", version: "1.0.0" });
 try {
   await client.connect(transport);
   const tools = await client.listTools();
-  assert.equal(tools.tools.length, 10);
+  assert.equal(tools.tools.length, 20);
   const capabilities = await client.callTool({
     name: "things_capabilities",
     arguments: {},

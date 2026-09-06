@@ -1,5 +1,7 @@
 # Install Things MCP
 
+These instructions describe version 1.0. The package exposes twenty tools. New connections start read-only.
+
 ## Before you start
 
 You need a Mac with Things 3 installed, signed in, and running. The local package also needs a current Claude Desktop version that supports MCPB extensions and Node.js 24 or later in its bundled runtime. You do not need to install Node separately for that route.
@@ -8,7 +10,7 @@ Things MCP is independent of Things and the client vendors. Their apps, accounts
 
 ## Claude Desktop
 
-1. Download `things-mcp-0.83.0.mcpb` from the repository's [Releases page](https://github.com/mathiswrong/Things-MCP/releases). Choose the `.mcpb` asset, not GitHub's source ZIP. If no release has been published, developers can build it using CONTRIBUTING.md.
+1. Download the versioned `things-mcp-<version>.mcpb` from the repository's [Releases page](https://github.com/mathiswrong/Things-MCP/releases). Choose the `.mcpb` asset, not GitHub's source ZIP. If no release has been published, developers can build it using CONTRIBUTING.md.
 2. Open Things 3.
 3. Open the downloaded package with Claude Desktop and choose **Install**. If the file opens elsewhere, use **Settings > Extensions > Advanced settings > Install extension** and select it there.
 4. Open **Settings > Extensions > Things MCP > Configure**. Keep write access off for the first health check, or turn on **Allow changes** if you want to manage tasks immediately. Select **Save** after changing a setting.
@@ -16,6 +18,10 @@ Things MCP is independent of Things and the client vendors. Their apps, accounts
 6. If macOS requests permission to control Things, allow it. A successful result reports the Things version, running status, timezone, and whether writes are enabled.
 
 The local connection needs no API key, configuration editing, Terminal window, or separate background service. The client starts its packaged server when needed.
+
+## Optional checklist, reminder and duplication setup
+
+Follow [Things URL setup](../docs/URL-OPERATIONS.md). Create templates without a token; editing existing tasks or duplicating them requires your local Things URL token in Keychain. URL receipts report dispatch without claiming complete read-back.
 
 ## Try a task
 
@@ -35,6 +41,8 @@ The native extension settings separate ordinary writes from moving to Trash:
 
 | Switch | Connection it controls |
 |---|---|
+| **Delete projects, areas, and tags** | Container deletion by this Mac's extension; also requires Allow changes and a fresh scope preview |
+| **Delete projects, areas, and tags from ChatGPT** | Container deletion through the tunnel; also requires its Allow changes switch and a fresh scope preview |
 | **Allow changes** | This Mac's local extension |
 | **Allow changes from ChatGPT** | Your separately configured private tunnel, including clients using its account plugin |
 | **Allow moving to Trash** | Individual to-do removal from this Mac's local extension; also requires Allow changes |
@@ -42,7 +50,7 @@ The native extension settings separate ordinary writes from moving to Trash:
 
 Changes apply after **Save** and the host's server restart. Turning a switch off denies subsequent mutations. An operation already delivered to Things cannot be rolled back by switching access off. Client tool approval prompts are an additional control; they do not replace the Mac-side grant.
 
-New installations start read-only. Both Trash switches also default to off. They allow recoverable to-do deletion, including its checklist, but not permanent deletion or deleting whole projects or areas. Installing the extension does not create tasks. If a maintainer globally revoked access, regrant by switching the relevant control off, saving, switching it on, and saving again.
+New installations start read-only. Both Trash switches and both container-deletion switches also default to off. They allow recoverable to-do deletion, including its checklist, but not permanent deletion or deleting whole projects or areas. Installing the extension does not create tasks. If a maintainer globally revoked access, regrant by switching the relevant control off, saving, switching it on, and saving again.
 
 ## ChatGPT and other clients
 

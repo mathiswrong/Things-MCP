@@ -1,5 +1,7 @@
 # Product roadmap
 
+This planning document predates version 1.0. Use [Capabilities](docs/CAPABILITIES.md) and [Verification](VERIFICATION.md) for current behavior.
+
 Things MCP connects compatible clients to Things 3 using supported automation. The core runs on the user's Mac, works without a project-operated service, and keeps remote providers replaceable.
 
 ## Release scope
@@ -8,9 +10,9 @@ Publication is on hold. Basic read, create, update, and schedule tools do not sa
 
 Native recurrence is excluded: Things exposes no supported repeat-rule creation or editing operation. Do not build a separate scheduler, copies, or a manual handoff feature to substitute for it. Things has no public cloud API; the existing supported adapter operates on the Mac app, which handles Things Cloud synchronization itself.
 
-## Current implementation
+## Original preview
 
-The current implementation provides ten tools for health, capability discovery, bounded search, ID lookup, durable mutation receipts, creation, editing, scheduling, moves, and individual to-do Trash. It includes a native MCPB extension, separate local and remote grants, and an optional private tunnel. Read access and ordinary to-do mutations have been checked against Things 3.23.3. See [Capabilities](docs/CAPABILITIES.md) and [Verification](VERIFICATION.md) for the exact boundary.
+The original preview provided ten tools for health, capability discovery, bounded search, ID lookup, durable mutation receipts, creation, editing, scheduling, moves, and individual to-do Trash. It includes a native MCPB extension, separate local and remote grants, and an optional private tunnel. Read access and ordinary to-do mutations have been checked against Things 3.23.3. See [Capabilities](docs/CAPABILITIES.md) and [Verification](VERIFICATION.md) for the exact boundary.
 
 The local extension can be installed through the host's existing UI. Initial browser setup remains an advanced operator workflow. The first public release must explain that distinction and make supported task workflows usable without promising unimplemented features.
 

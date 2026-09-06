@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.0.1
+
+- Project move receipts now include descendant task counts, observed changed/unchanged counts, and up to 20 changed task IDs with field names. Version 1.0.0 returned only the project move receipt.
+- Summaries use the existing child verification reads and survive request replay and process restart. They contain no task titles, notes or field values.
+- Added coverage for large projects, unchanged array values, empty projects, failed reads, membership changes and delivery through the MCP client.
+- Clarified that unchanged exposed child fields do not mean the project move had no inherited effect.
+
+## 1.0.0
+
+- Twenty tools covering native task and project edits, tags, counts, filters, navigation, restoration and container deletion.
+- Structured project templates with headings and checklist rows, checklist edits, reminders, Evening scheduling, heading placement and duplication through documented Things URLs. These return an explicit unverified dispatch receipt.
+- Shared Keychain storage for the Things URL token. Credentials never enter tool arguments, receipts or telemetry.
+- Project revisions include exposed child contents, including logged children. Area deletion previews distinguish contents going to Trash from archived projects staying in Logbook.
+- Resumable searches beyond 5,000 objects and bounded processing for slow scans.
+- Corrected background launcher updates so the installed runner does not depend on a source checkout.
+- Updated installation, permission, capability and verification guides. Native repeat-rule editing, full checklist/heading reads and whole-library maintenance remain unavailable; see the capability reference for the reasons.
+
 ## 0.83
 
 Published as package version `0.83.0`.

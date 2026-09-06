@@ -6,7 +6,7 @@ Create Inbox tasks, edit titles and notes, set deadlines, schedule dates, move t
 
 [Documentation](docs/README.md) · [Installation](packaging/INSTALL.md) · [Daily use](docs/DAILY-USE.md) · [Capabilities](docs/CAPABILITIES.md) · [Full scope](docs/FULL-SCOPE.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) · [Buy me a coffee](https://buymeacoffee.com/paul2d)
 
-Version 0.83 is an early release. The local extension installs through its host. First-time browser setup is an advanced installation, and fresh-Mac consent and sleep/wake recovery still need wider testing. See [verification coverage](VERIFICATION.md).
+Version **1.0.1** provides twenty tools. The local extension uses the client's installer. Browser setup uses a private tunnel and currently requires developer commands. See [verification coverage](VERIFICATION.md) for the tested environments and remaining platform checks.
 
 ## Install
 
@@ -28,7 +28,7 @@ Other clients can use the standard local MCP transport. See [other MCP clients](
 
 ## What works
 
-| Operation | Version 0.83 |
+| Operation | Version 1.0.1 |
 |---|---|
 | Search and read to-dos, projects, areas, and tags | Available |
 | Create an Inbox to-do | Available |
@@ -40,11 +40,23 @@ Other clients can use the standard local MCP transport. See [other MCP clients](
 | Built-in list queries and project/area filters | Available |
 | Moves between supported lists, projects, and areas | Available |
 | Delete an individual task to Trash | Available with Trash permission |
-| Edit checklist steps inside a task | Not available |
+| Create, replace, append or prepend checklist rows | Available through Things URLs |
+| Create project templates with headings | Available through Things URLs |
+| Move a task to an existing heading | Available through Things URLs |
+| Duplicate a task or project | Available through Things URLs |
+| Set Evening or a reminder time | Available through Things URLs |
+| Restore open tasks and projects from Trash | Available |
+| Delete projects, areas and tags | Available with container permission |
+| Tag assignment, hierarchy and keyboard shortcuts | Available |
+| Counts, selection, date filters and resumable searches | Available |
 | Edit section headings inside a project | Not available |
 | Create or change repeating schedules | Not available |
 
-This release does not cover every Things operation. Some missing actions have public Things APIs and remain implementation work; others have no supported interface. [The capability reference](docs/CAPABILITIES.md) explains field limits, search behavior, and unavailable features. Tools return their current implementation status through `things_capabilities`.
+Project moves return task counts and observed descendant changes in the same receipt. See [project move results](docs/CAPABILITIES.md#project-move-results) for the counts, changed-task details and read-back limits.
+
+URL operations require [one-time local setup](docs/URL-OPERATIONS.md) for edits and duplication. Their receipts say **“Sent to Things; result not verified”** because Things does not expose complete read-back for those fields.
+
+Native repeat-rule editing, full checklist/heading reads, arbitrary ordering and verified whole-library maintenance are unavailable. [The capability reference](docs/CAPABILITIES.md) explains field limits, search behavior, and unavailable features. Tools return their current implementation status through `things_capabilities`.
 
 ## Requirements
 
@@ -59,7 +71,7 @@ Things and client subscriptions are separate products. This repository does not 
 
 Task content requested in a conversation is shared with that client and its provider. The bridge does not collect Things Cloud credentials, write to the Things database, or provide a shell tool. No telemetry destination is bundled.
 
-Writes require your local grant. Moving a task to Things’ recoverable Trash requires an additional permission so you can allow editing without allowing deletion. Every mutation checks permission, uses a durable request ID, and verifies the result in Things. Edits also require the current item revision. Uncertain writes are never automatically repeated with a new request ID. These checks reduce duplicate and stale edits; Things automation is not transactional and cannot promise automatic rollback.
+Writes require your local grant. Moving a task to Things’ recoverable Trash requires an additional permission so you can allow editing without allowing deletion. Every mutation checks permission and uses a durable request ID. Native task edits verify the exposed result in Things. URL tools report dispatch separately and do not claim a verified result. Edits also require the current item revision. Uncertain writes are never automatically repeated with a new request ID. These checks reduce duplicate and stale edits; Things automation is not transactional and cannot promise automatic rollback.
 
 Local and remote connections share the same permission store, write lock, and request journal. See [Security](SECURITY.md) for the trust boundary and private vulnerability reporting.
 

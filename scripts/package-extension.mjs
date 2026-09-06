@@ -104,6 +104,28 @@ try {
     },
     compatibility: { platforms: ["darwin"], runtimes: { node: ">=24" } },
   };
+  for (const [key, suffix, title, description] of [
+    [
+      "container_delete",
+      "CONTAINER_DELETE",
+      "Delete projects, areas, and tags",
+      "Allows deletion of entire containers, including their children or shared tag assignments. Requires ordinary changes and a fresh scope preview.",
+    ],
+  ]) {
+    for (const browser of [false, true]) {
+      const name = `allow_${browser ? "browser_" : ""}${key}`;
+      manifest.user_config[name] = {
+        type: "boolean",
+        title: `${title}${browser ? " from ChatGPT" : ""}`,
+        description,
+        default: false,
+        required: false,
+      };
+      manifest.server.mcp_config.env[
+        `THINGS_MCP_${browser ? "BROWSER_" : ""}ALLOW_${suffix}`
+      ] = `\${user_config.${name}}`;
+    }
+  }
   await writeFile(
     join(payload, "manifest.json"),
     `${JSON.stringify(manifest, null, 2)}\n`,

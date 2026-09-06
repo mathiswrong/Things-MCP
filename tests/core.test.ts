@@ -16,13 +16,16 @@ import test from "node:test";
 import {
   type Adapter,
   type Create,
+  type DestructiveScope,
   fingerprint,
   type Item,
   type List,
   type Move,
   type Query,
   type Reference,
+  type Restore,
   type Schedule,
+  type ScopeItem,
   type Trash,
   type Update,
 } from "../src/domain.js";
@@ -31,6 +34,14 @@ import { ThingsService } from "../src/service.js";
 import { type Lease, State } from "../src/state.js";
 
 class MemoryAdapter implements Adapter {
+  readonly destructiveVerified = {
+    todo: false,
+    project: true,
+    area: true,
+    tag: true,
+    empty_trash: true,
+    log_completed: true,
+  };
   items = new Map<string, Item>();
   mutations = { create: 0, update: 0, schedule: 0 };
   reads = 0;
@@ -39,6 +50,24 @@ class MemoryAdapter implements Adapter {
   discardWrites = false;
   onRead?: (signal?: AbortSignal) => Promise<void>;
 
+  async scope(input: DestructiveScope): Promise<ScopeItem[]> {
+    const item = input.target ? this.items.get(input.target.id) : undefined;
+    return item ? [{ ...item }] : [];
+  }
+  async destructive() {
+    return true;
+  }
+  async count() {
+    return { count: 0, scanComplete: true, nextScanOffset: null };
+  }
+  async navigate() {
+    return true;
+  }
+  async children(reference: Reference) {
+    return [...this.items.values()]
+      .filter((item) => item.projectId === reference.id)
+      .map((item) => ({ ...item }));
+  }
   async health() {
     return { version: "fixture", running: true, timezone: "UTC" };
   }
@@ -49,6 +78,16 @@ class MemoryAdapter implements Adapter {
     const item = this.items.get(reference.id);
     if (!item || item.kind !== reference.kind)
       throw new BridgeError("NOT_FOUND");
+    if (item.kind === "project" && !item.inTrash) {
+      const children = await this.children(reference);
+      return {
+        ...item,
+        childRevision: fingerprint(
+          children.sort((a, b) => a.id.localeCompare(b.id)),
+        ),
+        childCount: children.length,
+      };
+    }
     return { ...item };
   }
   async find(query: Query) {
@@ -56,11 +95,7 @@ class MemoryAdapter implements Adapter {
       (item) =>
         item.kind === query.kind &&
         item.title.includes(query.text) &&
-        (!query.status || item.status === query.status) &&
-        (!query.parent ||
-          (query.parent.kind === "project" ? item.projectId : item.areaId) ===
-            query.parent.id) &&
-        (query.list === "trash" || !item.inTrash),
+        (!query.status || item.status === query.status),
     );
     const next = query.offset + query.limit;
     const hasMore = matches.length > next;
@@ -130,6 +165,19 @@ class MemoryAdapter implements Adapter {
       const item = await this.get(input.target);
       this.items.set(item.id, { ...item, inTrash: true });
       this.membership.set(item.id, "trash");
+    }
+    return input.target;
+  }
+  restored = 0;
+  async restore(input: Restore) {
+    this.restored++;
+    if (!this.discardWrites) {
+      const item = await this.get(input.target);
+      this.items.set(item.id, { ...item, inTrash: false });
+      this.membership.set(
+        item.id,
+        input.target.kind === "project" ? "today" : "inbox",
+      );
     }
     return input.target;
   }
@@ -981,156 +1029,867 @@ test("missing or trashed move destinations fail before journaling or applying a 
   });
 });
 
-function projectMoveFixture(adapter: MemoryAdapter, count: number) {
-  const project: Item = {
-    kind: "project",
-    id: "project",
-    title: "Synthetic project",
-    areaId: null,
-  };
-  adapter.items.set(project.id, project);
-  for (let i = 0; i < count; i++) {
-    adapter.items.set(`child-${i}`, {
-      kind: "todo",
-      id: `child-${i}`,
-      title: "Synthetic child",
-      notes: "Synthetic private note",
-      projectId: project.id,
-      areaId: null,
-    });
-  }
-  return {
-    requestId: randomUUID(),
-    target: { kind: "project", id: project.id },
-    expectedRevision: fingerprint(project),
-    destination: { kind: "list", list: "someday" },
-  };
-}
-
-test("project moves compare paginated descendants and persist a bounded summary for replay", async () => {
-  await fixture(async ({ adapter, service, directory }) => {
-    const request = projectMoveFixture(adapter, 125);
-    adapter.items.set("unrelated", {
-      kind: "todo",
-      id: "unrelated",
-      title: "Synthetic unrelated task",
-    });
-    const move = adapter.move.bind(adapter);
-    adapter.move = async (input) => {
-      const result = await move(input);
-      for (let i = 0; i < 25; i++) {
-        const child = adapter.items.get(`child-${i}`);
-        assert.ok(child);
-        child.scheduledDate = "2026-09-07";
-      }
-      return result;
+test("tag replacement and incremental edits preserve unrelated fields and replay once", async () => {
+  await fixture(async ({ adapter, service }) => {
+    const item = seed(adapter);
+    adapter.items.set(item.id, { ...item, tagIds: ["tag-a"] });
+    adapter.items.set("tag-a", { kind: "tag", id: "tag-a", title: "A" });
+    adapter.items.set("tag-b", { kind: "tag", id: "tag-b", title: "B" });
+    const current = await service.get({ kind: item.kind, id: item.id });
+    const input = {
+      requestId: randomUUID(),
+      target: { kind: item.kind, id: item.id },
+      expectedRevision: current.revision,
+      changes: { addTagIds: ["tag-b"], removeTagIds: ["tag-a"] },
     };
-    const receipt = await service.move(request);
-    const impact = receipt.descendantImpact;
-    assert.ok(impact);
-    assert.equal(impact.beforeCount, 125);
-    assert.equal(impact.afterCount, 125);
-    assert.equal(impact.beforeComplete, true);
-    assert.equal(impact.afterComplete, true);
-    assert.equal(impact.comparedCount, 125);
-    assert.equal(impact.changedCount, 25);
-    assert.equal(impact.unchangedExposedFieldsCount, 100);
-    assert.equal(impact.notComparedCount, 0);
-    assert.equal(impact.changes.length, 20);
-    assert.equal(impact.changesTruncated, true);
-    assert.deepEqual(impact.changes[0], {
-      id: "child-0",
-      changedFields: ["scheduledDate"],
-    });
-    assert.ok(!JSON.stringify(receipt).includes("Synthetic private note"));
-    adapter.find = async () => {
-      throw new Error("Replay must not query descendants");
-    };
-    const restarted = new ThingsService(adapter, new State(directory));
-    assert.deepEqual(await restarted.move(request), {
-      ...receipt,
-      replayed: true,
-    });
+    input.target = { kind: item.kind, id: item.id };
+    await service.update(input);
     assert.deepEqual(
-      (await restarted.requestStatus({ requestId: request.requestId })).receipt
-        ?.descendantImpact,
-      impact,
+      (await service.get({ kind: item.kind, id: item.id })).tagIds,
+      ["tag-b"],
     );
-    assert.equal(adapter.moved, 1);
+    assert.equal(
+      (await service.get({ kind: item.kind, id: item.id })).title,
+      item.title,
+    );
+    assert.equal((await service.update(input)).replayed, true);
+    assert.equal(adapter.mutations.update, 1);
   });
 });
 
-test("empty, capped and incomplete project reads report their coverage", async () => {
-  for (const count of [0, 1000, 1001]) {
-    await fixture(async ({ adapter, service }) => {
-      const request = projectMoveFixture(adapter, count);
-      const impact = (await service.move(request)).descendantImpact;
-      assert.ok(impact);
-      assert.equal(impact.beforeCount, Math.min(count, 1000));
-      assert.equal(impact.beforeComplete, count <= 1000);
-      assert.equal(impact.afterComplete, count <= 1000);
-      assert.equal(impact.changedCount, 0);
-      assert.equal(impact.comparedCount, Math.min(count, 1000));
-    });
-  }
+test("tag hierarchy cycles fail before a write receipt", async () => {
   await fixture(async ({ adapter, service }) => {
-    const request = projectMoveFixture(adapter, 1);
-    const find = adapter.find.bind(adapter);
-    adapter.find = async (query) => ({
-      ...(await find(query)),
-      scanComplete: false,
+    adapter.items.set("tag-a", {
+      kind: "tag",
+      id: "tag-a",
+      title: "A",
+      parentTagId: null,
+    });
+    adapter.items.set("tag-b", {
+      kind: "tag",
+      id: "tag-b",
+      title: "B",
+      parentTagId: "tag-a",
+    });
+    const target = { kind: "tag", id: "tag-a" };
+    const current = await service.get(target);
+    const requestId = randomUUID();
+    await assert.rejects(
+      service.update({
+        target,
+        expectedRevision: current.revision,
+        requestId,
+        changes: { parentTagId: "tag-b" },
+      }),
+      code("INVALID_INPUT"),
+    );
+    assert.equal(
+      (await service.requestStatus({ requestId })).state,
+      "not_seen",
+    );
+    assert.equal(adapter.mutations.update, 0);
+  });
+});
+
+test("restoration requires writes, an open trashed item and its current revision", async () => {
+  await fixture(async ({ adapter, service, state }) => {
+    const item = { ...seed(adapter), inTrash: true };
+    adapter.items.set(item.id, item);
+    const input = {
+      target: { kind: "todo", id: item.id },
+      requestId: randomUUID(),
+      expectedRevision: fingerprint(item),
+    };
+    await state.setWrites(false);
+    await assert.rejects(service.restore(input), code("READ_ONLY"));
+    await state.setWrites(true);
+    await assert.rejects(
+      service.restore({ ...input, expectedRevision: "0".repeat(64) }),
+      code("STALE_ITEM"),
+    );
+    assert.equal(adapter.restored, 0);
+    assert.equal(
+      (await service.requestStatus({ requestId: input.requestId })).state,
+      "not_seen",
+    );
+  });
+});
+
+test("restoration verifies content and Inbox membership, replays once, and preserves uncertainty", async () => {
+  await fixture(async ({ adapter, service }) => {
+    const item = { ...seed(adapter), inTrash: true };
+    adapter.items.set(item.id, item);
+    const input = {
+      target: { kind: "todo", id: item.id },
+      requestId: randomUUID(),
+      expectedRevision: fingerprint(item),
+    };
+    adapter.discardWrites = true;
+    await assert.rejects(service.restore(input), code("VERIFICATION_FAILED"));
+    await assert.rejects(service.restore(input), code("OUTCOME_UNKNOWN"));
+    assert.equal(adapter.restored, 1);
+    adapter.discardWrites = false;
+    const next = { ...input, requestId: randomUUID() };
+    assert.equal((await service.restore(next)).verification, "read_back");
+    assert.equal((await service.restore(next)).replayed, true);
+    assert.equal(adapter.restored, 2);
+    assert.equal(adapter.items.get(item.id)?.notes, item.notes);
+    const active = {
+      ...next,
+      requestId: randomUUID(),
+      expectedRevision: fingerprint(adapter.items.get(item.id)),
+    };
+    await assert.rejects(service.restore(active), code("INVALID_INPUT"));
+    adapter.items.set(item.id, { ...item, status: "completed" });
+    await assert.rejects(
+      service.restore({
+        ...active,
+        expectedRevision: fingerprint(adapter.items.get(item.id)),
+      }),
+      code("INVALID_INPUT"),
+    );
+  });
+});
+
+test("append edits enforce final limits and reject a concurrent change before writing", async () => {
+  await fixture(async ({ adapter, service }) => {
+    const item = seed(adapter);
+    const current = await service.get({ kind: item.kind, id: item.id });
+    const target = { kind: item.kind, id: item.id };
+    await assert.rejects(
+      service.update({
+        target,
+        requestId: randomUUID(),
+        expectedRevision: current.revision,
+        changes: { appendTitle: "x".repeat(4000) },
+      }),
+      code("INVALID_INPUT"),
+    );
+    assert.equal(adapter.mutations.update, 0);
+    let reads = 0;
+    adapter.onRead = async () => {
+      if (++reads === 2)
+        adapter.items.set(item.id, { ...item, title: "Concurrent edit" });
+    };
+    await assert.rejects(
+      service.update({
+        target,
+        requestId: randomUUID(),
+        expectedRevision: current.revision,
+        changes: { appendNotes: "new" },
+      }),
+      code("STALE_ITEM"),
+    );
+    assert.equal(adapter.mutations.update, 0);
+  });
+});
+
+test("timestamp offsets normalize and type-specific fields stay restricted", async () => {
+  await fixture(async ({ adapter, service }) => {
+    const item = seed(adapter);
+    const current = await service.get({ kind: item.kind, id: item.id });
+    const target = { kind: item.kind, id: item.id };
+    await service.update({
+      target,
+      requestId: randomUUID(),
+      expectedRevision: current.revision,
+      changes: { creationDate: "2026-09-01T05:00:00-07:00" },
     });
     assert.equal(
-      (await service.move(request)).descendantImpact?.beforeComplete,
+      (await service.get(target)).creationDate,
+      "2026-09-01T12:00:00.000Z",
+    );
+    await assert.rejects(
+      service.create({
+        kind: "tag",
+        title: "x",
+        tagIds: [],
+        requestId: randomUUID(),
+      }),
+      code("INVALID_INPUT"),
+    );
+    await assert.rejects(
+      service.create({
+        kind: "project",
+        title: "x",
+        projectId: item.id,
+        requestId: randomUUID(),
+      }),
+      code("INVALID_INPUT"),
+    );
+  });
+});
+
+test("advanced actions require separate grants and reject changed scope before mutation", async () => {
+  await fixture(async ({ adapter, state, service }) => {
+    let applied = 0;
+    const target = { kind: "area" as const, id: "area-scope" };
+    adapter.items.set(target.id, { ...target, title: "Synthetic area" });
+    adapter.scope = async () => [
+      { ...target, title: adapter.items.get(target.id)?.title ?? "" },
+    ];
+    adapter.destructive = async () => {
+      applied++;
+      adapter.items.delete(target.id);
+      return true;
+    };
+    const preview = await service.previewDestructive({
+      action: "delete_container",
+      target,
+    });
+    const input = {
+      action: "delete_container",
+      target,
+      expectedScopeRevision: preview.scopeRevision,
+      requestId: randomUUID(),
+    };
+    await assert.rejects(service.destructive(input), code("ADVANCED_DISABLED"));
+    await state.configureAdvanced({
+      delete_container: true,
+      empty_trash: false,
+      log_completed: false,
+    });
+    adapter.items.set(target.id, { ...target, title: "Changed scope" });
+    await assert.rejects(service.destructive(input), code("STALE_ITEM"));
+    assert.equal(applied, 0);
+    assert.equal(
+      (await service.requestStatus({ requestId: input.requestId })).state,
+      "not_seen",
+    );
+    const updated = await service.previewDestructive({
+      action: "delete_container",
+      target,
+    });
+    const ready = { ...input, expectedScopeRevision: updated.scopeRevision };
+    await service.destructive(ready);
+    assert.equal(applied, 1);
+    assert.equal((await service.destructive(ready)).replayed, true);
+    assert.equal(applied, 1);
+  });
+});
+
+test("advanced grant revocation survives restart and never grants another connection", async () => {
+  await fixture(async ({ directory, state }) => {
+    const local = new State(directory, true, "desktop-extension");
+    const remote = new State(directory, true, "browser");
+    await local.configureClient(true);
+    await remote.configureClient(true);
+    const grants = {
+      delete_container: true,
+      empty_trash: false,
+      log_completed: false,
+    };
+    await local.configureAdvanced(grants);
+    assert.equal(await local.advancedEnabled("delete_container"), true);
+    assert.equal(await remote.advancedEnabled("delete_container"), false);
+    await state.setWrites(false);
+    await local.configureClient(true);
+    await local.configureAdvanced(grants);
+    assert.equal(await local.advancedEnabled("delete_container"), false);
+    await local.configureClient(false);
+    await local.configureClient(true);
+    assert.equal(await local.advancedEnabled("delete_container"), false);
+    await local.configureAdvanced({ ...grants, delete_container: false });
+    await local.configureAdvanced(grants);
+    assert.equal(await local.advancedEnabled("delete_container"), true);
+    assert.equal(
+      await new State(directory, false, "desktop-extension").advancedEnabled(
+        "delete_container",
+      ),
       false,
     );
   });
 });
 
-test("descendants missing from either snapshot are not called unchanged or verified changes", async () => {
-  await fixture(async ({ adapter, service }) => {
-    const request = projectMoveFixture(adapter, 2);
-    const move = adapter.move.bind(adapter);
-    adapter.move = async (input) => {
-      const result = await move(input);
-      adapter.items.delete("child-0");
-      adapter.items.set("new-child", {
-        kind: "todo",
-        id: "new-child",
-        title: "Synthetic new child",
-        projectId: "project",
-      });
-      return result;
-    };
-    const impact = (await service.move(request)).descendantImpact;
-    assert.ok(impact);
-    assert.equal(impact.notComparedCount, 2);
-    assert.equal(impact.comparedCount, 1);
-    assert.equal(impact.changedCount, 0);
-    assert.equal(impact.unchangedExposedFieldsCount, 1);
+test("native action gates and unsupported deletion states reject before journaling", async () => {
+  await fixture(async ({ adapter, state, service }) => {
+    await state.configureAdvanced({
+      delete_container: true,
+      empty_trash: true,
+      log_completed: true,
+    });
+    adapter.destructiveVerified.empty_trash = false;
+    const requestId = randomUUID();
+    await assert.rejects(
+      service.destructive({
+        action: "empty_trash",
+        requestId,
+        expectedScopeRevision: "0".repeat(64),
+      }),
+      code("VERIFICATION_UNAVAILABLE"),
+    );
+    assert.equal(
+      (await service.requestStatus({ requestId })).state,
+      "not_seen",
+    );
+    const target = { kind: "project" as const, id: "trashed-project" };
+    adapter.items.set(target.id, {
+      ...target,
+      title: "Synthetic",
+      status: "open",
+      inTrash: true,
+    });
+    await assert.rejects(
+      service.previewDestructive({ action: "delete_container", target }),
+      code("INVALID_INPUT"),
+    );
+    const child = { ...seed(adapter), inTrash: true, projectId: target.id };
+    adapter.items.set(child.id, child);
+    await assert.rejects(
+      service.restore({
+        target: { kind: "todo", id: child.id },
+        requestId: randomUUID(),
+        expectedRevision: fingerprint(child),
+      }),
+      code("INVALID_INPUT"),
+    );
+    const closed = { ...seed(adapter), status: "completed" as const };
+    adapter.items.set(closed.id, closed);
+    await state.setTrash(true);
+    await assert.rejects(
+      service.trash({
+        target: { kind: "todo", id: closed.id },
+        requestId: randomUUID(),
+        expectedRevision: fingerprint(closed),
+      }),
+      code("VERIFICATION_UNAVAILABLE"),
+    );
+    assert.equal(adapter.trashed + adapter.restored, 0);
   });
 });
 
-test("snapshot failure before a move does not journal; failure afterward prevents retries", async () => {
-  for (const failAfter of [false, true]) {
+test("project deletion never reports verified if unrelated content changes", async () => {
+  await fixture(async ({ adapter, state, service }) => {
+    const project: Item = {
+      kind: "project",
+      id: "project-delete",
+      title: "Synthetic project",
+      status: "open",
+      tagIds: ["tag-keep"],
+    };
+    adapter.items.set(project.id, project);
+    adapter.scope = async () => {
+      const current = adapter.items.get(project.id);
+      assert.ok(current);
+      return [{ ...current }];
+    };
+    adapter.destructive = async () => {
+      adapter.items.set(project.id, { ...project, inTrash: true, tagIds: [] });
+      return true;
+    };
+    await state.configureAdvanced({
+      delete_container: true,
+      empty_trash: false,
+      log_completed: false,
+    });
+    const target = { kind: project.kind, id: project.id };
+    const preview = await service.previewDestructive({
+      action: "delete_container",
+      target,
+    });
+    const requestId = randomUUID();
+    const input = {
+      action: "delete_container",
+      target,
+      requestId,
+      expectedScopeRevision: preview.scopeRevision,
+    };
+    await assert.rejects(
+      service.destructive(input),
+      code("VERIFICATION_FAILED"),
+    );
+    await assert.rejects(service.destructive(input), code("OUTCOME_UNKNOWN"));
+    assert.equal((await service.requestStatus({ requestId })).state, "unknown");
+  });
+});
+
+test("area deletion previews distinguish active contents from retained Logbook projects", async () => {
+  await fixture(async ({ adapter, state, service }) => {
+    const area: Item = {
+      kind: "area",
+      id: "area-delete",
+      title: "Synthetic area",
+    };
+    const open: Item = {
+      kind: "project",
+      id: "open-project",
+      title: "Open",
+      status: "open",
+      areaId: area.id,
+      inTrash: false,
+    };
+    const closed: Item = {
+      ...open,
+      id: "closed-project",
+      title: "Closed",
+      status: "completed",
+    };
+    const openChild: Item = {
+      kind: "todo",
+      id: "open-parent-child",
+      title: "Child",
+      projectId: open.id,
+      status: "completed",
+      areaId: null,
+      inTrash: false,
+    };
+    const closedChild: Item = {
+      ...openChild,
+      id: "closed-parent-child",
+      projectId: closed.id,
+    };
+    for (const item of [area, open, closed, openChild, closedChild])
+      adapter.items.set(item.id, item);
+    adapter.membership.set(closed.id, "logbook");
+    const scope: ScopeItem[] = [
+      area,
+      { ...open, inLogbook: false },
+      { ...closed, inLogbook: true },
+      { ...openChild, inLogbook: true },
+      { ...closedChild, inLogbook: true },
+    ];
+    adapter.scope = async () => scope.map((item) => ({ ...item }));
+    adapter.destructive = async () => {
+      adapter.items.delete(area.id);
+      for (const item of [open, closed, openChild, closedChild])
+        adapter.items.set(item.id, {
+          ...item,
+          areaId: null,
+          inTrash: item.id === open.id || item.projectId === open.id,
+        });
+      return true;
+    };
+    const target = { kind: area.kind, id: area.id };
+    const preview = await service.previewDestructive({
+      action: "delete_container",
+      target,
+    });
+    assert.deepEqual(
+      Object.fromEntries(preview.items.map((item) => [item.id, item.effect])),
+      {
+        [area.id]: "permanent_delete",
+        [open.id]: "move_to_trash",
+        [closed.id]: "detach_from_area",
+        [openChild.id]: "move_to_trash",
+        [closedChild.id]: "detach_from_area",
+      },
+    );
+    await state.configureAdvanced({
+      delete_container: true,
+      empty_trash: false,
+      log_completed: false,
+    });
+    const receipt = await service.destructive({
+      action: "delete_container",
+      target,
+      requestId: randomUUID(),
+      expectedScopeRevision: preview.scopeRevision,
+    });
+    assert.equal(receipt.verification, "read_back");
+    assert.equal(adapter.items.get(closedChild.id)?.projectId, closed.id);
+    assert.equal(adapter.items.get(closed.id)?.inTrash, false);
+  });
+});
+
+test("project revisions reject changed child content and failed cascades remain uncertain", async () => {
+  await fixture(async ({ adapter, service }) => {
+    const target = { kind: "project" as const, id: "project-scope" };
+    adapter.items.set(target.id, {
+      ...target,
+      title: "Project",
+      status: "open",
+    });
+    adapter.items.set("child", {
+      kind: "todo",
+      id: "child",
+      title: "Child",
+      status: "open",
+      projectId: target.id,
+    });
+    const old = await service.get(target);
+    const changedChild = adapter.items.get("child");
+    assert.ok(changedChild);
+    adapter.items.set("child", {
+      ...changedChild,
+      title: "Edited child",
+    });
+    const requestId = randomUUID();
+    await assert.rejects(
+      service.update({
+        target,
+        requestId,
+        expectedRevision: old.revision,
+        changes: { status: "completed" },
+      }),
+      code("STALE_ITEM"),
+    );
+    assert.equal(adapter.mutations.update, 0);
+    const fresh = await service.get(target);
+    await assert.rejects(
+      service.update({
+        target,
+        requestId,
+        expectedRevision: fresh.revision,
+        changes: { status: "completed" },
+      }),
+      code("VERIFICATION_FAILED"),
+    );
+    assert.equal((await service.requestStatus({ requestId })).state, "unknown");
+    assert.equal(adapter.mutations.update, 1);
+  });
+});
+
+test("navigation is permission checked and reports acceptance rather than a task mutation", async () => {
+  await fixture(async ({ service, state }) => {
+    const request = { requestId: randomUUID(), action: "quick_entry" };
+    await state.setWrites(false);
+    await assert.rejects(service.navigate(request), code("READ_ONLY"));
+    await state.setWrites(true);
+    const receipt = await service.navigate(request);
+    assert.equal(receipt.verification, "command_accepted");
+    assert.equal((await service.navigate(request)).replayed, true);
+    await assert.rejects(
+      service.navigate({
+        requestId: randomUUID(),
+        action: "show",
+        url: "file:///tmp",
+      }),
+      code("INVALID_INPUT"),
+    );
+  });
+});
+
+test("URL dispatch preserves permissions, revisions and receipts without storing credentials", async () => {
+  await fixture(async ({ adapter, state, directory }) => {
+    const item = seed(adapter);
+    let sent = 0;
+    let tokenReads = 0;
+    const transport = {
+      token: async () => {
+        tokenReads++;
+        return "synthetic-url-token";
+      },
+      send: async (command: { parameters: Record<string, string> }) => {
+        sent++;
+        assert.equal(command.parameters["auth-token"], "synthetic-url-token");
+      },
+    };
+    const service = new ThingsService(adapter, state, transport);
+    const request = {
+      action: "edit",
+      requestId: randomUUID(),
+      target: { kind: "todo", id: item.id },
+      expectedRevision: fingerprint(item),
+      changes: { checklist: [{ title: "Synthetic checklist text" }] },
+    };
+    await state.setWrites(false);
+    await assert.rejects(service.url(request), code("READ_ONLY"));
+    assert.equal(tokenReads, 0);
+    await state.setWrites(true);
+    await assert.rejects(
+      service.url({ ...request, expectedRevision: "0".repeat(64) }),
+      code("STALE_ITEM"),
+    );
+    assert.equal(sent, 0);
+    const receipt = await service.url(request);
+    assert.equal(receipt.verification, "url_dispatched");
+    assert.equal(sent, 1);
+    assert.equal(
+      (await service.requestStatus({ requestId: request.requestId })).state,
+      "dispatched",
+    );
+    assert.equal(
+      (
+        await new ThingsService(adapter, new State(directory), transport).url(
+          request,
+        )
+      ).replayed,
+      true,
+    );
+    assert.equal(sent, 1);
+    const stored = JSON.stringify(await state.operation(request.requestId));
+    assert.ok(!stored.includes("synthetic-url-token"));
+    assert.ok(!stored.includes("Synthetic checklist text"));
+    await assert.rejects(
+      service.url({ ...request, changes: { when: "evening" } }),
+      code("REQUEST_CONFLICT"),
+    );
+    await state.setWrites(false);
+    await assert.rejects(service.url(request), code("READ_ONLY"));
+  });
+});
+
+test("URL token failures and changes during Keychain access reject before dispatch", async () => {
+  await fixture(async ({ adapter, state }) => {
+    const item = seed(adapter);
+    let sent = 0;
+    const request = {
+      action: "duplicate",
+      requestId: randomUUID(),
+      target: { kind: "todo", id: item.id },
+      expectedRevision: fingerprint(item),
+    };
+    const missing = new ThingsService(adapter, state, {
+      token: async () => {
+        throw new BridgeError("URL_AUTH_REQUIRED");
+      },
+      send: async () => {
+        sent++;
+      },
+    });
+    await assert.rejects(missing.url(request), code("URL_AUTH_REQUIRED"));
+    assert.equal(await state.operation(request.requestId), undefined);
+    const changed = new ThingsService(adapter, state, {
+      token: async () => {
+        adapter.items.set(item.id, { ...item, title: "Changed elsewhere" });
+        return "synthetic";
+      },
+      send: async () => {
+        sent++;
+      },
+    });
+    await assert.rejects(changed.url(request), code("STALE_ITEM"));
+    assert.equal(sent, 0);
+    assert.equal(await state.operation(request.requestId), undefined);
+  });
+});
+
+test("uncertain URL dispatch never replays and cannot claim a created ID", async () => {
+  await fixture(async ({ adapter, state, directory }) => {
+    let sent = 0;
+    const request = {
+      action: "template",
+      requestId: randomUUID(),
+      item: { kind: "todo", title: "Synthetic template" },
+    };
+    const transport = {
+      token: async () => {
+        throw new Error("No token needed");
+      },
+      send: async () => {
+        sent++;
+        throw new Error("Disconnected after delivery");
+      },
+    };
+    const service = new ThingsService(adapter, state, transport);
+    await assert.rejects(service.url(request), code("OUTCOME_UNKNOWN"));
+    await assert.rejects(
+      new ThingsService(adapter, new State(directory), transport).url(request),
+      code("OUTCOME_UNKNOWN"),
+    );
+    assert.equal(sent, 1);
+    const success = await new ThingsService(adapter, state, {
+      ...transport,
+      send: async () => {},
+    }).url({ ...request, requestId: randomUUID() });
+    assert.equal(success.target, undefined);
+    assert.equal(success.verification, "url_dispatched");
+  });
+});
+
+test("URL templates validate parents and payload size without dispatching", async () => {
+  await fixture(async ({ adapter, state }) => {
+    let sent = 0;
+    const service = new ThingsService(adapter, state, {
+      token: async () => "",
+      send: async () => {
+        sent++;
+      },
+    });
+    const request = {
+      action: "template",
+      requestId: randomUUID(),
+      item: {
+        kind: "todo",
+        title: "Synthetic",
+        list: { kind: "project", id: "missing" },
+      },
+    };
+    await assert.rejects(service.url(request), code("NOT_FOUND"));
+    await assert.rejects(
+      service.url({
+        action: "template",
+        requestId: randomUUID(),
+        item: {
+          kind: "project",
+          title: "Synthetic",
+          items: Array.from({ length: 100 }, () => ({
+            kind: "todo",
+            title: "a".repeat(4000),
+            notes: "b".repeat(10000),
+          })),
+        },
+      }),
+      code("INVALID_INPUT"),
+    );
+    assert.equal(sent, 0);
+  });
+});
+
+function projectFixture(adapter: MemoryAdapter, count: number) {
+  const target = { kind: "project" as const, id: "impact-project" };
+  adapter.items.set(target.id, {
+    ...target,
+    title: "Private project",
+    status: "open",
+  });
+  for (let i = 0; i < count; i++) {
+    const id = `impact-child-${String(i).padStart(4, "0")}`;
+    adapter.items.set(id, {
+      kind: "todo",
+      id,
+      projectId: target.id,
+      title: "Private child title",
+      notes: "Private child notes",
+      status: i % 2 ? "completed" : "open",
+      areaId: null,
+      scheduledDate: null,
+      tagIds: ["tag-a", "tag-b"],
+    });
+  }
+  return target;
+}
+
+test("project move receipts report all compared tasks, bound changed details and survive restart without content", async () => {
+  await fixture(async ({ adapter, service, state, directory }) => {
+    const target = projectFixture(adapter, 25);
+    adapter.items.set("destination-area", {
+      kind: "area",
+      id: "destination-area",
+      title: "Destination",
+    });
+    const move = adapter.move.bind(adapter);
+    adapter.move = async (input) => {
+      const result = await move(input);
+      for (const item of await adapter.children(target))
+        adapter.items.set(item.id, { ...item, areaId: "destination-area" });
+      return result;
+    };
+    const request = {
+      requestId: randomUUID(),
+      target,
+      expectedRevision: (await service.get(target)).revision,
+      destination: { kind: "area", id: "destination-area" },
+    };
+    const result = await service.move(request);
+    const impact = result.descendantImpact;
+    assert.ok(impact);
+    assert.equal(impact.beforeCount, 25);
+    assert.equal(impact.afterCount, 25);
+    assert.equal(impact.beforeComplete, true);
+    assert.equal(impact.afterComplete, true);
+    assert.equal(impact.comparedCount, 25);
+    assert.equal(impact.changedCount, 25);
+    assert.equal(impact.unchangedExposedFieldsCount, 0);
+    assert.equal(impact.notComparedCount, 0);
+    assert.equal(impact.changes.length, 20);
+    assert.equal(impact.changesTruncated, true);
+    assert.ok(
+      impact.changes.every(
+        (item) => JSON.stringify(item.changedFields) === '["areaId"]',
+      ),
+    );
+    assert.ok(!JSON.stringify(result).includes("Private"));
+    const savedReceipt = (await state.operation(request.requestId))?.receipt;
+    assert.ok(savedReceipt && savedReceipt.verification !== "url_dispatched");
+    assert.deepEqual(savedReceipt.descendantImpact, impact);
+    adapter.get = async () => {
+      throw new Error("Replay must not read Things");
+    };
+    const replay = await new ThingsService(adapter, new State(directory)).move(
+      request,
+    );
+    assert.deepEqual(replay, { ...result, replayed: true });
+    assert.equal(adapter.moved, 1);
+  });
+});
+
+test("project move comparison includes tasks beyond 1000 and compares array contents", async () => {
+  await fixture(async ({ adapter, service }) => {
+    const target = projectFixture(adapter, 1205);
+    const move = adapter.move.bind(adapter);
+    adapter.move = async (input) => {
+      const result = await move(input);
+      for (const item of await adapter.children(target))
+        adapter.items.set(item.id, {
+          ...item,
+          tagIds: [...(item.tagIds ?? [])].reverse(),
+          ...(item.id === "impact-child-1204"
+            ? { scheduledDate: "2026-10-01" }
+            : {}),
+        });
+      return result;
+    };
+    const result = await service.move({
+      requestId: randomUUID(),
+      target,
+      expectedRevision: (await service.get(target)).revision,
+      destination: { kind: "list", list: "today" },
+    });
+    assert.equal(result.descendantImpact?.comparedCount, 1205);
+    assert.equal(result.descendantImpact?.changedCount, 1);
+    assert.equal(result.descendantImpact?.unchangedExposedFieldsCount, 1204);
+    assert.deepEqual(result.descendantImpact?.changes, [
+      { id: "impact-child-1204", changedFields: ["scheduledDate"] },
+    ]);
+  });
+});
+
+test("empty and unchanged project descendants remain distinct from inherited move effects", async () => {
+  for (const count of [0, 2]) {
     await fixture(async ({ adapter, service }) => {
-      const request = projectMoveFixture(adapter, 1);
-      const find = adapter.find.bind(adapter);
-      adapter.find = async (query) => {
-        if (!failAfter || adapter.moved)
-          throw new BridgeError("NATIVE_FAILURE");
-        return find(query);
+      const target = projectFixture(adapter, count);
+      for (const destination of [
+        { kind: "list", list: "today" },
+        { kind: "list", list: "someday" },
+        { kind: "detach", parent: "area" },
+      ]) {
+        const result = await service.move({
+          requestId: randomUUID(),
+          target,
+          expectedRevision: (await service.get(target)).revision,
+          destination,
+        });
+        assert.equal(result.descendantImpact?.comparedCount, count);
+        assert.equal(result.descendantImpact?.changedCount, 0);
+        assert.equal(
+          result.descendantImpact?.unchangedExposedFieldsCount,
+          count,
+        );
+        assert.deepEqual(result.descendantImpact?.changes, []);
+        assert.equal(result.descendantImpact?.changesTruncated, false);
+        assert.match(
+          result.descendantImpact?.limitations ?? "",
+          /Unchanged exposed fields do not mean unaffected/,
+        );
+      }
+    });
+  }
+});
+
+test("project child read failures prevent a move or leave it uncertain without replay", async () => {
+  for (const failBefore of [true, false]) {
+    await fixture(async ({ adapter, service, state }) => {
+      const target = projectFixture(adapter, 2);
+      const request = {
+        requestId: randomUUID(),
+        target,
+        expectedRevision: (await service.get(target)).revision,
+        destination: { kind: "list", list: "today" },
       };
-      await assert.rejects(
-        service.move(request),
-        code(failAfter ? "OUTCOME_UNKNOWN" : "NATIVE_FAILURE"),
-      );
-      assert.equal(adapter.moved, failAfter ? 1 : 0);
-      assert.equal(
-        (await service.requestStatus({ requestId: request.requestId })).state,
-        failAfter ? "unknown" : "not_seen",
-      );
-      if (failAfter) {
+      const children = adapter.children.bind(adapter);
+      adapter.children = async (reference) => {
+        if (failBefore || adapter.moved)
+          throw new BridgeError("NATIVE_FAILURE");
+        return children(reference);
+      };
+      await assert.rejects(service.move(request));
+      assert.equal(adapter.moved, failBefore ? 0 : 1);
+      const recorded = await state.operation(request.requestId);
+      if (failBefore) assert.equal(recorded, undefined);
+      else {
+        assert.equal(recorded?.state, "unknown");
+        assert.equal(recorded?.receipt, undefined);
         await assert.rejects(service.move(request), code("OUTCOME_UNKNOWN"));
         assert.equal(adapter.moved, 1);
       }
@@ -1138,42 +1897,61 @@ test("snapshot failure before a move does not journal; failure afterward prevent
   }
 });
 
-test("a project edited during the descendant snapshot is rejected before moving", async () => {
-  await fixture(async ({ adapter, service }) => {
-    const request = projectMoveFixture(adapter, 1);
-    const find = adapter.find.bind(adapter);
-    adapter.find = async (query) => {
-      const project = adapter.items.get("project");
-      assert.ok(project);
-      project.title = "Synthetic concurrent edit";
-      return find(query);
-    };
-    await assert.rejects(service.move(request), code("STALE_ITEM"));
-    assert.equal(adapter.moved, 0);
-    assert.equal(
-      (await service.requestStatus({ requestId: request.requestId })).state,
-      "not_seen",
-    );
-  });
-});
-
-test("project area, detach and Today moves also include descendant observations", async () => {
-  for (const destination of [
-    { kind: "area", id: "area" },
-    { kind: "detach", parent: "area" },
-    { kind: "list", list: "today" },
-  ]) {
-    await fixture(async ({ adapter, service }) => {
-      const request = projectMoveFixture(adapter, 1);
-      adapter.items.set("area", {
-        kind: "area",
-        id: "area",
-        title: "Synthetic area",
-      });
-      const impact = (await service.move({ ...request, destination }))
-        .descendantImpact;
-      assert.equal(impact?.comparedCount, 1);
-      assert.equal(impact?.changedCount, 0);
+test("changed project membership or protected child content cannot produce an impact success receipt", async () => {
+  for (const change of ["add", "remove", "notes"]) {
+    await fixture(async ({ adapter, service, state }) => {
+      const target = projectFixture(adapter, 2);
+      const move = adapter.move.bind(adapter);
+      adapter.move = async (input) => {
+        const result = await move(input);
+        const child = adapter.items.get("impact-child-0000");
+        assert.ok(child);
+        if (change === "remove") adapter.items.delete(child.id);
+        else if (change === "add")
+          adapter.items.set("new-child", { ...child, id: "new-child" });
+        else
+          adapter.items.set(child.id, {
+            ...child,
+            notes: "Unexpected content change",
+          });
+        return result;
+      };
+      const request = {
+        requestId: randomUUID(),
+        target,
+        expectedRevision: (await service.get(target)).revision,
+        destination: { kind: "list", list: "today" },
+      };
+      await assert.rejects(service.move(request), code("VERIFICATION_FAILED"));
+      assert.equal(
+        (await state.operation(request.requestId))?.state,
+        "unknown",
+      );
+      await assert.rejects(service.move(request), code("OUTCOME_UNKNOWN"));
+      assert.equal(adapter.moved, 1);
     });
   }
+});
+
+test("individual task moves and existing receipts retain their original shape", async () => {
+  await fixture(async ({ adapter, service, state }) => {
+    const item = seed(adapter);
+    const request = {
+      requestId: randomUUID(),
+      target: { kind: item.kind, id: item.id },
+      expectedRevision: fingerprint(item),
+      destination: { kind: "list", list: "today" },
+    };
+    const result = await service.move(request);
+    assert.equal("descendantImpact" in result, false);
+    assert.equal(
+      "descendantImpact" in
+        ((await state.operation(request.requestId))?.receipt ?? {}),
+      false,
+    );
+    assert.deepEqual(await service.move(request), {
+      ...result,
+      replayed: true,
+    });
+  });
 });

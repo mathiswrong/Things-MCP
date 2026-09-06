@@ -13,6 +13,7 @@ import {
 import { join } from "node:path";
 import lockfile from "proper-lockfile";
 import { z } from "zod";
+import type { DestructiveAction } from "./domain.js";
 import { BridgeError } from "./errors.js";
 
 export const descendantImpactSchema = z.strictObject({
@@ -44,14 +45,26 @@ export const receiptSchema = z.strictObject({
     id: z.string(),
   }),
   changedFields: z.array(z.string()),
-  verification: z.literal("read_back"),
+  verification: z.enum(["read_back", "command_accepted"]),
   descendantImpact: descendantImpactSchema.optional(),
 });
 export type Receipt = z.infer<typeof receiptSchema>;
+export const urlReceiptSchema = z.strictObject({
+  requestId: z.uuid(),
+  target: z
+    .strictObject({ kind: z.enum(["todo", "project"]), id: z.string() })
+    .optional(),
+  operation: z.enum(["template", "edit", "duplicate", "navigate"]),
+  verification: z.literal("url_dispatched"),
+  message: z.literal(
+    "Sent to Things; result not verified. Inspect Things before making another change. Do not repeat this request with a new ID.",
+  ),
+});
+export type UrlReceipt = z.infer<typeof urlReceiptSchema>;
 const recordSchema = z.strictObject({
   fingerprint: z.string().regex(/^[a-f0-9]{64}$/),
-  state: z.enum(["pending", "completed", "unknown"]),
-  receipt: receiptSchema.optional(),
+  state: z.enum(["pending", "completed", "unknown", "dispatched"]),
+  receipt: z.union([receiptSchema, urlReceiptSchema]).optional(),
 });
 export type OperationRecord = z.infer<typeof recordSchema>;
 export const clientIdSchema = z.enum([
@@ -159,6 +172,54 @@ export class State {
       ? settings.clients?.[this.clientId]?.enabled === true
       : settings.allowTrash;
   }
+  async advancedEnabled(action: DestructiveAction) {
+    if (!(await this.writesEnabled())) return false;
+    const settings = await this.advancedSettings(action);
+    return this.clientId
+      ? settings.clients?.[this.clientId]?.enabled === true
+      : settings.allowWrites;
+  }
+  private async advancedSettings(action: DestructiveAction) {
+    if (!["delete_container", "empty_trash", "log_completed"].includes(action))
+      throw new BridgeError("INVALID_INPUT");
+    const value = await this.read(`${action}-settings.json`);
+    if (value === undefined)
+      return { allowWrites: false } as z.infer<typeof settingsSchema>;
+    const parsed = settingsSchema.safeParse(value);
+    if (!parsed.success) throw new BridgeError("STATE_FAILURE");
+    return parsed.data;
+  }
+  async configureAdvanced(grants: Record<DestructiveAction, boolean>) {
+    await this.exclusive(async (lease) => {
+      for (const action of [
+        "delete_container",
+        "empty_trash",
+        "log_completed",
+      ] as const) {
+        const settings = await this.advancedSettings(action);
+        const enabled = grants[action];
+        if (this.clientId) {
+          if (settings.clients?.[this.clientId]?.configured !== enabled)
+            await this.write(
+              `${action}-settings.json`,
+              {
+                ...settings,
+                clients: {
+                  ...settings.clients,
+                  [this.clientId]: { configured: enabled, enabled },
+                },
+              },
+              lease,
+            );
+        } else
+          await this.write(
+            `${action}-settings.json`,
+            { ...settings, allowWrites: enabled },
+            lease,
+          );
+      }
+    });
+  }
   private async trashSettings() {
     const value = await this.read("trash-settings.json");
     if (value === undefined)
@@ -213,6 +274,20 @@ export class State {
     await this.exclusive(async (lease) => {
       const settings = await this.settings();
       if (!enabled) {
+        for (const action of [
+          "delete_container",
+          "empty_trash",
+          "log_completed",
+        ] as const) {
+          const advanced = await this.advancedSettings(action);
+          for (const grant of Object.values(advanced.clients ?? {}))
+            grant.enabled = false;
+          await this.write(
+            `${action}-settings.json`,
+            { ...advanced, allowWrites: false },
+            lease,
+          );
+        }
         const trash = await this.trashSettings();
         for (const grant of Object.values(trash.clients ?? {}))
           grant.enabled = false;
