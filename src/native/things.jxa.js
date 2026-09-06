@@ -1,0 +1,251 @@
+ObjC.import("Foundation");
+
+// biome-ignore lint/correctness/noUnusedVariables: Entry point invoked by osascript.
+function run() {
+  function fail(code) {
+    throw new Error(code);
+  }
+  try {
+    const data = $.NSFileHandle.fileHandleWithStandardInput.readDataToEndOfFile;
+    const text = ObjC.unwrap(
+      $.NSString.alloc.initWithDataEncoding(data, $.NSUTF8StringEncoding),
+    );
+    const request = JSON.parse(text);
+    const app = Application("com.culturedcode.ThingsMac");
+    if (!app.running()) fail("APP_UNAVAILABLE");
+
+    function collection(kind) {
+      switch (kind) {
+        case "todo":
+          return app.toDos;
+        case "project":
+          return app.projects;
+        case "area":
+          return app.areas;
+        case "tag":
+          return app.tags;
+        default:
+          return fail("INVALID_INPUT");
+      }
+    }
+    function resolve(reference) {
+      const item = collection(reference.kind).byId(reference.id);
+      if (!item.exists()) fail("NOT_FOUND");
+      if (reference.kind === "todo" && app.projects.byId(reference.id).exists())
+        fail("INVALID_INPUT");
+      return item;
+    }
+    function builtin(name) {
+      const ids = {
+        inbox: "TMInboxListSource",
+        today: "TMTodayListSource",
+        anytime: "TMNextListSource",
+        upcoming: "TMCalendarListSource",
+        someday: "TMSomedayListSource",
+        logbook: "TMLogbookListSource",
+        trash: "TMTrashListSource",
+      };
+      if (!ids[name]) fail("INVALID_INPUT");
+      const list = app.lists.byId(ids[name]);
+      if (!list.exists()) fail("NOT_FOUND");
+      return list;
+    }
+    let trashIds;
+    function inTrash(id) {
+      if (!trashIds) trashIds = builtin("trash").toDos.id();
+      return trashIds.indexOf(id) >= 0;
+    }
+    function dateOnly(value) {
+      if (!value?.getFullYear || !Number.isFinite(value.getTime())) return null;
+      return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
+    }
+    function localDate(value) {
+      const parts = value.split("-").map(Number);
+      const date = new Date(0);
+      date.setFullYear(parts[0], parts[1] - 1, parts[2]);
+      date.setHours(12, 0, 0, 0);
+      return date;
+    }
+    function parentId(property) {
+      const parent = property();
+      if (!parent) return null;
+      return parent.id() || null;
+    }
+    function serialize(item, kind) {
+      const result = { kind: kind, id: item.id(), title: item.name() };
+      if (kind === "todo" || kind === "project") {
+        result.inTrash = inTrash(result.id);
+        result.notes = item.notes() || "";
+        result.status = item.status();
+        result.deadline = dateOnly(item.dueDate());
+        result.scheduledDate = dateOnly(item.activationDate());
+        result.areaId = parentId(item.area);
+        if (kind === "todo") result.projectId = parentId(item.project);
+        result.tagNames = item.tagNames() || "";
+      } else if (kind === "area") {
+        result.tagNames = item.tagNames() || "";
+      } else {
+        result.parentTagId = parentId(item.parentTag);
+        result.keyboardShortcut = item.keyboardShortcut() || "";
+      }
+      return result;
+    }
+    let result;
+    const input = request.input;
+    switch (request.operation) {
+      case "health":
+        result = {
+          version: app.version(),
+          running: true,
+          timezone: ObjC.unwrap($.NSTimeZone.localTimeZone.name),
+        };
+        break;
+      case "get":
+        result = serialize(resolve(input), input.kind);
+        break;
+      case "find": {
+        const scoped = input.list || input.parent;
+        const source = input.list
+          ? builtin(input.list).toDos
+          : input.parent
+            ? resolve(input.parent).toDos
+            : collection(input.kind);
+        const objects = source();
+        const ids = source.id();
+        const titles = input.text ? source.name() : [];
+        const notes =
+          input.text && (input.kind === "todo" || input.kind === "project")
+            ? source.notes()
+            : [];
+        const statuses = input.status ? source.status() : [];
+        const projectIds =
+          input.kind === "todo" || scoped ? app.projects.id() : [];
+        const targetCount = input.offset + input.limit + 1;
+        const matches = [];
+        let scanned = 0;
+        for (; scanned < Math.min(objects.length, 5000); scanned++) {
+          const object = objects[scanned];
+          const id = ids[scanned];
+          if (input.kind === "todo" && projectIds.indexOf(id) >= 0) continue;
+          if (input.kind === "project" && scoped && projectIds.indexOf(id) < 0)
+            continue;
+          if (
+            !input.list &&
+            (input.kind === "todo" || input.kind === "project") &&
+            inTrash(id)
+          )
+            continue;
+          if (input.status && statuses[scanned] !== input.status) continue;
+          const searchable =
+            `${titles[scanned] || ""}\n${notes[scanned] || ""}`.toLowerCase();
+          if (input.text && searchable.indexOf(input.text.toLowerCase()) < 0)
+            continue;
+          const item = serialize(object, input.kind);
+          if (item.id !== id || (input.status && item.status !== input.status))
+            continue;
+          if (
+            input.text &&
+            `${item.title}\n${item.notes || ""}`
+              .toLowerCase()
+              .indexOf(input.text.toLowerCase()) < 0
+          )
+            continue;
+          matches.push(item);
+          if (matches.length >= targetCount) {
+            scanned++;
+            break;
+          }
+        }
+        const hasMore = matches.length > input.offset + input.limit;
+        result = {
+          items: matches.slice(input.offset, input.offset + input.limit),
+          hasMore: hasMore,
+          scanComplete: scanned >= objects.length,
+          nextOffset: hasMore ? input.offset + input.limit : null,
+        };
+        break;
+      }
+      case "create": {
+        const properties = { name: input.title };
+        if (input.notes !== undefined) properties.notes = input.notes;
+        let item;
+        switch (input.kind) {
+          case "todo":
+            item = app.ToDo(properties);
+            break;
+          case "project":
+            item = app.Project(properties);
+            break;
+          case "area":
+            item = app.Area(properties);
+            break;
+          case "tag":
+            item = app.Tag(properties);
+            break;
+          default:
+            fail("INVALID_INPUT");
+        }
+        collection(input.kind).push(item);
+        result = { kind: input.kind, id: item.id() };
+        break;
+      }
+      case "update": {
+        const item = resolve(input.target);
+        const changes = input.changes;
+        if (changes.title !== undefined) item.name = changes.title;
+        if (changes.notes !== undefined) item.notes = changes.notes;
+        if (changes.status !== undefined) item.status = changes.status;
+        if (changes.deadline !== undefined) {
+          if (changes.deadline === null) app.delete(item.dueDate);
+          else item.dueDate = localDate(changes.deadline);
+        }
+        result = input.target;
+        break;
+      }
+      case "schedule":
+        app.schedule(resolve(input.target), { for: localDate(input.date) });
+        result = input.target;
+        break;
+      case "inList":
+        result = builtin(input.list).toDos.byId(input.target.id).exists();
+        break;
+      case "move": {
+        const item = resolve(input.target);
+        if (inTrash(input.target.id)) fail("INVALID_INPUT");
+        const destination = input.destination;
+        if (destination.kind === "project") item.project = resolve(destination);
+        else if (destination.kind === "area") item.area = resolve(destination);
+        else if (
+          destination.kind === "detach" &&
+          destination.parent === "project"
+        )
+          app.delete(item.project);
+        else if (destination.kind === "detach" && destination.parent === "area")
+          app.delete(item.area);
+        else fail("INVALID_INPUT");
+        result = input.target;
+        break;
+      }
+      case "trash": {
+        if (input.target.kind !== "todo") fail("INVALID_INPUT");
+        const item = resolve(input.target);
+        if (inTrash(input.target.id)) fail("INVALID_INPUT");
+        app.delete(item);
+        result = input.target;
+        break;
+      }
+      default:
+        fail("INVALID_INPUT");
+    }
+    return JSON.stringify({ ok: true, result: result });
+  } catch (error) {
+    const allowed = ["APP_UNAVAILABLE", "NOT_FOUND", "INVALID_INPUT"];
+    const code =
+      Number(error.errorNumber) === -1743
+        ? "AUTOMATION_DENIED"
+        : allowed.indexOf(error.message) >= 0
+          ? error.message
+          : "NATIVE_FAILURE";
+    return JSON.stringify({ ok: false, code: code });
+  }
+}

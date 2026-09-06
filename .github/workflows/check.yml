@@ -1,0 +1,29 @@
+name: Check
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '41 9 * * 1'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: check-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm run smoke
+      - run: npm run package:extension
+      - run: npm run smoke:extension
+      - run: npm audit --audit-level=high

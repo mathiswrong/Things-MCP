@@ -1,0 +1,15 @@
+node_modules/
+.env
+.env.*
+!.env.example
+.DS_Store
+*.log
+dist/
+build/
+coverage/
+.cache/
+.build/
+*.tsbuildinfo
+*.mcpb
+*.mcpb.sha256
+*.sarif
