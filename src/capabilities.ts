@@ -9,7 +9,8 @@ export const capabilities = [
     operation: "find_items",
     state: "implemented",
     adapter: "applescript",
-    limitation: "Bounded scan of 5000 objects; pagination is not a snapshot.",
+    limitation:
+      "Built-in list and project/area filters supported. Trash excluded by default. Bounded scan of 5000 objects; pagination is not a snapshot.",
   },
   { operation: "get_item", state: "implemented", adapter: "applescript" },
   {
@@ -18,7 +19,7 @@ export const capabilities = [
     adapter: "applescript",
     validation: "todo_live_write_verified_3.23.3",
     limitation:
-      "Local write permission required. Project, area and tag creation remain unverified.",
+      "Local write permission required. To-do and project creation verified; area and tag creation remain unverified.",
   },
   {
     operation: "update_item",
@@ -37,6 +38,22 @@ export const capabilities = [
       "To-do calendar-date scheduling verified; projects remain unverified. Clearing, Evening and reminders are not implemented.",
   },
   {
+    operation: "move_item",
+    state: "implemented",
+    adapter: "applescript",
+    validation: "todo_lists_project_and_detach_live_verified_3.23.3",
+    limitation:
+      "Inbox, Today, Anytime, Someday, project placement and project detachment verified. Area placement and Logbook moves remain experimental. No headings, reordering, or Trash restoration.",
+  },
+  {
+    operation: "trash_item",
+    state: "implemented",
+    adapter: "applescript",
+    validation: "single_todo_live_write_verified_3.23.3",
+    limitation:
+      "Requires separate per-connection Trash permission plus ordinary writes. Moves one to-do and its checklist to Trash. No container deletion, permanent deletion, or restore.",
+  },
+  {
     operation: "request_status",
     state: "implemented",
     adapter: "local_journal",
@@ -46,23 +63,23 @@ export const capabilities = [
     state: "unavailable",
     adapter: "shortcuts",
     limitation:
-      "A reviewed, installed Shortcuts bridge is required; not included yet.",
+      "Excluded: Apple Shortcuts dependencies are not part of this product.",
   },
   {
     operation: "checklists",
     state: "unavailable",
     adapter: "shortcuts",
     limitation:
-      "Lossless checklist round trips must be proven before enabling writes.",
+      "Full checklist queries and checked-row editing are unavailable without Apple Shortcuts, which is excluded. URL writes do not supply a read-back interface.",
   },
   {
-    operation: "move_duplicate_tags_history",
+    operation: "duplicate_tags_history",
     state: "unavailable",
     adapter: "applescript",
     limitation: "Public routes identified; implementation pending.",
   },
   {
-    operation: "trash_delete_restore",
+    operation: "container_delete_permanent_delete_restore",
     state: "unavailable",
     adapter: "applescript",
     limitation:
@@ -71,7 +88,8 @@ export const capabilities = [
   {
     operation: "repeat_rules",
     state: "unavailable",
-    limitation: "No supported public editing interface established.",
+    limitation:
+      "Excluded: no supported public editing interface. No replacement scheduler.",
   },
   {
     operation: "exact_ordering",

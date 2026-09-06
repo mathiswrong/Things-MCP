@@ -14,6 +14,7 @@ await mkdir(join(destination, "native"), { recursive: true, mode: 0o700 });
 for (const filename of [
   "cli.mjs",
   "native/things.jxa.js",
+  "native/move-list.applescript",
   "THIRD-PARTY-NOTICES.txt",
 ]) {
   await copyFile(join(build, filename), join(destination, filename));

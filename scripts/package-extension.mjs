@@ -56,6 +56,10 @@ try {
         env: {
           // biome-ignore lint/suspicious/noTemplateCurlyInString: The host reads the user's native extension setting.
           THINGS_MCP_ALLOW_WRITES: "${user_config.allow_changes}",
+          // biome-ignore lint/suspicious/noTemplateCurlyInString: The host owns the separate Trash grant.
+          THINGS_MCP_ALLOW_TRASH: "${user_config.allow_trash}",
+          // biome-ignore lint/suspicious/noTemplateCurlyInString: The host owns the remote Trash grant.
+          THINGS_MCP_BROWSER_ALLOW_TRASH: "${user_config.allow_browser_trash}",
           THINGS_MCP_BROWSER_ALLOW_WRITES:
             // biome-ignore lint/suspicious/noTemplateCurlyInString: The host owns the remote connection grant.
             "${user_config.allow_browser_changes}",
@@ -64,6 +68,22 @@ try {
     },
     tools_generated: true,
     user_config: {
+      allow_trash: {
+        type: "boolean",
+        title: "Allow moving to Trash",
+        description:
+          "Allow this connection to move individual to-dos and their checklists to Things Trash. Also requires Allow changes. Does not allow permanent deletion.",
+        default: false,
+        required: false,
+      },
+      allow_browser_trash: {
+        type: "boolean",
+        title: "Allow moving to Trash from ChatGPT",
+        description:
+          "Allow the connected tunnel to move individual to-dos and their checklists to Things Trash. Also requires Allow changes from ChatGPT. Does not allow permanent deletion.",
+        default: false,
+        required: false,
+      },
       allow_browser_changes: {
         type: "boolean",
         title: "Allow changes from ChatGPT",
@@ -124,6 +144,7 @@ try {
     "README.md",
     "server/cli.mjs",
     "server/native/things.jxa.js",
+    "server/native/move-list.applescript",
     "server/THIRD-PARTY-NOTICES.txt",
     ...(metadata.license !== "UNLICENSED" ? ["LICENSE"] : []),
   ]) {

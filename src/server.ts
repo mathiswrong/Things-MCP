@@ -3,9 +3,11 @@ import { z } from "zod";
 import { capabilities } from "./capabilities.js";
 import {
   createSchema,
+  moveSchema,
   querySchema,
   referenceSchema,
   scheduleSchema,
+  trashSchema,
   updateSchema,
 } from "./domain.js";
 import { publicError } from "./errors.js";
@@ -69,14 +71,14 @@ export function createServer(service: ThingsService) {
   );
   register(
     "things_health",
-    "Check the local Things connection, timezone, and ordinary-write permission.",
+    "Check the local Things connection, timezone, ordinary-write permission, and separate Trash permission.",
     z.strictObject({}),
     true,
     () => service.health(),
   );
   register(
     "things_find_items",
-    "Find items by type, title or notes, and optional status. Notes are omitted unless requested. Results are bounded and are not a consistent snapshot. Fetch an item before editing.",
+    "Find items by type, title or notes, status, built-in list, or project/area parent. Trash is excluded unless its list is requested. Notes are omitted unless requested. Results are bounded and not a snapshot. Fetch an item before editing.",
     querySchema,
     true,
     (input) => service.find(input),
@@ -90,7 +92,7 @@ export function createServer(service: ThingsService) {
   );
   register(
     "things_create_item",
-    "Create a to-do, project, area, or tag. Supply a unique UUID requestId. To-do creation is verified; other item types remain experimental. Local write permission is required and disabled by default.",
+    "Create a to-do, project, area, or tag. Supply a unique UUID requestId. To-do and project creation are verified; area and tag creation remain experimental. Local write permission is required and disabled by default.",
     createSchema,
     false,
     (input) => service.create(input),
@@ -109,6 +111,22 @@ export function createServer(service: ThingsService) {
     scheduleSchema,
     false,
     (input) => service.schedule(input),
+    true,
+  );
+  register(
+    "things_move_item",
+    "Move a to-do to a project or area, a project to an area, detach a parent, or move to Inbox, Today, Anytime, Someday, or Logbook. Moving to Logbook can complete an item. Moving projects can affect descendants. Requires the latest revision and write permission. Does not reorder items, address headings, or restore Trash.",
+    moveSchema,
+    false,
+    (input) => service.move(input),
+    true,
+  );
+  register(
+    "things_trash_item",
+    "Move one to-do, including any checklist it contains, to Things Trash on the Mac. Read it and review the target first. Requires the latest revision, a unique request ID, ordinary write permission, and the separate local Trash grant. Does not permanently delete, empty Trash, or delete projects, areas or tags.",
+    trashSchema,
+    false,
+    (input) => service.trash(input),
     true,
   );
   register(

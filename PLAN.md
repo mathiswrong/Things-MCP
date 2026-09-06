@@ -2,9 +2,15 @@
 
 Things MCP connects compatible clients to Things 3 using supported automation. The core runs on the user's Mac, works without a project-operated service, and keeps remote providers replaceable.
 
-## Version 0.1
+## Release scope
 
-The current implementation provides eight tools for health, capability discovery, bounded search, ID lookup, durable mutation receipts, creation, editing, and scheduling. It includes a native MCPB extension, separate local and remote grants, and an optional private tunnel. Read access and ordinary to-do mutations have been checked against Things 3.23.3. See [Capabilities](docs/CAPABILITIES.md) and [Verification](VERIFICATION.md) for the exact boundary.
+Publication is on hold. Basic read, create, update, and schedule tools do not satisfy the intended product. Broaden coverage through Things' supported interfaces while keeping the server lightweight. Apple Shortcuts dependencies and substitute workflows are excluded. Account for remaining gaps in [the complete scope inventory](docs/FULL-SCOPE.md).
+
+Native recurrence is excluded: Things exposes no supported repeat-rule creation or editing operation. Do not build a separate scheduler, copies, or a manual handoff feature to substitute for it. Things has no public cloud API; the existing supported adapter operates on the Mac app, which handles Things Cloud synchronization itself.
+
+## Current implementation
+
+The current implementation provides ten tools for health, capability discovery, bounded search, ID lookup, durable mutation receipts, creation, editing, scheduling, moves, and individual to-do Trash. It includes a native MCPB extension, separate local and remote grants, and an optional private tunnel. Read access and ordinary to-do mutations have been checked against Things 3.23.3. See [Capabilities](docs/CAPABILITIES.md) and [Verification](VERIFICATION.md) for the exact boundary.
 
 The local extension can be installed through the host's existing UI. Initial browser setup remains an advanced operator workflow. The first public release must explain that distinction and make supported task workflows usable without promising unimplemented features.
 
@@ -14,7 +20,7 @@ Work in this order, verifying the supported public interface and read-back behav
 
 1. Verify existing project, area, and tag mutation paths with isolated fixtures.
 2. Add supported moves, tag assignment, duplication, and history/navigation operations with type-specific tests.
-3. Establish lossless heading and checklist read/write round trips through supported Things Shortcuts actions before enabling mutation tools.
+3. Document the heading and checklist limits without adding Apple Shortcuts. The URL scheme exposes some writes, but does not establish lossless reading and verification of existing headings or checked checklist rows.
 4. Add reminders, Evening, and schedule clearing only when their supported interfaces and calendar semantics are verified.
 5. Add destructive operations only with previewed scope, trusted approval, cascade checks, and tests in a disposable library.
 6. Broaden the remote setup experience without a companion app, hand-edited configuration, or project-owned account requirement.

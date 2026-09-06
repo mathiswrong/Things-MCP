@@ -39,6 +39,9 @@ test("MCP initialization, discovery, reads, and write rejection work through the
     create: forbidden,
     update: forbidden,
     schedule: forbidden,
+    move: forbidden,
+    trash: forbidden,
+    inList: async () => false,
   };
   const server = createServer(new ThingsService(adapter, new State(directory)));
   const client = new Client({ name: "protocol-test", version: "1.0.0" });
@@ -50,7 +53,7 @@ test("MCP initialization, discovery, reads, and write rejection work through the
       client.connect(clientTransport),
     ]);
     const tools = await client.listTools();
-    assert.equal(tools.tools.length, 8);
+    assert.equal(tools.tools.length, 10);
     assert.equal(
       tools.tools.find((tool) => tool.name === "things_find_items")?.annotations
         ?.readOnlyHint,

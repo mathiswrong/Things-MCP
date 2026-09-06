@@ -55,7 +55,7 @@ macOS may notify you that **Things MCP** can run in the background. The service 
 
 In ChatGPT's plugin settings, create a custom plugin named **Things MCP**. Choose the **Tunnel** connection type and select the tunnel you created. The local stdio server does not implement a second authentication layer; the secure tunnel and its workspace association provide access control. Follow the provider's current form labels if they differ.
 
-Create the plugin, verify that its eight tools are listed, and select **Connect**. In a new conversation, select Things MCP and ask:
+Create the plugin, verify that its ten tools are listed, and select **Connect**. An existing connection may retain an older tool catalog. If move and Trash are missing and its management screen has no Refresh action, the client update is unresolved; a healthy tunnel alone does not establish that the new tools are available. In a new conversation, select Things MCP and ask:
 
 > Use Things MCP to check the connection without reading or changing tasks.
 
@@ -64,6 +64,8 @@ A successful call reports the Things version and running state. If the Mac is un
 ## 5. Enable ordinary changes
 
 On the Mac, open **Claude Desktop > Settings > Extensions > Things MCP > Configure**. Turn on **Allow changes from ChatGPT** and **Save**. That native setting manages the remote grant; no tool can enable its own access. Request a new health check and confirm `writesEnabled: true`.
+
+For individual to-do deletion, also enable **Allow moving to Trash from ChatGPT** and save. This separate permission defaults to off and never allows permanent deletion or container deletion.
 
 Test one labeled Inbox task, then read it back. You may still see ChatGPT tool approval prompts. Do not bypass them or change unrelated plugin permissions.
 
@@ -81,7 +83,7 @@ The result contains `.codex-plugin/plugin.json` and `.app.json` outside the repo
 
 `npm run tunnel -- status` reports transport health without reading task content. If it is unavailable, check the Mac's network, login Keychain, provider key, and Login Items permission. Check the plugin's workspace and tunnel association too. Do not post raw provider logs; they can contain task data.
 
-For an update, build the new source, run `npm run install:local`, and repeat the tunnel install command. Then check status and run a health call in ChatGPT. Updating the local `.mcpb` alone does not update the tunnel's installed runtime.
+For an update, build the new source, run `npm run install:local`, and repeat the tunnel install command. Then check status. If tools changed, open the connection in ChatGPT plugin settings and use **Refresh** when available, review the new tool list, and start a new conversation for the health check. See the [connection update guide](https://developers.openai.com/plugins/deploy/connect-chatgpt). Updating the local `.mcpb` alone does not update the tunnel's installed runtime.
 
 To stop the connection and disable future automatic startup:
 

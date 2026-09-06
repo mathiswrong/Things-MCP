@@ -4,11 +4,13 @@ import {
   createSchema,
   fingerprint,
   type Item,
+  moveSchema,
   present,
   querySchema,
   type Reference,
   referenceSchema,
   scheduleSchema,
+  trashSchema,
   updateSchema,
 } from "./domain.js";
 import { BridgeError } from "./errors.js";
@@ -24,6 +26,7 @@ export class ThingsService {
     return {
       ...(await this.adapter.health()),
       writesEnabled: await this.state.writesEnabled(),
+      trashEnabled: await this.state.trashEnabled(),
     };
   }
   async get(input: unknown) {
@@ -106,6 +109,62 @@ export class ThingsService {
       ? { requestId, state: record.state, receipt: record.receipt }
       : { requestId, state: "not_seen" };
   }
+  async move(input: unknown) {
+    const value = this.parse(moveSchema, input);
+    return this.mutate(
+      "move",
+      value,
+      async (lease) => {
+        const destination = value.destination;
+        await lease.assertOwned();
+        const target = await this.adapter.move(value, lease.signal);
+        await lease.assertOwned();
+        const actual = await this.adapter.get(target, lease.signal);
+        if (destination.kind === "project")
+          this.verify(actual, { projectId: destination.id });
+        else if (destination.kind === "area")
+          this.verify(actual, {
+            areaId: destination.id,
+            ...(value.target.kind === "todo" ? { projectId: null } : {}),
+          });
+        else if (destination.kind === "detach")
+          this.verify(actual, {
+            [destination.parent === "project" ? "projectId" : "areaId"]: null,
+          });
+        else if (
+          !(await this.adapter.inList(target, destination.list, lease.signal))
+        )
+          throw new BridgeError("VERIFICATION_FAILED");
+        return { target, changedFields: ["placement"] };
+      },
+      value,
+      false,
+      async (lease) => {
+        const destination = value.destination;
+        if (destination.kind === "area" || destination.kind === "project") {
+          const parent = await this.adapter.get(destination, lease.signal);
+          if (parent.inTrash) throw new BridgeError("INVALID_INPUT");
+        }
+      },
+    );
+  }
+  async trash(input: unknown) {
+    const value = this.parse(trashSchema, input);
+    return this.mutate(
+      "trash",
+      value,
+      async (lease) => {
+        await lease.assertOwned();
+        const target = await this.adapter.trash(value, lease.signal);
+        await lease.assertOwned();
+        if (!(await this.adapter.inList(target, "trash", lease.signal)))
+          throw new BridgeError("VERIFICATION_FAILED");
+        return { target, changedFields: ["inTrash"] };
+      },
+      value,
+      true,
+    );
+  }
   private parse<T>(schema: z.ZodType<T>, input: unknown): T {
     const result = schema.safeParse(input);
     if (!result.success) throw new BridgeError("INVALID_INPUT");
@@ -127,10 +186,14 @@ export class ThingsService {
       lease: Lease,
     ) => Promise<{ target: Reference; changedFields: string[] }>,
     precondition?: { target: Reference; expectedRevision: string },
+    requiresTrash = false,
+    beforeWrite?: (lease: Lease) => Promise<void>,
   ) {
     return this.state.exclusive(async (lease) => {
       if (!(await this.state.writesEnabled()))
         throw new BridgeError("READ_ONLY");
+      if (requiresTrash && !(await this.state.trashEnabled()))
+        throw new BridgeError("TRASH_DISABLED");
       const hash = fingerprint({ operation, input });
       const previous = await this.state.operation(input.requestId);
       if (previous) {
@@ -140,14 +203,16 @@ export class ThingsService {
           return { ...previous.receipt, replayed: true };
         throw new BridgeError("OUTCOME_UNKNOWN");
       }
-      if (
-        precondition &&
-        fingerprint(
-          await this.adapter.get(precondition.target, lease.signal),
-        ) !== precondition.expectedRevision
-      ) {
-        throw new BridgeError("STALE_ITEM");
+      if (precondition) {
+        const current = await this.adapter.get(
+          precondition.target,
+          lease.signal,
+        );
+        if (fingerprint(current) !== precondition.expectedRevision)
+          throw new BridgeError("STALE_ITEM");
+        if (current.inTrash) throw new BridgeError("INVALID_INPUT");
       }
+      await beforeWrite?.(lease);
       await this.state.checkCapacity();
       await this.state.record(
         input.requestId,

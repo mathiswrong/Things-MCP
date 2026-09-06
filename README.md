@@ -2,9 +2,9 @@
 
 Find and manage Things 3 tasks from a conversation. Things MCP connects compatible MCP clients to the Things app on your Mac through its supported automation interfaces.
 
-Create Inbox tasks, edit titles and notes, set deadlines, schedule dates, and complete or reopen tasks. Your Mac runs the bridge. The local connection needs no companion app or project-operated account or server.
+Create Inbox tasks, edit titles and notes, set deadlines, schedule dates, move tasks, and complete or reopen them. A separate permission enables moving individual to-dos to Trash. Your Mac runs the bridge. The local connection needs no companion app or project-operated account or server.
 
-[Installation](packaging/INSTALL.md) · [Capabilities](docs/CAPABILITIES.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) · [Buy me a coffee](https://buymeacoffee.com/paul2d)
+[Installation](packaging/INSTALL.md) · [Capabilities](docs/CAPABILITIES.md) · [Full scope](docs/FULL-SCOPE.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) · [Buy me a coffee](https://buymeacoffee.com/paul2d)
 
 ## Install
 
@@ -30,8 +30,13 @@ Other clients can use the standard local MCP transport. See [other MCP clients](
 | Set or clear a deadline | Available |
 | Schedule a to-do on a calendar date | Available |
 | Complete, cancel, or reopen a to-do | Available |
-| Create projects, areas, or tags; edit their supported fields | Experimental; not yet verified against the real app |
-| Headings, checklists, moves, tag assignment, deletion, reminders, repeating rules | Not included |
+| Create a project and complete an empty project | Available |
+| Create areas or tags; broader non-task editing | Experimental; not yet verified against the real app |
+| Built-in list queries and project/area filters | Available |
+| Moves between lists, projects, and areas | Available; see exact verification coverage |
+| Move an individual to-do to Trash | Separate permission required |
+| Container/permanent deletion, restoration, duplication, tag assignment, reminders | Not included |
+| Full checklists, headings, native repeating rules | Excluded under the supported-interface and no-Shortcuts boundary |
 
 This release does not cover every Things operation. [The capability reference](docs/CAPABILITIES.md) explains field limits, search behavior, and unavailable features. Tools return their current implementation status through `things_capabilities`.
 

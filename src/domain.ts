@@ -24,6 +24,16 @@ export const referenceSchema = z.strictObject({
   id: idSchema,
 });
 export type Reference = z.infer<typeof referenceSchema>;
+export const listSchema = z.enum([
+  "inbox",
+  "today",
+  "anytime",
+  "upcoming",
+  "someday",
+  "logbook",
+  "trash",
+]);
+export type List = z.infer<typeof listSchema>;
 export const itemSchema = z.strictObject({
   kind: kindSchema,
   id: idSchema,
@@ -37,16 +47,33 @@ export const itemSchema = z.strictObject({
   tagNames: z.string().optional(),
   parentTagId: idSchema.nullable().optional(),
   keyboardShortcut: z.string().optional(),
+  inTrash: z.boolean().optional(),
 });
 export type Item = z.infer<typeof itemSchema>;
-export const querySchema = z.strictObject({
-  kind: kindSchema.default("todo"),
-  text: z.string().max(500).default(""),
-  status: statusSchema.optional(),
-  limit: z.number().int().min(1).max(100).default(25),
-  offset: z.number().int().min(0).max(4900).default(0),
-  includeNotes: z.boolean().default(false),
-});
+export const querySchema = z
+  .strictObject({
+    kind: kindSchema.default("todo"),
+    text: z.string().max(500).default(""),
+    status: statusSchema.optional(),
+    limit: z.number().int().min(1).max(100).default(25),
+    offset: z.number().int().min(0).max(4900).default(0),
+    includeNotes: z.boolean().default(false),
+    list: listSchema.optional(),
+    parent: z
+      .strictObject({ kind: z.enum(["project", "area"]), id: idSchema })
+      .optional(),
+  })
+  .superRefine((value, context) => {
+    if (
+      (value.list && value.parent) ||
+      ((value.list || value.parent || value.status) &&
+        !["todo", "project"].includes(value.kind))
+    )
+      context.addIssue({
+        code: "custom",
+        message: "Choose a list or parent for to-dos or projects.",
+      });
+  });
 export type Query = z.infer<typeof querySchema>;
 export const createSchema = z
   .strictObject({
@@ -103,6 +130,46 @@ export const scheduleSchema = z.strictObject({
   date: dateSchema,
 });
 export type Schedule = z.infer<typeof scheduleSchema>;
+export const moveSchema = z
+  .strictObject({
+    requestId: z.uuid(),
+    target: z.strictObject({ kind: z.enum(["todo", "project"]), id: idSchema }),
+    expectedRevision: z.string().regex(/^[a-f0-9]{64}$/),
+    destination: z.discriminatedUnion("kind", [
+      z.strictObject({ kind: z.literal("project"), id: idSchema }),
+      z.strictObject({ kind: z.literal("area"), id: idSchema }),
+      z.strictObject({
+        kind: z.literal("list"),
+        list: z.enum(["inbox", "today", "anytime", "someday", "logbook"]),
+      }),
+      z.strictObject({
+        kind: z.literal("detach"),
+        parent: z.enum(["project", "area"]),
+      }),
+    ]),
+  })
+  .superRefine((value, context) => {
+    if (
+      value.target.kind === "project" &&
+      (value.destination.kind === "project" ||
+        (value.destination.kind === "list" &&
+          value.destination.list === "inbox") ||
+        (value.destination.kind === "detach" &&
+          value.destination.parent === "project"))
+    )
+      context.addIssue({
+        code: "custom",
+        message:
+          "Projects can belong to areas, not other projects or the Inbox.",
+      });
+  });
+export type Move = z.infer<typeof moveSchema>;
+export const trashSchema = z.strictObject({
+  requestId: z.uuid(),
+  target: z.strictObject({ kind: z.literal("todo"), id: idSchema }),
+  expectedRevision: z.string().regex(/^[a-f0-9]{64}$/),
+});
+export type Trash = z.infer<typeof trashSchema>;
 export const queryResultSchema = z.strictObject({
   items: z.array(itemSchema),
   hasMore: z.boolean(),
@@ -121,6 +188,9 @@ export interface Adapter {
   create(input: Create, signal?: AbortSignal): Promise<Reference>;
   update(input: Update, signal?: AbortSignal): Promise<Reference>;
   schedule(input: Schedule, signal?: AbortSignal): Promise<Reference>;
+  move(input: Move, signal?: AbortSignal): Promise<Reference>;
+  trash(input: Trash, signal?: AbortSignal): Promise<Reference>;
+  inList(target: Reference, list: List, signal?: AbortSignal): Promise<boolean>;
 }
 export function fingerprint(value: unknown): string {
   const canonical = (input: unknown): unknown => {

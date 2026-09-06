@@ -35,6 +35,26 @@ function run() {
         fail("INVALID_INPUT");
       return item;
     }
+    function builtin(name) {
+      const ids = {
+        inbox: "TMInboxListSource",
+        today: "TMTodayListSource",
+        anytime: "TMNextListSource",
+        upcoming: "TMCalendarListSource",
+        someday: "TMSomedayListSource",
+        logbook: "TMLogbookListSource",
+        trash: "TMTrashListSource",
+      };
+      if (!ids[name]) fail("INVALID_INPUT");
+      const list = app.lists.byId(ids[name]);
+      if (!list.exists()) fail("NOT_FOUND");
+      return list;
+    }
+    let trashIds;
+    function inTrash(id) {
+      if (!trashIds) trashIds = builtin("trash").toDos.id();
+      return trashIds.indexOf(id) >= 0;
+    }
     function dateOnly(value) {
       if (!value?.getFullYear || !Number.isFinite(value.getTime())) return null;
       return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
@@ -54,6 +74,7 @@ function run() {
     function serialize(item, kind) {
       const result = { kind: kind, id: item.id(), title: item.name() };
       if (kind === "todo" || kind === "project") {
+        result.inTrash = inTrash(result.id);
         result.notes = item.notes() || "";
         result.status = item.status();
         result.deadline = dateOnly(item.dueDate());
@@ -83,19 +104,51 @@ function run() {
         result = serialize(resolve(input), input.kind);
         break;
       case "find": {
-        const objects = collection(input.kind)();
-        const projectIds = input.kind === "todo" ? app.projects.id() : [];
+        const scoped = input.list || input.parent;
+        const source = input.list
+          ? builtin(input.list).toDos
+          : input.parent
+            ? resolve(input.parent).toDos
+            : collection(input.kind);
+        const objects = source();
+        const ids = source.id();
+        const titles = input.text ? source.name() : [];
+        const notes =
+          input.text && (input.kind === "todo" || input.kind === "project")
+            ? source.notes()
+            : [];
+        const statuses = input.status ? source.status() : [];
+        const projectIds =
+          input.kind === "todo" || scoped ? app.projects.id() : [];
         const targetCount = input.offset + input.limit + 1;
         const matches = [];
         let scanned = 0;
         for (; scanned < Math.min(objects.length, 5000); scanned++) {
           const object = objects[scanned];
-          if (input.kind === "todo" && projectIds.indexOf(object.id()) >= 0)
+          const id = ids[scanned];
+          if (input.kind === "todo" && projectIds.indexOf(id) >= 0) continue;
+          if (input.kind === "project" && scoped && projectIds.indexOf(id) < 0)
+            continue;
+          if (
+            !input.list &&
+            (input.kind === "todo" || input.kind === "project") &&
+            inTrash(id)
+          )
+            continue;
+          if (input.status && statuses[scanned] !== input.status) continue;
+          const searchable =
+            `${titles[scanned] || ""}\n${notes[scanned] || ""}`.toLowerCase();
+          if (input.text && searchable.indexOf(input.text.toLowerCase()) < 0)
             continue;
           const item = serialize(object, input.kind);
-          if (input.status && item.status !== input.status) continue;
-          const searchable = `${item.title}\n${item.notes || ""}`.toLowerCase();
-          if (input.text && searchable.indexOf(input.text.toLowerCase()) < 0)
+          if (item.id !== id || (input.status && item.status !== input.status))
+            continue;
+          if (
+            input.text &&
+            `${item.title}\n${item.notes || ""}`
+              .toLowerCase()
+              .indexOf(input.text.toLowerCase()) < 0
+          )
             continue;
           matches.push(item);
           if (matches.length >= targetCount) {
@@ -153,6 +206,34 @@ function run() {
         app.schedule(resolve(input.target), { for: localDate(input.date) });
         result = input.target;
         break;
+      case "inList":
+        result = builtin(input.list).toDos.byId(input.target.id).exists();
+        break;
+      case "move": {
+        const item = resolve(input.target);
+        if (inTrash(input.target.id)) fail("INVALID_INPUT");
+        const destination = input.destination;
+        if (destination.kind === "project") item.project = resolve(destination);
+        else if (destination.kind === "area") item.area = resolve(destination);
+        else if (
+          destination.kind === "detach" &&
+          destination.parent === "project"
+        )
+          app.delete(item.project);
+        else if (destination.kind === "detach" && destination.parent === "area")
+          app.delete(item.area);
+        else fail("INVALID_INPUT");
+        result = input.target;
+        break;
+      }
+      case "trash": {
+        if (input.target.kind !== "todo") fail("INVALID_INPUT");
+        const item = resolve(input.target);
+        if (inTrash(input.target.id)) fail("INVALID_INPUT");
+        app.delete(item);
+        result = input.target;
+        break;
+      }
       default:
         fail("INVALID_INPUT");
     }

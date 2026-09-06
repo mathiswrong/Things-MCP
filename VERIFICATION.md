@@ -56,3 +56,22 @@ An ordinary browser conversation checked `writesEnabled: true`, created exactly 
 The 30-test suite, typecheck, lint, runtime build, packaged extraction and live health checks, and dependency audit passed. Documentation links were checked locally. The installed archive passed credential, attribution-signature, and personal-configuration scans. A maintained secret scanner found no leaks in all reachable history. A separate history review found no generation-credit signatures or automated co-author trailers. The only path-pattern match was an intentionally synthetic path in a privacy test. Compatibility names and required dependency notices are retained.
 
 The new installation, capability, troubleshooting, other-client, remote setup, and release guides describe the actual supported scope. The sponsor configuration uses the existing Buy Me a Coffee username. License choice, public visibility, and release publication remain separate pending decisions. No claim is made that all Things operations or command-free browser provisioning on a new Mac are complete.
+
+
+## Expanded supported-interface coverage, September 5, 2026
+
+The expanded build exposes ten tools. Local type checking, lint, 37 synthetic tests, runtime build, MCPB packaging, packaged extension restart/permission checks, live read-only smoke, and the production dependency audit passed. The runtime adds no dependency and no Apple Shortcuts bridge.
+
+Ten successful single-item mutations were verified against Things 3.23.3: create a synthetic to-do; move it to Someday, Today, Anytime and Inbox; create a synthetic project; move the to-do into that project; detach the project; move the to-do to Trash; complete the empty project. List and parent queries returned the expected fixture after the relevant moves. The to-do remains in Trash and the empty synthetic project is completed. Private fixture IDs and receipts remain outside the repository.
+
+The first list-move attempt failed with a native type-conversion error. Read-back confirmed the item remained in Inbox, and the uncertain request was not replayed. The fixed AppleScript command file then passed the list moves. A subsequent search timed out because full item serialization preceded text filtering. Bulk filter fields now narrow candidates before full serialization, and the previously failing query passed.
+
+Client writes were temporarily revoked during these checks and the previously enabled grants were restored afterward. Both new Trash grants remain disabled. Trash permissions use a separate owner-only state file so older installed clients can continue reading their existing settings.
+
+Area moves, project moves between built-in lists, Logbook moves, and populated-project cascades have not been live verified. No permanent deletion, container deletion, recurrence, heading mutation, or checklist mutation was performed. Revisions cover the public fields returned by the adapter, not hidden checklist or repeat-template content.
+
+The updated native extension was installed through the host's package installer. Its Configure screen listed five read tools and five write/delete tools, including move and Trash, plus four permission switches. Existing ordinary-write settings were restored; Trash remained off. The remote runtime was updated and its background connection returned healthy and ready after restart. One initial installer bootstrap failed; a direct retry succeeded.
+
+A fresh browser Work conversation called health and capabilities without reading task content. Ordinary writes were enabled and Trash was disabled. It reported move and Trash as implemented but not callable because the saved account tool catalog still contained eight tools. The connection's visible management screen did not offer Refresh. The expanded ChatGPT tool catalog remains an unresolved client acceptance check, not a completed verification.
+
+The updated source and reachable commit messages contained no generation-credit signatures, automated co-author trailers, private fixture IDs, or owner-specific paths. The maintained secret scanner reported no leaks in ten reachable commits. Functional compatibility names and third-party legal notices remain.

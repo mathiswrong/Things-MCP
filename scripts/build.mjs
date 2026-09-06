@@ -75,6 +75,10 @@ export async function buildRuntime(directory) {
     join(root, "src/native/things.jxa.js"),
     join(output, "native/things.jxa.js"),
   );
+  await copyFile(
+    join(root, "src/native/move-list.applescript"),
+    join(output, "native/move-list.applescript"),
+  );
   const packages = new Set();
   for (const input of Object.keys(result.metafile.inputs)) {
     const match = input.match(/^(.*node_modules\/((?:@[^/]+\/)?[^/]+))\//);

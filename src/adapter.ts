@@ -1,4 +1,5 @@
 import { type ChildProcessWithoutNullStreams, spawn } from "node:child_process";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import {
@@ -6,11 +7,14 @@ import {
   type Create,
   healthSchema,
   itemSchema,
+  type List,
+  type Move,
   type Query,
   queryResultSchema,
   type Reference,
   referenceSchema,
   type Schedule,
+  type Trash,
   type Update,
 } from "./domain.js";
 import { BridgeError } from "./errors.js";
@@ -50,9 +54,19 @@ export function nativeExecutor(
     if (Buffer.byteLength(payload) > 262144)
       throw new BridgeError("INVALID_INPUT");
     return new Promise((resolve, reject) => {
+      const move = operation === "moveList" ? (input as Move) : undefined;
+      const arguments_ =
+        move && move.destination.kind === "list"
+          ? [
+              join(dirname(script), "move-list.applescript"),
+              move.target.kind,
+              move.target.id,
+              move.destination.list,
+            ]
+          : ["-l", "JavaScript", script];
       const child = runtime.launch
         ? runtime.launch(script)
-        : spawn("/usr/bin/osascript", ["-l", "JavaScript", script], {
+        : spawn("/usr/bin/osascript", arguments_, {
             shell: false,
             stdio: ["pipe", "pipe", "pipe"],
             env: { PATH: "/usr/bin:/bin", LANG: "en_US.UTF-8" },
@@ -150,5 +164,18 @@ export class NativeAdapter implements Adapter {
   }
   schedule(input: Schedule, signal?: AbortSignal) {
     return this.call("schedule", input, referenceSchema, true, signal);
+  }
+  async move(input: Move, signal?: AbortSignal) {
+    if (input.destination.kind === "list") {
+      await this.call("moveList", input, z.literal(true), true, signal);
+      return input.target;
+    }
+    return this.call("move", input, referenceSchema, true, signal);
+  }
+  trash(input: Trash, signal?: AbortSignal) {
+    return this.call("trash", input, referenceSchema, true, signal);
+  }
+  inList(target: Reference, list: List, signal?: AbortSignal) {
+    return this.call("inList", { target, list }, z.boolean(), false, signal);
   }
 }

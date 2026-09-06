@@ -31,16 +31,18 @@ Do not retry a create if the tool reports an uncertain result. Inspect the task 
 
 ## Write permissions
 
-The native extension settings have two independent switches:
+The native extension settings separate ordinary writes from moving to Trash:
 
 | Switch | Connection it controls |
 |---|---|
 | **Allow changes** | This Mac's local extension |
 | **Allow changes from ChatGPT** | Your separately configured private tunnel, including clients using its account plugin |
+| **Allow moving to Trash** | Individual to-do removal from this Mac's local extension; also requires Allow changes |
+| **Allow moving to Trash from ChatGPT** | Individual to-do removal through the private tunnel; also requires its Allow changes switch |
 
 Changes apply after **Save** and the host's server restart. Turning a switch off denies subsequent mutations. An operation already delivered to Things cannot be rolled back by switching access off. Client tool approval prompts are an additional control; they do not replace the Mac-side grant.
 
-New installations start read-only. Installing the extension does not create tasks. If a maintainer globally revoked access, regrant by switching the relevant control off, saving, switching it on, and saving again.
+New installations start read-only. Both Trash switches also default to off. They allow recoverable to-do deletion, including its checklist, but not permanent deletion or deleting whole projects or areas. Installing the extension does not create tasks. If a maintainer globally revoked access, regrant by switching the relevant control off, saving, switching it on, and saving again.
 
 ## ChatGPT and other clients
 

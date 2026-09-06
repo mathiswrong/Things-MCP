@@ -18,9 +18,12 @@ import {
   type Create,
   fingerprint,
   type Item,
+  type List,
+  type Move,
   type Query,
   type Reference,
   type Schedule,
+  type Trash,
   type Update,
 } from "../src/domain.js";
 import { BridgeError, type ErrorCode } from "../src/errors.js";
@@ -90,6 +93,44 @@ class MemoryAdapter implements Adapter {
     if (!this.discardWrites)
       this.items.set(item.id, { ...item, scheduledDate: input.date });
     return input.target;
+  }
+  moved = 0;
+  trashed = 0;
+  membership = new Map<string, List>();
+  async move(input: Move) {
+    this.moved++;
+    const item = this.items.get(input.target.id);
+    if (!item) throw new BridgeError("NOT_FOUND");
+    if (!this.discardWrites) {
+      const destination = input.destination;
+      if (destination.kind === "area")
+        this.items.set(item.id, {
+          ...item,
+          areaId: destination.id,
+          ...(item.kind === "todo" ? { projectId: null } : {}),
+        });
+      else if (destination.kind === "project")
+        this.items.set(item.id, { ...item, projectId: destination.id });
+      else if (destination.kind === "detach")
+        this.items.set(item.id, {
+          ...item,
+          [destination.parent === "area" ? "areaId" : "projectId"]: null,
+        });
+      else this.membership.set(item.id, destination.list);
+    }
+    return input.target;
+  }
+  async trash(input: Trash) {
+    this.trashed++;
+    if (!this.discardWrites) {
+      const item = await this.get(input.target);
+      this.items.set(item.id, { ...item, inTrash: true });
+      this.membership.set(item.id, "trash");
+    }
+    return input.target;
+  }
+  async inList(target: Reference, list: List) {
+    return this.membership.get(target.id) === list;
   }
 }
 
@@ -727,5 +768,211 @@ test("a permissive state directory prevents access and mutation", async () => {
     );
     assert.equal(adapter.mutations.create, 0);
     assert.equal(adapter.reads, 0);
+  });
+});
+
+test("moves require a fresh revision and verify parent placement before replay", async () => {
+  await fixture(async ({ adapter, service }) => {
+    const item = seed(adapter);
+    adapter.items.set("destination", {
+      kind: "project",
+      id: "destination",
+      title: "Synthetic project",
+    });
+    const request = {
+      requestId: randomUUID(),
+      target: { kind: "todo", id: item.id },
+      expectedRevision: fingerprint(item),
+      destination: { kind: "project", id: "destination" },
+    };
+    await assert.rejects(
+      service.move({ ...request, expectedRevision: "0".repeat(64) }),
+      code("STALE_ITEM"),
+    );
+    assert.equal(adapter.moved, 0);
+    assert.equal((await service.move(request)).verification, "read_back");
+    assert.equal(adapter.items.get(item.id)?.projectId, "destination");
+    assert.equal(adapter.items.get(item.id)?.notes, item.notes);
+    assert.equal((await service.move(request)).replayed, true);
+    assert.equal(adapter.moved, 1);
+  });
+});
+
+test("list movement is verified by destination membership and uncertain moves never repeat", async () => {
+  await fixture(async ({ adapter, service }) => {
+    const item = seed(adapter);
+    const request = {
+      requestId: randomUUID(),
+      target: { kind: "todo", id: item.id },
+      expectedRevision: fingerprint(item),
+      destination: { kind: "list", list: "someday" },
+    };
+    adapter.discardWrites = true;
+    await assert.rejects(service.move(request), code("VERIFICATION_FAILED"));
+    adapter.discardWrites = false;
+    await assert.rejects(service.move(request), code("OUTCOME_UNKNOWN"));
+    assert.equal(adapter.moved, 1);
+    const success = await service.move({ ...request, requestId: randomUUID() });
+    assert.equal(success.verification, "read_back");
+    assert.equal(
+      await adapter.inList({ kind: "todo", id: item.id }, "someday"),
+      true,
+    );
+  });
+});
+
+test("move and Trash input cannot target invalid types, unsafe destinations, or arbitrary commands", async () => {
+  await fixture(async ({ adapter, service, state }) => {
+    const item = seed(adapter);
+    const request = {
+      requestId: randomUUID(),
+      target: { kind: "todo", id: item.id },
+      expectedRevision: fingerprint(item),
+    };
+    for (const destination of [
+      { kind: "list", list: "trash" },
+      { kind: "list", list: "upcoming" },
+      { kind: "project", id: "../../invalid" },
+      { kind: "shell", command: "echo x" },
+    ]) {
+      await assert.rejects(
+        service.move({ ...request, destination }),
+        code("INVALID_INPUT"),
+      );
+    }
+    await assert.rejects(
+      service.move({
+        ...request,
+        target: { kind: "project", id: item.id },
+        destination: { kind: "project", id: "other" },
+      }),
+      code("INVALID_INPUT"),
+    );
+    for (const kind of ["project", "area", "tag"])
+      await assert.rejects(
+        service.trash({ ...request, target: { kind, id: item.id } }),
+        code("INVALID_INPUT"),
+      );
+    await assert.rejects(
+      service.trash({ ...request, permanent: true }),
+      code("INVALID_INPUT"),
+    );
+    await state.setWrites(false);
+    await assert.rejects(
+      service.move({
+        ...request,
+        destination: { kind: "list", list: "today" },
+      }),
+      code("READ_ONLY"),
+    );
+    await assert.rejects(service.trash(request), code("READ_ONLY"));
+    assert.equal(adapter.moved + adapter.trashed, 0);
+  });
+});
+
+test("Trash has a separate grant and a verified receipt; it never permanently deletes", async () => {
+  await fixture(async ({ adapter, service, state }) => {
+    const item = seed(adapter);
+    const request = {
+      requestId: randomUUID(),
+      target: { kind: "todo", id: item.id },
+      expectedRevision: fingerprint(item),
+    };
+    await assert.rejects(service.trash(request), code("TRASH_DISABLED"));
+    assert.equal(adapter.reads, 0);
+    assert.equal(adapter.trashed, 0);
+    await state.setTrash(true);
+    assert.equal((await service.trash(request)).verification, "read_back");
+    assert.equal(adapter.items.get(item.id)?.inTrash, true);
+    assert.equal((await service.trash(request)).replayed, true);
+    assert.equal(adapter.trashed, 1);
+    assert.equal(adapter.items.get(item.id)?.notes, item.notes);
+    await state.setWrites(false);
+    assert.equal(await state.trashEnabled(), false);
+    await state.setWrites(true);
+    assert.equal(await state.trashEnabled(), false);
+  });
+});
+
+test("Trash grant revocation persists independently across clients and unchanged host settings", async () => {
+  await fixture(async ({ state, directory }) => {
+    const desktop = new State(directory, true, "desktop-extension");
+    const browser = new State(directory, true, "browser");
+    await desktop.configureClient(true, true);
+    await browser.configureClient(true, false);
+    assert.equal(await desktop.trashEnabled(), true);
+    assert.equal(await browser.trashEnabled(), false);
+    await state.setWrites(false);
+    await desktop.configureClient(true, true);
+    assert.equal(await desktop.writesEnabled(), false);
+    assert.equal(await desktop.trashEnabled(), false);
+    await desktop.configureClient(false, true);
+    await desktop.configureClient(true, true);
+    assert.equal(await desktop.writesEnabled(), true);
+    assert.equal(await desktop.trashEnabled(), false);
+    await desktop.configureClient(true, false);
+    await desktop.configureClient(true, true);
+    assert.equal(await desktop.trashEnabled(), true);
+    assert.equal(await browser.trashEnabled(), false);
+  });
+});
+
+test("an ignored Trash command is uncertain and existing Trash items cannot be edited or moved", async () => {
+  await fixture(async ({ adapter, service, state }) => {
+    const item = seed(adapter);
+    const request = {
+      requestId: randomUUID(),
+      target: { kind: "todo", id: item.id },
+      expectedRevision: fingerprint(item),
+    };
+    await state.setTrash(true);
+    adapter.discardWrites = true;
+    await assert.rejects(service.trash(request), code("VERIFICATION_FAILED"));
+    await assert.rejects(service.trash(request), code("OUTCOME_UNKNOWN"));
+    assert.equal(adapter.trashed, 1);
+    const trashedItem = { ...item, inTrash: true };
+    adapter.items.set(item.id, trashedItem);
+    const current = {
+      ...request,
+      requestId: randomUUID(),
+      expectedRevision: fingerprint(trashedItem),
+    };
+    await assert.rejects(service.trash(current), code("INVALID_INPUT"));
+    await assert.rejects(
+      service.move({
+        ...current,
+        destination: { kind: "list", list: "inbox" },
+      }),
+      code("INVALID_INPUT"),
+    );
+    await assert.rejects(
+      service.update({ ...current, changes: { status: "open" } }),
+      code("INVALID_INPUT"),
+    );
+    assert.equal(adapter.moved, 0);
+    assert.equal(adapter.mutations.update, 0);
+  });
+});
+
+test("missing or trashed move destinations fail before journaling or applying a move", async () => {
+  await fixture(async ({ adapter, service, state }) => {
+    const item = seed(adapter);
+    const request = {
+      requestId: randomUUID(),
+      target: { kind: "todo", id: item.id },
+      expectedRevision: fingerprint(item),
+      destination: { kind: "project", id: "destination" },
+    };
+    await assert.rejects(service.move(request), code("NOT_FOUND"));
+    assert.equal(await state.operation(request.requestId), undefined);
+    adapter.items.set("destination", {
+      kind: "project",
+      id: "destination",
+      title: "Deleted destination",
+      inTrash: true,
+    });
+    await assert.rejects(service.move(request), code("INVALID_INPUT"));
+    assert.equal(await state.operation(request.requestId), undefined);
+    assert.equal(adapter.moved, 0);
   });
 });

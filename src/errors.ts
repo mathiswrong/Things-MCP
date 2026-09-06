@@ -1,6 +1,7 @@
 export type ErrorCode =
   | "INVALID_INPUT"
   | "READ_ONLY"
+  | "TRASH_DISABLED"
   | "NOT_FOUND"
   | "AUTOMATION_DENIED"
   | "APP_UNAVAILABLE"
@@ -18,6 +19,8 @@ const messages: Record<ErrorCode, string> = {
   INVALID_INPUT: "The request contains invalid or unsupported fields.",
   READ_ONLY:
     "Writes are disabled. Open Things MCP extension settings, enable Allow changes for this connection, and save.",
+  TRASH_DISABLED:
+    "Moving items to Trash is disabled for this connection. Enable Allow moving to Trash in the extension settings and save.",
   NOT_FOUND: "The requested item was not found. Find it again before retrying.",
   AUTOMATION_DENIED:
     "Allow automation access to Things in macOS Privacy & Security settings.",

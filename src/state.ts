@@ -49,6 +49,9 @@ const settingsSchema = z.strictObject({
     )
     .optional(),
 });
+const trashSettingsSchema = settingsSchema
+  .omit({ allowWrites: true })
+  .extend({ allowTrash: z.boolean() });
 export interface Lease {
   signal: AbortSignal;
   assertOwned(): Promise<void>;
@@ -126,6 +129,21 @@ export class State {
       ? settings.clients?.[this.clientId]?.enabled === true
       : settings.allowWrites;
   }
+  async trashEnabled() {
+    if (!(await this.writesEnabled())) return false;
+    const settings = await this.trashSettings();
+    return this.clientId
+      ? settings.clients?.[this.clientId]?.enabled === true
+      : settings.allowTrash;
+  }
+  private async trashSettings() {
+    const value = await this.read("trash-settings.json");
+    if (value === undefined)
+      return { allowTrash: false } as z.infer<typeof trashSettingsSchema>;
+    const result = trashSettingsSchema.safeParse(value);
+    if (!result.success) throw new BridgeError("STATE_FAILURE");
+    return result.data;
+  }
   private async settings() {
     const value = await this.read("settings.json");
     if (value === undefined)
@@ -134,35 +152,68 @@ export class State {
     if (!result.success) throw new BridgeError("STATE_FAILURE");
     return result.data;
   }
-  async configureClient(enabled: boolean) {
+  async configureClient(enabled: boolean, allowTrash = false) {
     if (!this.clientId) throw new BridgeError("INVALID_INPUT");
     const id = this.clientId;
     await this.exclusive(async (lease) => {
       const settings = await this.settings();
-      if (settings.clients?.[id]?.configured === enabled) return;
-      await this.write(
-        "settings.json",
-        {
-          ...settings,
-          clients: {
-            ...settings.clients,
-            [id]: { configured: enabled, enabled },
+      const trash = await this.trashSettings();
+      if (trash.clients?.[id]?.configured !== allowTrash) {
+        await this.write(
+          "trash-settings.json",
+          {
+            ...trash,
+            clients: {
+              ...trash.clients,
+              [id]: { configured: allowTrash, enabled: allowTrash },
+            },
           },
-        },
-        lease,
-      );
+          lease,
+        );
+      }
+      if (settings.clients?.[id]?.configured !== enabled) {
+        await this.write(
+          "settings.json",
+          {
+            ...settings,
+            clients: {
+              ...settings.clients,
+              [id]: { configured: enabled, enabled },
+            },
+          },
+          lease,
+        );
+      }
     });
   }
   async setWrites(enabled: boolean) {
     await this.exclusive(async (lease) => {
       const settings = await this.settings();
-      if (!enabled && settings.clients) {
-        for (const grant of Object.values(settings.clients))
+      if (!enabled) {
+        const trash = await this.trashSettings();
+        for (const grant of Object.values(trash.clients ?? {}))
+          grant.enabled = false;
+        await this.write(
+          "trash-settings.json",
+          { ...trash, allowTrash: false },
+          lease,
+        );
+        for (const grant of Object.values(settings.clients ?? {}))
           grant.enabled = false;
       }
       await this.write(
         "settings.json",
         { ...settings, allowWrites: enabled },
+        lease,
+      );
+    });
+  }
+  async setTrash(enabled: boolean) {
+    await this.exclusive(async (lease) => {
+      const settings = await this.trashSettings();
+      await this.write(
+        "trash-settings.json",
+        { ...settings, allowTrash: enabled },
         lease,
       );
     });

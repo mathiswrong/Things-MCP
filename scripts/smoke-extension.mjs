@@ -44,7 +44,7 @@ try {
   });
   assert.equal(
     entries.filter((entry) => entry.isFile()).length,
-    metadata.license === "UNLICENSED" ? 5 : 6,
+    metadata.license === "UNLICENSED" ? 6 : 7,
   );
   assert.ok(entries.every((entry) => !entry.isSymbolicLink()));
   const manifest = JSON.parse(
@@ -68,7 +68,12 @@ try {
     manifest,
     extensionPath: extracted,
     systemDirs: {},
-    userConfig: { allow_changes: false, allow_browser_changes: false },
+    userConfig: {
+      allow_changes: false,
+      allow_browser_changes: false,
+      allow_trash: false,
+      allow_browser_trash: false,
+    },
     pathSeparator: "/",
   });
   assert.ok(config);
@@ -124,7 +129,7 @@ try {
         stderr: "pipe",
       }),
     );
-    assert.equal((await client.listTools()).tools.length, 8);
+    assert.equal((await client.listTools()).tools.length, 10);
     assert.ok(
       !(await client.callTool({ name: "things_capabilities", arguments: {} }))
         .isError,
@@ -160,9 +165,12 @@ try {
       },
     },
   );
-  assert.deepEqual(await readdir(state), ["settings.json"]);
+  assert.deepEqual(await readdir(state), [
+    "settings.json",
+    "trash-settings.json",
+  ]);
   process.stdout.write(
-    "Packaged extension: checksum, extraction, portable launch, eight tools, write rejection, and restart passed.\n",
+    "Packaged extension: checksum, extraction, portable launch, ten tools, write rejection, and restart passed.\n",
   );
   if (process.argv.includes("--live-health"))
     process.stdout.write("Live health passed without reading task contents.\n");
