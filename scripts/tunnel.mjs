@@ -13,7 +13,6 @@ import { dirname, isAbsolute, join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
-import metadata from "../package.json" with { type: "json" };
 
 const execute = promisify(execFile);
 const root = join(homedir(), "Library", "Application Support", "Things MCP");
@@ -115,6 +114,9 @@ async function main() {
   if (process.platform !== "darwin")
     throw new Error("Tunnel installation requires macOS.");
   if (command === "install") {
+    const { default: metadata } = await import("../package.json", {
+      with: { type: "json" },
+    });
     const tunnelId = process.argv[3];
     if (!/^tunnel_[a-f0-9]{32}$/.test(tunnelId ?? ""))
       throw new Error("A valid tunnel ID is required.");

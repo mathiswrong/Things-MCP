@@ -16,6 +16,10 @@ Receipts remain until removed by the owner. The server stops accepting new write
 
 An optional diagnostic destination can be supplied by a developer. Its filter permits only short operation error codes and removes task content, paths, requests, user fields, exception details, and breadcrumbs. No destination is included in the distributed package.
 
+## Things URL token
+
+Optional URL editing and duplication use the local token in the login Keychain, separate from the tunnel credential. It is never accepted as a tool input or stored in the journal. URL dispatch receipts contain no checklist text, template contents or credential. The native helper sends the typed URL only to Things on this Mac.
+
 ## Remote connection
 
 The optional provider tunnel carries tool traffic to your Mac through your own account. Its runtime credential stays in the login Keychain and is passed only to the official transport process. The MCP child does not receive it. The tunnel provider and authorized workspace administrators are part of this trust boundary.

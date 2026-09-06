@@ -466,6 +466,55 @@ function run() {
             };
         break;
       }
+      case "url": {
+        if (
+          !["json", "update", "update-project", "show", "search"].includes(
+            input.command,
+          )
+        )
+          fail("INVALID_INPUT");
+        const allowed = [
+          "data",
+          "auth-token",
+          "id",
+          "duplicate",
+          "title",
+          "query",
+          "filter",
+          "when",
+          "append-checklist-items",
+          "prepend-checklist-items",
+          "heading",
+          "list-id",
+        ];
+        const keys = Object.keys(input.parameters);
+        if (
+          keys.some(
+            (key) =>
+              !allowed.includes(key) ||
+              typeof input.parameters[key] !== "string",
+          )
+        )
+          fail("INVALID_INPUT");
+        ObjC.import("AppKit");
+        const url =
+          "things:///" +
+          input.command +
+          "?" +
+          keys
+            .map(
+              (key) =>
+                encodeURIComponent(key) +
+                "=" +
+                encodeURIComponent(input.parameters[key]),
+            )
+            .join("&");
+        result = Boolean(
+          $.NSWorkspace.sharedWorkspace.openURL($.NSURL.URLWithString(url)),
+        );
+        if (!result) fail("NATIVE_FAILURE");
+        break;
+      }
       case "create": {
         const converted = properties(input);
         let item;

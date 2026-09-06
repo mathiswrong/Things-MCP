@@ -35,7 +35,7 @@ export const capabilities = [
     adapter: "applescript",
     validation: "native_write_verified_3.23.4",
     limitation:
-      "To-do and populated-project calendar-date scheduling verified. Clearing, Evening and reminders are not implemented.",
+      "To-do and populated-project calendar-date scheduling verified. Clearing, Evening and reminders use the separate URL extras tool with unverified dispatch receipts.",
   },
   {
     operation: "move_item",
@@ -51,7 +51,7 @@ export const capabilities = [
     adapter: "applescript",
     validation: "single_native_write_verified_3.23.4",
     limitation:
-      "Requires separate per-connection Trash permission plus ordinary writes. Moves one open to-do and its checklist to Trash. Closed-task deletion failed native checks and is rejected before writing. Container deletion is a separate development operation. No per-item permanent deletion is enabled; restore is a separate tool.",
+      "Requires separate per-connection Trash permission plus ordinary writes. Moves one open to-do and its checklist to Trash. Closed-task deletion failed native checks and is rejected before writing. Container deletion is a separate operation. No per-item permanent deletion is enabled; restore is a separate tool.",
   },
   {
     operation: "restore_item",
@@ -82,38 +82,59 @@ export const capabilities = [
   },
   {
     operation: "preview_destructive",
-    state: "development",
+    state: "implemented",
     adapter: "applescript",
     limitation:
-      "Reads affected exposed objects and returns a scope revision. Native completeness checks are in progress.",
+      "Reads affected exposed objects and returns a scope revision. Checklist, heading and repeat-template internals are not exposed. Global execution remains disabled.",
   },
   {
     operation: "apply_destructive",
-    state: "development",
+    state: "implemented",
     adapter: "applescript",
     limitation:
       "Open-project, area and tag-hierarchy deletion passed native checks. Requires the separate container grant and a current scope preview. Area previews distinguish Trash movement from archived projects retained in Logbook. Whole-library commands remain disabled pending their checks. Health reports each native gate independently.",
   },
   {
     operation: "headings",
-    state: "unavailable",
-    adapter: "shortcuts",
+    state: "limited",
+    adapter: "url_scheme",
     limitation:
-      "Excluded: Apple Shortcuts dependencies are not part of this product.",
+      "Initial headings in project templates and task placement under existing headings are available. No full heading read-back or in-place heading edits. URL receipts confirm dispatch only.",
   },
   {
     operation: "checklists",
-    state: "unavailable",
-    adapter: "shortcuts",
+    state: "limited",
+    adapter: "url_scheme",
     limitation:
-      "Full checklist queries and checked-row editing are unavailable without Apple Shortcuts, which is excluded. URL writes do not supply a read-back interface.",
+      "Create or replace rows with checked/canceled state, clear rows, append or prepend text. No existing row IDs or full read-back. Replacement affects every row. Maximum 100 rows. URL receipts confirm dispatch only.",
   },
   {
     operation: "duplicate",
-    state: "unavailable",
-    adapter: "applescript",
+    state: "implemented",
+    adapter: "url_scheme",
     limitation:
-      "The native command returned -1717 and is not registered as a tool. The documented URL duplication route remains implementation work.",
+      "Duplicate a to-do or project with the local Keychain token and current revision. Repeating items cannot be duplicated. Receipt identifies the source and confirms dispatch only; the new ID is not returned.",
+  },
+  {
+    operation: "create_from_template",
+    state: "implemented",
+    adapter: "url_scheme",
+    limitation:
+      "Create one structured to-do or project with up to 100 project entries and bounded payload size. No token needed. Receipt confirms dispatch only and has no created ID.",
+  },
+  {
+    operation: "edit_extras",
+    state: "implemented",
+    adapter: "url_scheme",
+    limitation:
+      "Checklist edits, heading placement, reminders, Evening and When clearing require the local Keychain token and a current revision. Unexposed fields cannot participate in revision checks. Receipt confirms dispatch only.",
+  },
+  {
+    operation: "show_view",
+    state: "implemented",
+    adapter: "url_scheme",
+    limitation:
+      "Open search or built-in views with optional tag filters. Changes only the Mac view. Requires ordinary writes; receipt confirms URL dispatch only.",
   },
   {
     operation: "permanent_delete_restore",

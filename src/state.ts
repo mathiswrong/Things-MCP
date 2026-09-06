@@ -26,10 +26,22 @@ export const receiptSchema = z.strictObject({
   verification: z.enum(["read_back", "command_accepted"]),
 });
 export type Receipt = z.infer<typeof receiptSchema>;
+export const urlReceiptSchema = z.strictObject({
+  requestId: z.uuid(),
+  target: z
+    .strictObject({ kind: z.enum(["todo", "project"]), id: z.string() })
+    .optional(),
+  operation: z.enum(["template", "edit", "duplicate", "navigate"]),
+  verification: z.literal("url_dispatched"),
+  message: z.literal(
+    "Sent to Things; result not verified. Inspect Things before making another change. Do not repeat this request with a new ID.",
+  ),
+});
+export type UrlReceipt = z.infer<typeof urlReceiptSchema>;
 const recordSchema = z.strictObject({
   fingerprint: z.string().regex(/^[a-f0-9]{64}$/),
-  state: z.enum(["pending", "completed", "unknown"]),
-  receipt: receiptSchema.optional(),
+  state: z.enum(["pending", "completed", "unknown", "dispatched"]),
+  receipt: z.union([receiptSchema, urlReceiptSchema]).optional(),
 });
 export type OperationRecord = z.infer<typeof recordSchema>;
 export const clientIdSchema = z.enum([

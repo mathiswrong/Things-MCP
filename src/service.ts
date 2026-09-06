@@ -22,13 +22,109 @@ import {
   updateSchema,
 } from "./domain.js";
 import { BridgeError } from "./errors.js";
-import type { Lease, Receipt, State } from "./state.js";
+import type { Lease, Receipt, State, UrlReceipt } from "./state.js";
+import { urlActionSchema, urlCommand } from "./url-domain.js";
+import { NativeUrlTransport, type UrlTransport } from "./url-transport.js";
 
 export class ThingsService {
   constructor(
     private readonly adapter: Adapter,
     private readonly state: State,
+    private readonly urls: UrlTransport = new NativeUrlTransport(),
   ) {}
+  async url(input: unknown) {
+    const value = this.parse(urlActionSchema, input);
+    const command = urlCommand(value);
+    if (Buffer.byteLength(JSON.stringify(command)) > 240000)
+      throw new BridgeError("INVALID_INPUT");
+    return this.state.exclusive(async (lease) => {
+      if (!(await this.state.writesEnabled()))
+        throw new BridgeError("READ_ONLY");
+      const hash = fingerprint({ operation: "url", input: value });
+      const previous = await this.state.operation(value.requestId);
+      if (previous) {
+        if (previous.fingerprint !== hash)
+          throw new BridgeError("REQUEST_CONFLICT");
+        if (
+          previous.state === "dispatched" &&
+          previous.receipt?.verification === "url_dispatched"
+        )
+          return { ...previous.receipt, replayed: true };
+        throw new BridgeError("OUTCOME_UNKNOWN");
+      }
+      if ("target" in value) {
+        const current = await this.adapter.get(value.target, lease.signal);
+        if (current.inTrash) throw new BridgeError("INVALID_INPUT");
+        if (fingerprint(current) !== value.expectedRevision)
+          throw new BridgeError("STALE_ITEM");
+        if (value.action === "edit" && value.changes.heading) {
+          const projectId = value.changes.projectId ?? current.projectId;
+          if (!projectId) throw new BridgeError("INVALID_INPUT");
+          if (
+            (
+              await this.adapter.get(
+                { kind: "project", id: projectId },
+                lease.signal,
+              )
+            ).inTrash
+          )
+            throw new BridgeError("INVALID_INPUT");
+        }
+      }
+      if (value.action === "template") {
+        const item = value.item;
+        await this.validateReferences(
+          item.kind === "project"
+            ? { areaId: item.areaId }
+            : item.list?.kind === "project"
+              ? { projectId: item.list.id }
+              : { areaId: item.list?.id },
+        );
+      }
+      if (value.action === "edit" || value.action === "duplicate") {
+        command.parameters["auth-token"] = await this.urls.token(lease.signal);
+        const current = await this.adapter.get(value.target, lease.signal);
+        if (fingerprint(current) !== value.expectedRevision)
+          throw new BridgeError("STALE_ITEM");
+      }
+      await this.state.checkCapacity();
+      await this.state.record(
+        value.requestId,
+        { fingerprint: hash, state: "pending" },
+        lease,
+      );
+      try {
+        await lease.assertOwned();
+        await this.urls.send(command, lease.signal);
+        const receipt: UrlReceipt = {
+          requestId: value.requestId,
+          operation: value.action,
+          ...("target" in value ? { target: value.target } : {}),
+          verification: "url_dispatched",
+          message:
+            "Sent to Things; result not verified. Inspect Things before making another change. Do not repeat this request with a new ID.",
+        };
+        await lease.assertOwned();
+        await this.state.record(
+          value.requestId,
+          { fingerprint: hash, state: "dispatched", receipt },
+          lease,
+        );
+        return { ...receipt, replayed: false };
+      } catch {
+        await this.state
+          .record(
+            value.requestId,
+            { fingerprint: hash, state: "unknown" },
+            lease,
+          )
+          .catch(() => undefined);
+        throw new BridgeError("OUTCOME_UNKNOWN");
+      } finally {
+        delete command.parameters["auth-token"];
+      }
+    });
+  }
   async health() {
     await this.state.initialize();
     return {
@@ -509,7 +605,11 @@ export class ThingsService {
       if (previous) {
         if (previous.fingerprint !== hash)
           throw new BridgeError("REQUEST_CONFLICT");
-        if (previous.state === "completed" && previous.receipt)
+        if (
+          previous.state === "completed" &&
+          previous.receipt &&
+          previous.receipt.verification !== "url_dispatched"
+        )
           return { ...previous.receipt, replayed: true };
         throw new BridgeError("OUTCOME_UNKNOWN");
       }

@@ -18,6 +18,12 @@ import {
 import { publicError } from "./errors.js";
 import type { ThingsService } from "./service.js";
 import { reportFailure } from "./telemetry.js";
+import {
+  duplicateSchema,
+  templateSchema,
+  urlEditSchema,
+  urlNavigateSchema,
+} from "./url-domain.js";
 
 export function createServer(service: ThingsService) {
   const server = new McpServer(
@@ -67,6 +73,35 @@ export function createServer(service: ThingsService) {
       },
     );
   }
+  register(
+    "things_create_from_template",
+    "Send one structured to-do or project to Things. Supports checklist rows and initial project headings. Requires writes. URL receipt confirms dispatch only: Things exposes no complete read-back or returned IDs here. Inspect Things; never retry with a new request ID.",
+    templateSchema,
+    false,
+    (input) => service.url({ ...input, action: "template" }),
+  );
+  register(
+    "things_edit_extras",
+    "Send checklist replacement/append/prepend, heading placement or scheduling including reminders/Evening/clearing to Things. Requires writes, current revision and the local Keychain URL token. Checklist replacement replaces every row. These fields cannot be read back; receipt is unverified dispatch. Repeat templates may reject these changes.",
+    urlEditSchema,
+    false,
+    (input) => service.url({ ...input, action: "edit" }),
+    true,
+  );
+  register(
+    "things_duplicate_item",
+    "Ask Things to duplicate a to-do or project through its documented URL command. Requires writes, current revision and the local Keychain URL token. Repeating items cannot be duplicated. Receipt contains the source ID, not a new item ID, and does not confirm completion. Inspect Things before another request.",
+    duplicateSchema,
+    false,
+    (input) => service.url({ ...input, action: "duplicate" }),
+  );
+  register(
+    "things_show_view",
+    "Open search or a built-in Things view, optionally filtering by tags. This changes the Mac's view only. Requires writes and a request ID; receipt confirms URL dispatch, not a visible result or returned task data.",
+    urlNavigateSchema,
+    false,
+    (input) => service.url({ ...input, action: "navigate" }),
+  );
   register(
     "things_capabilities",
     "Read the implementation and verification status of every operation family. Unavailable features cannot be invoked.",

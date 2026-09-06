@@ -1558,3 +1558,170 @@ test("navigation is permission checked and reports acceptance rather than a task
     );
   });
 });
+
+test("URL dispatch preserves permissions, revisions and receipts without storing credentials", async () => {
+  await fixture(async ({ adapter, state, directory }) => {
+    const item = seed(adapter);
+    let sent = 0;
+    let tokenReads = 0;
+    const transport = {
+      token: async () => {
+        tokenReads++;
+        return "synthetic-url-token";
+      },
+      send: async (command: { parameters: Record<string, string> }) => {
+        sent++;
+        assert.equal(command.parameters["auth-token"], "synthetic-url-token");
+      },
+    };
+    const service = new ThingsService(adapter, state, transport);
+    const request = {
+      action: "edit",
+      requestId: randomUUID(),
+      target: { kind: "todo", id: item.id },
+      expectedRevision: fingerprint(item),
+      changes: { checklist: [{ title: "Synthetic checklist text" }] },
+    };
+    await state.setWrites(false);
+    await assert.rejects(service.url(request), code("READ_ONLY"));
+    assert.equal(tokenReads, 0);
+    await state.setWrites(true);
+    await assert.rejects(
+      service.url({ ...request, expectedRevision: "0".repeat(64) }),
+      code("STALE_ITEM"),
+    );
+    assert.equal(sent, 0);
+    const receipt = await service.url(request);
+    assert.equal(receipt.verification, "url_dispatched");
+    assert.equal(sent, 1);
+    assert.equal(
+      (await service.requestStatus({ requestId: request.requestId })).state,
+      "dispatched",
+    );
+    assert.equal(
+      (
+        await new ThingsService(adapter, new State(directory), transport).url(
+          request,
+        )
+      ).replayed,
+      true,
+    );
+    assert.equal(sent, 1);
+    const stored = JSON.stringify(await state.operation(request.requestId));
+    assert.ok(!stored.includes("synthetic-url-token"));
+    assert.ok(!stored.includes("Synthetic checklist text"));
+    await assert.rejects(
+      service.url({ ...request, changes: { when: "evening" } }),
+      code("REQUEST_CONFLICT"),
+    );
+    await state.setWrites(false);
+    await assert.rejects(service.url(request), code("READ_ONLY"));
+  });
+});
+
+test("URL token failures and changes during Keychain access reject before dispatch", async () => {
+  await fixture(async ({ adapter, state }) => {
+    const item = seed(adapter);
+    let sent = 0;
+    const request = {
+      action: "duplicate",
+      requestId: randomUUID(),
+      target: { kind: "todo", id: item.id },
+      expectedRevision: fingerprint(item),
+    };
+    const missing = new ThingsService(adapter, state, {
+      token: async () => {
+        throw new BridgeError("URL_AUTH_REQUIRED");
+      },
+      send: async () => {
+        sent++;
+      },
+    });
+    await assert.rejects(missing.url(request), code("URL_AUTH_REQUIRED"));
+    assert.equal(await state.operation(request.requestId), undefined);
+    const changed = new ThingsService(adapter, state, {
+      token: async () => {
+        adapter.items.set(item.id, { ...item, title: "Changed elsewhere" });
+        return "synthetic";
+      },
+      send: async () => {
+        sent++;
+      },
+    });
+    await assert.rejects(changed.url(request), code("STALE_ITEM"));
+    assert.equal(sent, 0);
+    assert.equal(await state.operation(request.requestId), undefined);
+  });
+});
+
+test("uncertain URL dispatch never replays and cannot claim a created ID", async () => {
+  await fixture(async ({ adapter, state, directory }) => {
+    let sent = 0;
+    const request = {
+      action: "template",
+      requestId: randomUUID(),
+      item: { kind: "todo", title: "Synthetic template" },
+    };
+    const transport = {
+      token: async () => {
+        throw new Error("No token needed");
+      },
+      send: async () => {
+        sent++;
+        throw new Error("Disconnected after delivery");
+      },
+    };
+    const service = new ThingsService(adapter, state, transport);
+    await assert.rejects(service.url(request), code("OUTCOME_UNKNOWN"));
+    await assert.rejects(
+      new ThingsService(adapter, new State(directory), transport).url(request),
+      code("OUTCOME_UNKNOWN"),
+    );
+    assert.equal(sent, 1);
+    const success = await new ThingsService(adapter, state, {
+      ...transport,
+      send: async () => {},
+    }).url({ ...request, requestId: randomUUID() });
+    assert.equal(success.target, undefined);
+    assert.equal(success.verification, "url_dispatched");
+  });
+});
+
+test("URL templates validate parents and payload size without dispatching", async () => {
+  await fixture(async ({ adapter, state }) => {
+    let sent = 0;
+    const service = new ThingsService(adapter, state, {
+      token: async () => "",
+      send: async () => {
+        sent++;
+      },
+    });
+    const request = {
+      action: "template",
+      requestId: randomUUID(),
+      item: {
+        kind: "todo",
+        title: "Synthetic",
+        list: { kind: "project", id: "missing" },
+      },
+    };
+    await assert.rejects(service.url(request), code("NOT_FOUND"));
+    await assert.rejects(
+      service.url({
+        action: "template",
+        requestId: randomUUID(),
+        item: {
+          kind: "project",
+          title: "Synthetic",
+          items: Array.from({ length: 100 }, () => ({
+            kind: "todo",
+            title: "a".repeat(4000),
+            notes: "b".repeat(10000),
+          })),
+        },
+      }),
+      code("INVALID_INPUT"),
+    );
+    assert.equal(sent, 0);
+  });
+});

@@ -6,7 +6,7 @@ Things MCP uses the existing clients' extension and plugin interfaces. There is 
 
 The MCPB package bundles the server, fixed Things automation script, and required notices. The host supplies Node.js. Native extension settings provide separate local and remote write grants. The host starts the local server with its trusted configuration; MCP calls cannot grant permission.
 
-All clients for the same Things library share a state directory, filesystem lease, request journal, revision checks, and read-back verification. Every mutation rechecks its grant. Global revocation disables all grants and survives restarting unchanged native settings. Deliberately switching the relevant control off and saving, then on and saving, grants access again.
+All clients for the same Things library share a state directory, filesystem lease, request journal, revision checks, and native read-back verification. URL-only tools report dispatch separately because complete read-back is unavailable. Every mutation rechecks its grant. Global revocation disables all grants and survives restarting unchanged native settings. Deliberately switching the relevant control off and saving, then on and saving, grants access again.
 
 ## Remote connection
 

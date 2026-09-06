@@ -69,7 +69,7 @@ test("MCP initialization, discovery, reads, and write rejection work through the
       client.connect(clientTransport),
     ]);
     const tools = await client.listTools();
-    assert.equal(tools.tools.length, 16);
+    assert.equal(tools.tools.length, 20);
     assert.equal(
       tools.tools.find((tool) => tool.name === "things_find_items")?.annotations
         ?.readOnlyHint,
