@@ -63,13 +63,13 @@ A successful call reports the Things version and running state. If the Mac is un
 
 ## 5. Enable ordinary changes
 
-On the Mac, open **Claude Desktop > Settings > Extensions > Things MCP > Configure**. Turn on **Allow changes from ChatGPT** and **Save**. That native setting manages the remote grant; no tool can enable its own access. Request a new health check and confirm `writesEnabled: true`.
+On the Mac, open **Claude Desktop > Settings > Extensions > Things MCP > Configure**. Turn on **Allow changes from remote connections** and **Save**. That native setting manages the remote grant; no tool can enable its own access. Request a new health check and confirm `writesEnabled: true`.
 
-For individual to-do deletion, also enable **Allow moving to Trash from ChatGPT** and save. This separate permission defaults to off and never allows permanent deletion or container deletion.
+For individual to-do deletion, also enable **Allow moving to Trash from remote connections** and save. This separate permission defaults to off and never allows permanent deletion or container deletion.
 
 Test one labeled Inbox task, then read it back. You may still see ChatGPT tool approval prompts. Do not bypass them or change unrelated plugin permissions.
 
-For project, area and tag deletion, enable the separate **Delete projects, areas, and tags from ChatGPT** switch. The server requires a fresh scope preview before applying the operation.
+For project, area and tag deletion, enable the separate **Delete projects, areas, and tags from remote connections** switch. The server requires a fresh scope preview before applying the operation.
 
 Checklist and reminder edits and duplication also use the [Things URL token](URL-OPERATIONS.md) stored on this Mac. The tunnel credential and Things token are different secrets.
 

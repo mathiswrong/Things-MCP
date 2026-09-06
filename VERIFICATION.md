@@ -1,6 +1,14 @@
 # Verification record
 
-Version **1.0.1** was checked on September 6, 2026. It exposes twenty tools. The detailed [acceptance record](docs/V1-READINESS.md) separates observed native behavior from verification and environment limits.
+Version **1.0.2** was checked on September 6, 2026. It exposes twenty tools. The detailed [acceptance record](docs/V1-READINESS.md) separates observed native behavior from verification and environment limits.
+
+## Version 1.0.2 checks
+
+- Clean dependency installation, typecheck, lint, **82 tests**, runtime build, stdio smoke, extension packaging, extracted-package discovery/read-only/restart checks and native health passed. The dependency audit reported zero vulnerabilities.
+- This patch updates capability descriptions, remote permission labels and documentation. Mutation implementation is unchanged from 1.0.1; its live project-move evidence remains below. No additional task mutations were needed for the wording changes.
+- The maintained wiki was reconciled against current code and release evidence. Its source links, citations, page links and topics passed validation with no issues.
+- Secret scans passed for source, reachable history, the new package and all four previously published extension assets. Public pull-request, review-comment, commit and release text were reviewed for provenance signatures. Compatibility instructions and required plugin paths retain product names where necessary. Remote setting keys remain unchanged, so label changes preserve saved grants.
+- Repository description and topics were refreshed. Main and release-tag protections, required checks, secret scanning, push protection, read-only workflow defaults and private vulnerability reporting were checked.
 
 ## Version 1.0.1 checks
 

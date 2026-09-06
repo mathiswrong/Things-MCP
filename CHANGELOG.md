@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.2
+
+- Updated the maintained wiki and public documentation to describe the shipped twenty-tool server and project descendant receipts.
+- Clarified populated-project move verification, restoration versus permanent deletion, and optional remote access in capability metadata.
+- Made remote permission labels client-neutral while preserving setting keys and grants.
+- Refreshed release and repository descriptions. Mutation behavior is unchanged from 1.0.1.
+
 ## 1.0.1
 
 - Project move receipts now include descendant task counts, observed changed/unchanged counts, and up to 20 changed task IDs with field names. Version 1.0.0 returned only the project move receipt.

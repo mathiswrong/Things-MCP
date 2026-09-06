@@ -10,5 +10,5 @@
 - Keep the local core usable without a project-operated account or hosted service. Optional remote providers must remain replaceable. Builds and tests must not require personal credentials, signing identities, or private services.
 - Use maintained dependencies and preserve redistribution requirements. Do not redistribute Things or proprietary vendor assets.
 - Product planning precedes implementation. New UI requires approved designs. There is no companion app, custom setup window, or menu-bar app. Prefer existing client installation and settings controls. Document advanced setup honestly when a command-free installation is unavailable.
-- Run appropriate local checks and update the private pull request. Do not merge, change visibility, publish packages, or grant a license without the owner's explicit authorization.
+- Run appropriate local checks and update the pull request. Do not merge, change visibility, publish packages, or grant a license without the owner's explicit authorization.
 - Consult `almanac/` for architecture and historical decisions. Current code takes precedence over historical descriptions. Treat the wiki as read-only during ordinary development; use its maintenance workflow for wiki changes.

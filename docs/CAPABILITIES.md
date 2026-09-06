@@ -1,6 +1,6 @@
 # Capability reference
 
-Version 1.0.1 exposes twenty MCP tools using supported AppleScript/JXA and Things URLs. It does not accept caller scripts, access the Things database, or use Apple Shortcuts. [Verification](../VERIFICATION.md) records the evidence and environment limits.
+Version 1.0.2 exposes twenty MCP tools using supported AppleScript/JXA and Things URLs. It does not accept caller scripts, access the Things database, or use Apple Shortcuts. [Verification](../VERIFICATION.md) records the evidence and environment limits.
 
 | Tool | Behavior |
 |---|---|
@@ -51,7 +51,7 @@ Starting in 1.0.1, a successful project move includes `descendantImpact` in its 
 | `unchangedExposedFieldsCount` | Compared tasks whose exposed fields did not change. This does not mean the move had no inherited effect on them. |
 | `changes` | Up to 20 changed task IDs, each with its `changedFields` list. No titles, notes or before/after field values are included. |
 | `changesTruncated` | True when additional changed tasks are counted but omitted from the detail list. |
-| `beforeComplete`, `afterComplete` | Coverage of the public child collection. These are true for successful 1.0.1 moves; native timeouts or failed reads cannot produce a success receipt. |
+| `beforeComplete`, `afterComplete` | Coverage of the public child collection. These are true for successful moves; native timeouts or failed reads cannot produce a success receipt. |
 | `notComparedCount` | Zero for a successful move. Unexpected membership changes fail verification. |
 | `scope`, `limitations` | The summary covers exposed task fields. It cannot establish every inherited list effect, checklist, heading or repeating-template change. |
 

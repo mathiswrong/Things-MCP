@@ -25,3 +25,5 @@ Things MCP connects a conversation to Things 3 on your Mac. Version 1.0 provides
 [Contributing](../CONTRIBUTING.md) includes reproducible build and test commands. [Architecture](../SETUP-PLAN.md) describes the local server and optional transport. [Maintaining the repository](MAINTAINING.md) covers GitHub protections. [Releasing](RELEASING.md) covers package validation and publication. [Changelog](../CHANGELOG.md) records user-facing changes.
 
 The `almanac/` tree contains historical planning notes. Some describe routes that were later excluded. Use these guides and the current runtime capability response for installation and supported behavior.
+
+Maintainers can start with the [architecture wiki](../almanac/README.md) and [release procedure](RELEASING.md).

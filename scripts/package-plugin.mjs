@@ -17,15 +17,14 @@ const output = await externalDirectory(
 const manifest = {
   name: "things-mcp",
   version: metadata.version,
-  description:
-    "Find and manage Things 3 tasks on your Mac through a private connection.",
+  description: metadata.description,
   author: { name: "Things MCP contributors" },
   apps: "./.app.json",
   interface: {
     displayName: "Things MCP",
-    shortDescription: "Find and manage Things 3 tasks",
+    shortDescription: "Manage Things 3 tasks and projects",
     longDescription:
-      "Connect to Things on your Mac. Read-only by default. Ordinary changes require a local grant. The Mac must be awake and online.",
+      "Manage tasks, projects, tags, checklists, reminders and templates through Things on your Mac. Project moves report descendant observations; URL-only changes report dispatch. Starts read-only. Changes require a local grant, and the Mac must be awake and online.",
     developerName: "Things MCP contributors",
     category: "Productivity",
     capabilities: ["Read", "Write"],

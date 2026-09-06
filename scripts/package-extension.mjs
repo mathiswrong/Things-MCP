@@ -37,10 +37,9 @@ try {
     display_name: "Things MCP",
     version: metadata.version,
     ...(metadata.license !== "UNLICENSED" ? { license: metadata.license } : {}),
-    description:
-      "Find, create, edit, schedule, and move Things 3 tasks on this Mac.",
+    description: metadata.description,
     long_description:
-      "Requires Things 3 to be running on your Mac. Starts read-only. Enable Allow changes in extension settings to create, edit, and schedule tasks. No account, API key, or separate runtime installation is needed for this local connection. Task information you request is shared with the connected client.",
+      "Twenty tools for tasks, projects, tags, checklists, reminders and templates, including project move summaries. Requires Things 3 running on this Mac. Starts read-only; enable changes in extension settings. URL-only fields report dispatch rather than complete read-back. No account or separate runtime installation is needed for this local connection. Requested task information is shared with the connected client.",
     author: { name: "Things MCP contributors" },
     server: {
       type: "node",
@@ -79,15 +78,15 @@ try {
       },
       allow_browser_trash: {
         type: "boolean",
-        title: "Allow moving to Trash from ChatGPT",
+        title: "Allow moving to Trash from remote connections",
         description:
-          "Allow the connected tunnel to move individual to-dos and their checklists to Things Trash. Also requires Allow changes from ChatGPT. Does not allow permanent deletion.",
+          "Allow the connected tunnel to move individual to-dos and their checklists to Things Trash. Also requires Allow changes from remote connections. Does not allow permanent deletion.",
         default: false,
         required: false,
       },
       allow_browser_changes: {
         type: "boolean",
-        title: "Allow changes from ChatGPT",
+        title: "Allow changes from remote connections",
         description:
           "Allow the connected tunnel to create, edit, and schedule items. Turn off to revoke this access on the next request. The Mac must remain awake and online.",
         default: false,
@@ -116,7 +115,7 @@ try {
       const name = `allow_${browser ? "browser_" : ""}${key}`;
       manifest.user_config[name] = {
         type: "boolean",
-        title: `${title}${browser ? " from ChatGPT" : ""}`,
+        title: `${title}${browser ? " from remote connections" : ""}`,
         description,
         default: false,
         required: false,

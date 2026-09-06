@@ -26,7 +26,7 @@ Always identify the intended task if more than one result matches. If a tool rep
 
 ## Choose write access
 
-Open **Claude Desktop > Settings > Extensions > Things MCP > Configure**. **Allow changes** controls the local connection. **Allow changes from ChatGPT** controls the private tunnel. Save after changing a switch.
+Open **Claude Desktop > Settings > Extensions > Things MCP > Configure**. **Allow changes** controls the local connection. **Allow changes from remote connections** controls the private tunnel. Save after changing a switch.
 
 The two **Allow moving to Trash** switches are separate and default to off. Turn on the switch for the desired connection only when you want it to remove individual to-dos. It also needs ordinary changes enabled. This does not permit permanent deletion or deleting whole projects or areas. Client approval prompts remain separate.
 

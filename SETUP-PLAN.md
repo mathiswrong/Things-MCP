@@ -18,6 +18,6 @@ The Mac must be awake, online, and signed in. The transport exposes no public li
 
 ## Installation scope
 
-The packaged local route needs no configuration editing, commands, or separate runtime installation. A new Mac's ChatGPT tunnel still requires operator provisioning. The initial public package must not be described as a one-click browser setup or as supporting every Things operation.
+The packaged local route needs no configuration editing, commands, or separate runtime installation. A new Mac's browser tunnel still requires operator provisioning. The public package must not be described as a one-click browser setup or as supporting every Things operation.
 
 See [installation](packaging/INSTALL.md), [ChatGPT setup](docs/CHATGPT.md), [other MCP clients](docs/OTHER-CLIENTS.md), and [verification](VERIFICATION.md). SDK smoke tests, native client installation, actual conversational tool calls, and system lifecycle checks are distinct evidence; one does not establish the others.

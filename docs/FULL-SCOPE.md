@@ -1,13 +1,13 @@
 # Operation scope
 
-This is the version 1.0 scope. Availability follows the current code, the installed Things public scripting dictionary and the [documented Things URL commands](https://culturedcode.com/things/support/articles/2803573/). A command appearing in a dictionary is not proof that it executes successfully.
+This is the version 1.0.2 scope. Availability follows the current code, the installed Things public scripting dictionary and the [documented Things URL commands](https://culturedcode.com/things/support/articles/2803573/). A command appearing in a dictionary is not proof that it executes successfully.
 
 ## Implemented native operations
 
 - Read/search to-dos, projects, areas and tags; read selection; count and test existence; filter by parent, built-in list, tags and dates; sort returned results; continue scans beyond 5,000 objects.
 - Create to-dos, projects, areas and tags. Set supported initial placement, status, deadlines, tags and timestamps.
 - Edit or increment title and notes; complete, cancel or reopen; schedule calendar dates; clear deadlines; set exposed timestamps; assign/remove tags; manage tag hierarchy and shortcuts; collapse/expand areas.
-- Move to supported lists or parents and detach parents. To-dos support Inbox, Today, Anytime and Someday. Projects support Today, Someday and areas.
+- Move to supported lists or parents and detach parents. To-dos support Inbox, Today, Anytime and Someday. Projects support Today, Someday and areas. Project receipts include descendant counts and observed field changes, with up to twenty changed IDs and full counts for all successfully read tasks.
 - Move an open to-do to Trash. Restore open to-dos to Inbox and open projects to Today.
 - Preview and delete open projects, areas and tag hierarchies with separate permission and scope checks. Area deletion keeps archived projects in Logbook while clearing their area association.
 - Show/edit items and open Quick Entry. Navigation receipts acknowledge a command, not a newly created task.

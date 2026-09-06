@@ -41,9 +41,9 @@ export const capabilities = [
     operation: "move_item",
     state: "implemented",
     adapter: "applescript",
-    validation: "todo_and_empty_project_moves_live_verified_3.23.4",
+    validation: "todo_and_populated_project_moves_live_verified_3.23.4",
     limitation:
-      "To-do Inbox, Today, Anytime, Someday, project placement and detachment verified. Area placement/detachment and empty-project Today/Someday verified. Project Anytime and direct Logbook moves are rejected after failed native verification. Populated-project area movement and descendant preservation passed native checks. Project move receipts include descendantImpact counts and up to 20 changed task IDs with exposed field names; unchanged fields do not prove no inherited effect. No headings, reordering, or Trash restoration.",
+      "To-do Inbox, Today, Anytime, Someday, project placement and detachment verified. Area placement/detachment and populated-project Today/Someday verified. Project Anytime and direct Logbook moves are rejected after failed native verification. Populated-project area movement and descendant preservation passed native checks. Project move receipts include descendantImpact counts and up to 20 changed task IDs with exposed field names; unchanged fields do not prove no inherited effect. No headings, reordering, or Trash restoration.",
   },
   {
     operation: "trash_item",
@@ -137,11 +137,11 @@ export const capabilities = [
       "Open search or built-in views with optional tag filters. Changes only the Mac view. Requires ordinary writes; receipt confirms URL dispatch only.",
   },
   {
-    operation: "permanent_delete_restore",
+    operation: "permanent_delete",
     state: "unavailable",
     adapter: "applescript",
     limitation:
-      "Open to-dos restore to Inbox and open projects restore to Today. Closed-item restoration remains under investigation. The public whole-library empty Trash command is distinct from per-item permanent deletion.",
+      "Per-item permanent deletion is not enabled. The public whole-library Empty Trash command exists but remains disabled pending isolated-library verification. Open-item restoration is available through restore_item.",
   },
   {
     operation: "repeat_rules",
@@ -158,6 +158,6 @@ export const capabilities = [
     operation: "remote_http",
     state: "unavailable",
     limitation:
-      "This build exposes local stdio only. No public HTTP listener is started.",
+      "The core exposes stdio and starts no public HTTP listener. Remote access is available through the optional private provider tunnel, which launches this same stdio server.",
   },
 ] as const;
