@@ -18,9 +18,9 @@ The development server exposes sixteen MCP tools through fixed JXA and AppleScri
 | `things_move_item` | Move to supported lists or parents, or detach a parent. |
 | `things_restore_item` | Restore an open to-do to Inbox or an open project to Today, with current revision, normal writes and verified root read-back. |
 | `things_trash_item` | Move one open to-do and its checklist to Trash, with the separate Trash grant. |
-| `things_navigate` | Show an item/list, open an item for editing, or open empty Quick Entry on the Mac. |
+| `things_navigate` | Show an item/list, open an item for editing, or open Quick Entry on the Mac. |
 | `things_preview_destructive` | Development preview of exposed objects affected by a container deletion or global maintenance command. Returns a scope revision. |
-| `things_apply_destructive` | Development implementation with independent grants and stale-scope checks. Open-project and tag-hierarchy deletion are native verified. Area and global-command gates remain disabled pending separate checks. |
+| `things_apply_destructive` | Development implementation with independent grants and stale-scope checks. Open-project, area and tag-hierarchy deletion are native verified. Global-command gates remain disabled pending separate checks. |
 | `things_request_status` | Read a durable mutation receipt or pending/unknown status by request ID. |
 
 ## Fields and edits
@@ -51,7 +51,11 @@ Every mutation needs normal local authorization and a unique UUID request ID. It
 
 Task-changing tools verify the affected exposed fields or list membership. `things_navigate` instead returns `verification: "command_accepted"`: Things accepted a UI command. It does not certify that a task was created, the user submitted Quick Entry, or a remote screen changed.
 
-Individual to-do Trash requires its own grant. Development container deletion, global Empty Trash and global Log Completed each have another independent grant, default off. Native gates are independent: open-project and tag-hierarchy deletion passed, while area deletion and global commands remain disabled until their own checks pass. Global commands affect the whole library; they are not substitutes for a targeted fixture test.
+Quick Entry opening and dismissal were checked in the native UI. Things can retain a prior draft; the tool does not clear it or submit it.
+
+Area deletion previews label each effect. Open projects and their children move to Trash. Already logged projects and their children stay in Logbook with their area association removed. The area itself is deleted. Project restoration recovers its children; it does not recreate a deleted area.
+
+Individual to-do Trash requires its own grant. Development container deletion, global Empty Trash and global Log Completed each have another independent grant, default off. Native gates are independent: open-project, area and tag-hierarchy deletion passed, while global commands remain disabled until their own checks pass. Global commands affect the whole library; they are not substitutes for a targeted fixture test.
 
 ## Remaining limits
 

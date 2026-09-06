@@ -43,7 +43,7 @@ export const capabilities = [
     adapter: "applescript",
     validation: "todo_and_empty_project_moves_live_verified_3.23.4",
     limitation:
-      "To-do Inbox, Today, Anytime, Someday, project placement and detachment verified. Area placement/detachment and empty-project Today/Someday verified. Project Anytime and direct Logbook moves are rejected after failed native verification. Populated-project effects remain unverified. No headings, reordering, or Trash restoration.",
+      "To-do Inbox, Today, Anytime, Someday, project placement and detachment verified. Area placement/detachment and empty-project Today/Someday verified. Project Anytime and direct Logbook moves are rejected after failed native verification. Populated-project area movement and descendant preservation passed native checks. No headings, reordering, or Trash restoration.",
   },
   {
     operation: "trash_item",
@@ -78,7 +78,7 @@ export const capabilities = [
     state: "implemented",
     adapter: "applescript",
     limitation:
-      "Show an item/list, edit an item, or open empty Quick Entry on this Mac. Requires writes and a request ID. Receipt means command accepted, not that a task was created or a remote device changed view. Show/edit and selected-item read-back were native checked; Quick Entry still needs a UI check.",
+      "Show an item/list, edit an item, or open Quick Entry on this Mac. Requires writes and a request ID. Receipt means command accepted, not that a task was created or a remote device changed view. Show/edit and selected-item read-back were native checked. Quick Entry opening and dismissal were checked in the UI; Things may retain a previous draft.",
   },
   {
     operation: "preview_destructive",
@@ -92,7 +92,7 @@ export const capabilities = [
     state: "development",
     adapter: "applescript",
     limitation:
-      "Open-project deletion passed native checks and requires the separate container grant plus a current scope preview. Tag-hierarchy deletion and assignment removal passed native checks. Area deletion and whole-library commands remain disabled pending their checks. Health reports each native gate independently.",
+      "Open-project, area and tag-hierarchy deletion passed native checks. Requires the separate container grant and a current scope preview. Area previews distinguish Trash movement from archived projects retained in Logbook. Whole-library commands remain disabled pending their checks. Health reports each native gate independently.",
   },
   {
     operation: "headings",
@@ -120,7 +120,7 @@ export const capabilities = [
     state: "unavailable",
     adapter: "applescript",
     limitation:
-      "Restoration beyond open to-dos returning to Inbox is under investigation. The public whole-library empty Trash command is distinct from per-item permanent deletion.",
+      "Open to-dos restore to Inbox and open projects restore to Today. Closed-item restoration remains under investigation. The public whole-library empty Trash command is distinct from per-item permanent deletion.",
   },
   {
     operation: "repeat_rules",

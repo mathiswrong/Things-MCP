@@ -20,6 +20,7 @@ import {
   type Restore,
   referenceSchema,
   type Schedule,
+  scopeItemSchema,
   type Trash,
   type Update,
 } from "./domain.js";
@@ -168,7 +169,7 @@ export class NativeAdapter implements Adapter {
   readonly destructiveVerified = Object.freeze({
     todo: false,
     project: true,
-    area: false,
+    area: true,
     tag: true,
     empty_trash: false,
     log_completed: false,
@@ -209,7 +210,7 @@ export class NativeAdapter implements Adapter {
     return item;
   }
   scope(input: DestructiveScope, signal?: AbortSignal) {
-    return this.call("scope", input, z.array(itemSchema), false, signal);
+    return this.call("scope", input, z.array(scopeItemSchema), false, signal);
   }
   async destructive(
     input: Destructive,

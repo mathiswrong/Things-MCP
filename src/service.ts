@@ -15,6 +15,7 @@ import {
   type Reference,
   referenceSchema,
   restoreSchema,
+  type ScopeItem,
   scheduleSchema,
   trashSchema,
   type Update,
@@ -173,13 +174,18 @@ export class ThingsService {
     );
   }
   private async readScope(input: DestructiveScope, signal?: AbortSignal) {
+    const items = await this.adapter.scope(input, signal);
     if (input.target) {
-      const target = await this.adapter.get(input.target, signal);
+      const target = items.find(
+        (item) =>
+          item.kind === input.target?.kind && item.id === input.target.id,
+      );
+      if (!target) throw new BridgeError("NOT_FOUND");
       if (target.inTrash) throw new BridgeError("INVALID_INPUT");
       if (target.kind === "project" && target.status !== "open")
         throw new BridgeError("VERIFICATION_UNAVAILABLE");
     }
-    return (await this.adapter.scope(input, signal)).sort((a, b) =>
+    return items.sort((a, b) =>
       `${a.kind}:${a.id}`.localeCompare(`${b.kind}:${b.id}`),
     );
   }
@@ -197,10 +203,32 @@ export class ThingsService {
         title: item.title,
         status: item.status,
         inTrash: item.inTrash,
+        effect: this.destructiveEffect(value, item, items),
       })),
       unobservableContents: ["checklists", "headings", "repeat templates"],
       atomic: false,
     };
+  }
+  private destructiveEffect(
+    input: DestructiveScope,
+    item: ScopeItem,
+    items: ScopeItem[],
+  ) {
+    if (input.action === "empty_trash") return "permanent_delete";
+    if (input.action === "log_completed") return "move_to_logbook";
+    if (input.target?.kind === "tag")
+      return item.kind === "tag" ? "delete_tag" : "remove_tag_assignments";
+    if (input.target?.kind === "area") {
+      if (item.kind === "area") return "permanent_delete";
+      const parent = item.projectId
+        ? items.find(
+            (candidate) =>
+              candidate.kind === "project" && candidate.id === item.projectId,
+          )
+        : undefined;
+      if ((parent ?? item).inLogbook) return "detach_from_area";
+    }
+    return "move_to_trash";
   }
   async destructive(input: unknown) {
     const value = this.parse(destructiveSchema, input);
@@ -212,7 +240,7 @@ export class ThingsService {
       action: value.action,
       ...(value.target ? { target: value.target } : {}),
     });
-    let before: Item[] = [];
+    let before: ScopeItem[] = [];
     return this.mutate(
       value.action,
       value,
@@ -264,7 +292,27 @@ export class ThingsService {
                 notes: item.notes,
                 tagIds: item.tagIds?.filter((id) => !deletedTags.includes(id)),
               });
-            else if (!actual.inTrash)
+            else if (
+              this.destructiveEffect(scopeInput, item, before) ===
+              "detach_from_area"
+            ) {
+              const parent = item.projectId
+                ? before.find(
+                    (candidate) =>
+                      candidate.kind === "project" &&
+                      candidate.id === item.projectId,
+                  )
+                : undefined;
+              if (
+                actual.inTrash ||
+                !(await this.adapter.inList(
+                  parent ?? item,
+                  "logbook",
+                  lease.signal,
+                ))
+              )
+                throw new BridgeError("VERIFICATION_FAILED");
+            } else if (!actual.inTrash)
               throw new BridgeError("VERIFICATION_FAILED");
           }
         }

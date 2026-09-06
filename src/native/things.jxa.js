@@ -179,9 +179,12 @@ function run() {
     function projectChildren(parent) {
       if (inTrash(parent.id())) fail("INVALID_INPUT");
       const children = parent.toDos();
-      const logged = builtin("logbook").toDos.whose({
-        _match: [ObjectSpecifier().project.id, parent.id()],
-      })();
+      const logged =
+        parent.status() === "open"
+          ? builtin("logbook").toDos.whose({
+              _match: [ObjectSpecifier().project.id, parent.id()],
+            })()
+          : [];
       const byId = new Map();
       for (const item of [...children, ...logged]) byId.set(item.id(), item);
       return [...byId.values()].map((item) => serialize(item, "todo"));
@@ -211,14 +214,17 @@ function run() {
         const logged = builtin("logbook").toDos.whose({
           _match: [ObjectSpecifier().area.id, value.target.id],
         })();
+        const loggedIds = new Set(logged.map((item) => item.id()));
         const items = new Map();
         for (const object of [...parent.toDos(), ...logged]) {
           const item = serialize(object, taskKind(object));
           if (item.inTrash) continue;
+          item.inLogbook = loggedIds.has(item.id);
           items.set(item.id, item);
           if (item.kind === "project")
-            for (const child of projectChildren(object))
+            for (const child of projectChildren(object)) {
               items.set(child.id, child);
+            }
         }
         return [serialize(parent, "area"), ...items.values()];
       }

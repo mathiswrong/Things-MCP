@@ -16,6 +16,7 @@ import test from "node:test";
 import {
   type Adapter,
   type Create,
+  type DestructiveScope,
   fingerprint,
   type Item,
   type List,
@@ -24,6 +25,7 @@ import {
   type Reference,
   type Restore,
   type Schedule,
+  type ScopeItem,
   type Trash,
   type Update,
 } from "../src/domain.js";
@@ -48,8 +50,9 @@ class MemoryAdapter implements Adapter {
   discardWrites = false;
   onRead?: (signal?: AbortSignal) => Promise<void>;
 
-  async scope(): Promise<Item[]> {
-    return [];
+  async scope(input: DestructiveScope): Promise<ScopeItem[]> {
+    const item = input.target ? this.items.get(input.target.id) : undefined;
+    return item ? [{ ...item }] : [];
   }
   async destructive() {
     return true;
@@ -1397,6 +1400,94 @@ test("project deletion never reports verified if unrelated content changes", asy
     );
     await assert.rejects(service.destructive(input), code("OUTCOME_UNKNOWN"));
     assert.equal((await service.requestStatus({ requestId })).state, "unknown");
+  });
+});
+
+test("area deletion previews distinguish active contents from retained Logbook projects", async () => {
+  await fixture(async ({ adapter, state, service }) => {
+    const area: Item = {
+      kind: "area",
+      id: "area-delete",
+      title: "Synthetic area",
+    };
+    const open: Item = {
+      kind: "project",
+      id: "open-project",
+      title: "Open",
+      status: "open",
+      areaId: area.id,
+      inTrash: false,
+    };
+    const closed: Item = {
+      ...open,
+      id: "closed-project",
+      title: "Closed",
+      status: "completed",
+    };
+    const openChild: Item = {
+      kind: "todo",
+      id: "open-parent-child",
+      title: "Child",
+      projectId: open.id,
+      status: "completed",
+      areaId: null,
+      inTrash: false,
+    };
+    const closedChild: Item = {
+      ...openChild,
+      id: "closed-parent-child",
+      projectId: closed.id,
+    };
+    for (const item of [area, open, closed, openChild, closedChild])
+      adapter.items.set(item.id, item);
+    adapter.membership.set(closed.id, "logbook");
+    const scope: ScopeItem[] = [
+      area,
+      { ...open, inLogbook: false },
+      { ...closed, inLogbook: true },
+      { ...openChild, inLogbook: true },
+      { ...closedChild, inLogbook: true },
+    ];
+    adapter.scope = async () => scope.map((item) => ({ ...item }));
+    adapter.destructive = async () => {
+      adapter.items.delete(area.id);
+      for (const item of [open, closed, openChild, closedChild])
+        adapter.items.set(item.id, {
+          ...item,
+          areaId: null,
+          inTrash: item.id === open.id || item.projectId === open.id,
+        });
+      return true;
+    };
+    const target = { kind: area.kind, id: area.id };
+    const preview = await service.previewDestructive({
+      action: "delete_container",
+      target,
+    });
+    assert.deepEqual(
+      Object.fromEntries(preview.items.map((item) => [item.id, item.effect])),
+      {
+        [area.id]: "permanent_delete",
+        [open.id]: "move_to_trash",
+        [closed.id]: "detach_from_area",
+        [openChild.id]: "move_to_trash",
+        [closedChild.id]: "detach_from_area",
+      },
+    );
+    await state.configureAdvanced({
+      delete_container: true,
+      empty_trash: false,
+      log_completed: false,
+    });
+    const receipt = await service.destructive({
+      action: "delete_container",
+      target,
+      requestId: randomUUID(),
+      expectedScopeRevision: preview.scopeRevision,
+    });
+    assert.equal(receipt.verification, "read_back");
+    assert.equal(adapter.items.get(closedChild.id)?.projectId, closed.id);
+    assert.equal(adapter.items.get(closed.id)?.inTrash, false);
   });
 });
 

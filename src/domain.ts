@@ -82,6 +82,10 @@ export const itemSchema = z.strictObject({
   childCount: z.number().int().nonnegative().optional(),
 });
 export type Item = z.infer<typeof itemSchema>;
+export const scopeItemSchema = itemSchema.extend({
+  inLogbook: z.boolean().optional(),
+});
+export type ScopeItem = z.infer<typeof scopeItemSchema>;
 export const querySchema = z
   .strictObject({
     kind: kindSchema.default("todo"),
@@ -360,7 +364,7 @@ export interface Adapter {
   readonly destructiveVerified: Readonly<
     Record<Kind | "empty_trash" | "log_completed", boolean>
   >;
-  scope(input: DestructiveScope, signal?: AbortSignal): Promise<Item[]>;
+  scope(input: DestructiveScope, signal?: AbortSignal): Promise<ScopeItem[]>;
   destructive(input: Destructive, signal?: AbortSignal): Promise<boolean>;
   count(query: Query): Promise<z.infer<typeof countResultSchema>>;
   navigate(input: Navigate, signal?: AbortSignal): Promise<boolean>;

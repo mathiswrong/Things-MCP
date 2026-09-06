@@ -178,7 +178,7 @@ export function createServer(service: ThingsService) {
   );
   register(
     "things_apply_destructive",
-    "Apply a previously reviewed scope using its current scope revision. Requires ordinary writes and the separate local owner grant for this action. Container deletion can cascade; empty Trash is permanent and global. Open-project and tag-hierarchy deletion are native verified. Area and global-command gates remain disabled pending their separate checks.",
+    "Apply a previously reviewed scope using its current scope revision. Requires ordinary writes and the separate local owner grant for this action. Container deletion can cascade; empty Trash is permanent and global. Open-project, area and tag-hierarchy deletion are native verified. Global-command gates remain disabled pending their separate checks.",
     destructiveSchema,
     false,
     (input) => service.destructive(input),

@@ -176,6 +176,38 @@ test("project children include logged items once when native collections change"
   }
 });
 
+test("closed project children use their retained collection without a history query", () => {
+  const parent = { ...project, status: () => "completed" };
+  const child = {
+    ...project,
+    id: () => "closed-child",
+    project: () => parent,
+    status: () => "completed",
+  };
+  const container = { ...parent, toDos: collection([child]) };
+  const result = execute(
+    "children",
+    { kind: "project", id: parent.id() },
+    false,
+    [child],
+    [],
+    [],
+    [],
+    {
+      projects: collection([container]),
+      lists: {
+        byId: (id: string) => {
+          assert.notEqual(id, "TMLogbookListSource");
+          return { exists: () => true, toDos: collection([]) };
+        },
+      },
+    },
+  );
+  assert.equal(result.ok, true);
+  assert.equal(result.result.length, 1);
+  assert.equal(result.result[0].id, child.id());
+});
+
 test("date sorting is limited to kinds with exposed date fields", () => {
   for (const kind of ["area", "tag"]) {
     assert.equal(
