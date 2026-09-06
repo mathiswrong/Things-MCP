@@ -1,6 +1,6 @@
 # Capability reference
 
-Version 0.1 exposes ten MCP tools. The server uses Things' supported AppleScript interface through fixed JXA and AppleScript files. It does not use a private database API.
+Version 0.83 exposes ten MCP tools. The server uses Things' supported AppleScript interface through fixed JXA and AppleScript files. It does not use a private database API.
 
 | Tool | Inputs and behavior |
 |---|---|

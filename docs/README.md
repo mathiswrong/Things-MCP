@@ -1,6 +1,6 @@
 # Things MCP documentation
 
-Things MCP connects a conversation to Things 3 on your Mac. Version 0.1 is an early release with ten tools. Local extension installation uses the client's own installer. Initial browser setup requires developer tools and an eligible account.
+Things MCP connects a conversation to Things 3 on your Mac. Version 0.83 is an early release with ten tools. Local extension installation uses the client's own installer. Initial browser setup requires developer tools and an eligible account.
 
 ## Start here
 

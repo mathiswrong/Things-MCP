@@ -1,6 +1,6 @@
 # Complete operation scope
 
-Version 0.1 uses supported Things interfaces and documents its remaining installation and feature limits. Apple Shortcuts dependencies and replacement workflows are excluded. Features with no supported mechanism are omitted. This inventory separates missing implementation from missing vendor interfaces. Current runtime support is listed in [Capabilities](CAPABILITIES.md).
+Version 0.83 uses supported Things interfaces and documents its remaining installation and feature limits. Apple Shortcuts dependencies and replacement workflows are excluded. Features with no supported mechanism are omitted. This inventory separates missing implementation from missing vendor interfaces. Current runtime support is listed in [Capabilities](CAPABILITIES.md).
 
 Things does not offer a public cloud account API. The existing server talks to the local Mac app through its supported AppleScript interface. Things itself handles cloud synchronization. A direct cloud connection would require an unofficial protocol and is outside the supported-interface boundary.
 
@@ -36,7 +36,7 @@ Things does not offer a public cloud account API. The existing server talks to t
 
 ## Connection and safety gaps
 
-The core and native extension work locally. The optional private tunnel works for ordinary browser Chat and the desktop plugin, but its initial installation requires an operator. A command-free browser installation on a new Mac is not delivered in version 0.1. General compatible remote clients need a supported transport and authentication route, not a promise that all clients accept the same installer.
+The core and native extension work locally. The optional private tunnel works for ordinary browser Chat and the desktop plugin, but its initial installation requires an operator. A command-free browser installation on a new Mac is not delivered in version 0.83. General compatible remote clients need a supported transport and authentication route, not a promise that all clients accept the same installer.
 
 Separate individual to-do Trash permission is implemented. Bulk and container/permanent-deletion permissions, optional project/area allowlists, descendant-aware scope enforcement, and trusted approval for destructive previews remain implementation work. A model-supplied confirmation flag is not a trusted permission grant. Read and ordinary write permission must be independently revocable for each connection.
 
