@@ -2,7 +2,7 @@
 
 ## 0.1.0
 
-First public preview of the Things MCP server for macOS.
+First public preview of the Things MCP server for macOS, released under the MIT License.
 
 - Ten tools for health, capabilities, bounded search, item lookup, creation, editing, calendar scheduling, placement, individual to-do Trash, and request receipts.
 - A local desktop extension with a host-provided runtime and native permission switches. New installations start read-only; Trash requires a separate grant.

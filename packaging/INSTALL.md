@@ -62,4 +62,4 @@ The remote helper appears as **Things MCP** in macOS background-item notificatio
 
 Task content you ask a client to retrieve is shared with that client and its provider. The bridge does not upload a database or collect Things Cloud credentials. The remote tunnel credential stays in the Mac's login Keychain. No telemetry destination is bundled.
 
-See [Troubleshooting](../docs/TROUBLESHOOTING.md), [Capabilities](../docs/CAPABILITIES.md), and [Security](../SECURITY.md). Release packages include the project license and third-party notices when licensing is complete.
+See [Troubleshooting](../docs/TROUBLESHOOTING.md), [Capabilities](../docs/CAPABILITIES.md), and [Security](../SECURITY.md). Release packages include the MIT License and required third-party notices.

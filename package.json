@@ -2,7 +2,7 @@
   "name": "things-mcp",
   "version": "0.1.0",
   "private": true,
-  "license": "UNLICENSED",
+  "license": "MIT",
   "type": "module",
   "description": "Local MCP tools for Things 3 through supported automation interfaces",
   "engines": {

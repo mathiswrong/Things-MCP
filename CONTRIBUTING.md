@@ -51,4 +51,4 @@ Use your actual app ID only for a private local installation. The tunnel is a se
 
 Follow [the release checklist](docs/RELEASING.md). Publishing, changing repository visibility, and merging require a maintainer's explicit release decision. CI checks pull requests and never publishes automatically. Keep the release notes focused on what works, how to install it, and known limits.
 
-License selection is pending. Do not distribute project code until the project license is approved and included. Third-party notices apply only to their named dependencies.
+The project uses the [MIT License](LICENSE). Contributions are accepted under that license. Keep the copyright and permission notice with copies or substantial portions of the software. Third-party notices apply only to their named dependencies.

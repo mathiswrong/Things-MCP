@@ -65,4 +65,4 @@ For a bug or feature request, [open an issue](https://github.com/mathiswrong/Thi
 
 If Things MCP is useful to you, [buy me a coffee](https://buymeacoffee.com/paul2d). Support is optional and does not unlock features.
 
-Things MCP is an independent project. Product names identify compatibility; the project is not affiliated with or endorsed by the named vendors. License selection is pending; third-party notices apply to their respective dependencies.
+Things MCP is an independent project. Product names identify compatibility; the project is not affiliated with or endorsed by the named vendors. Released under the [MIT License](LICENSE). You may use, modify, and redistribute the code, including commercially, provided you retain its copyright and license notice. The software is provided without warranty. Third-party notices apply to their respective dependencies.
