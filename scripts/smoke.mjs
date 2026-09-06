@@ -24,7 +24,7 @@ const client = new Client({ name: "local-smoke-test", version: "1.0.0" });
 try {
   await client.connect(transport);
   const tools = await client.listTools();
-  assert.equal(tools.tools.length, 16);
+  assert.equal(tools.tools.length, 20);
   const capabilities = await client.callTool({
     name: "things_capabilities",
     arguments: {},

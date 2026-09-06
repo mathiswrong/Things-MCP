@@ -111,18 +111,6 @@ try {
       "Delete projects, areas, and tags",
       "Allows deletion of entire containers, including their children or shared tag assignments. Requires ordinary changes and a fresh scope preview.",
     ],
-    [
-      "empty_trash",
-      "EMPTY_TRASH",
-      "Permanently empty Things Trash",
-      "Allows permanent deletion of everything in Things Trash. Requires ordinary changes and a fresh scope preview. This cannot be undone through the server.",
-    ],
-    [
-      "log_completed",
-      "LOG_COMPLETED",
-      "Log all completed items",
-      "Allows the library-wide Log Completed Now command. Requires ordinary changes and a fresh scope preview.",
-    ],
   ]) {
     for (const browser of [false, true]) {
       const name = `allow_${browser ? "browser_" : ""}${key}`;

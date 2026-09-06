@@ -1,6 +1,6 @@
 # Install Things MCP
 
-These instructions describe the published 0.83 package. The 1.0 development package has additional permission controls. Open-project and tag-hierarchy deletion are verified; the remaining native destructive gates are disabled while verification is in progress. Do not use it as a completed release.
+These instructions describe version 1.0. The package exposes twenty tools. New connections start read-only.
 
 ## Before you start
 
@@ -18,6 +18,10 @@ Things MCP is independent of Things and the client vendors. Their apps, accounts
 6. If macOS requests permission to control Things, allow it. A successful result reports the Things version, running status, timezone, and whether writes are enabled.
 
 The local connection needs no API key, configuration editing, Terminal window, or separate background service. The client starts its packaged server when needed.
+
+## Optional checklist, reminder and duplication setup
+
+Follow [Things URL setup](../docs/URL-OPERATIONS.md). Create templates without a token; editing existing tasks or duplicating them requires your local Things URL token in Keychain. URL receipts report dispatch without claiming complete read-back.
 
 ## Try a task
 
@@ -37,6 +41,8 @@ The native extension settings separate ordinary writes from moving to Trash:
 
 | Switch | Connection it controls |
 |---|---|
+| **Delete projects, areas, and tags** | Container deletion by this Mac's extension; also requires Allow changes and a fresh scope preview |
+| **Delete projects, areas, and tags from ChatGPT** | Container deletion through the tunnel; also requires its Allow changes switch and a fresh scope preview |
 | **Allow changes** | This Mac's local extension |
 | **Allow changes from ChatGPT** | Your separately configured private tunnel, including clients using its account plugin |
 | **Allow moving to Trash** | Individual to-do removal from this Mac's local extension; also requires Allow changes |
@@ -44,7 +50,7 @@ The native extension settings separate ordinary writes from moving to Trash:
 
 Changes apply after **Save** and the host's server restart. Turning a switch off denies subsequent mutations. An operation already delivered to Things cannot be rolled back by switching access off. Client tool approval prompts are an additional control; they do not replace the Mac-side grant.
 
-New installations start read-only. Both Trash switches also default to off. They allow recoverable to-do deletion, including its checklist, but not permanent deletion or deleting whole projects or areas. Installing the extension does not create tasks. If a maintainer globally revoked access, regrant by switching the relevant control off, saving, switching it on, and saving again.
+New installations start read-only. Both Trash switches and both container-deletion switches also default to off. They allow recoverable to-do deletion, including its checklist, but not permanent deletion or deleting whole projects or areas. Installing the extension does not create tasks. If a maintainer globally revoked access, regrant by switching the relevant control off, saving, switching it on, and saving again.
 
 ## ChatGPT and other clients
 
