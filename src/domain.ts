@@ -56,7 +56,7 @@ export const querySchema = z
     text: z.string().max(500).default(""),
     status: statusSchema.optional(),
     limit: z.number().int().min(1).max(100).default(25),
-    offset: z.number().int().min(0).max(4900).default(0),
+    offset: z.number().int().min(0).max(4999).default(0),
     includeNotes: z.boolean().default(false),
     list: listSchema.optional(),
     parent: z
@@ -66,6 +66,10 @@ export const querySchema = z
   .superRefine((value, context) => {
     if (
       (value.list && value.parent) ||
+      (value.kind === "project" &&
+        (value.parent?.kind === "project" ||
+          value.list === "anytime" ||
+          value.list === "inbox")) ||
       ((value.list || value.parent || value.status) &&
         !["todo", "project"].includes(value.kind))
     )
@@ -140,7 +144,7 @@ export const moveSchema = z
       z.strictObject({ kind: z.literal("area"), id: idSchema }),
       z.strictObject({
         kind: z.literal("list"),
-        list: z.enum(["inbox", "today", "anytime", "someday", "logbook"]),
+        list: z.enum(["inbox", "today", "anytime", "someday"]),
       }),
       z.strictObject({
         kind: z.literal("detach"),
@@ -153,14 +157,14 @@ export const moveSchema = z
       value.target.kind === "project" &&
       (value.destination.kind === "project" ||
         (value.destination.kind === "list" &&
-          value.destination.list === "inbox") ||
+          ["inbox", "anytime"].includes(value.destination.list)) ||
         (value.destination.kind === "detach" &&
           value.destination.parent === "project"))
     )
       context.addIssue({
         code: "custom",
         message:
-          "Projects can belong to areas, not other projects or the Inbox.",
+          "Projects cannot move into projects or Inbox. Anytime project membership cannot be verified.",
       });
   });
 export type Move = z.infer<typeof moveSchema>;

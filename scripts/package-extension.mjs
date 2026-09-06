@@ -37,7 +37,8 @@ try {
     display_name: "Things MCP",
     version: metadata.version,
     ...(metadata.license !== "UNLICENSED" ? { license: metadata.license } : {}),
-    description: "Find, create, and update your Things 3 tasks on this Mac.",
+    description:
+      "Find, create, edit, schedule, and move Things 3 tasks on this Mac.",
     long_description:
       "Requires Things 3 to be running on your Mac. Starts read-only. Enable Allow changes in extension settings to create, edit, and schedule tasks. No account, API key, or separate runtime installation is needed for this local connection. Task information you request is shared with the connected client.",
     author: { name: "Things MCP contributors" },

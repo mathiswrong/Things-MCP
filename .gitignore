@@ -10,3 +10,6 @@ coverage/
 .cache/
 .build/
 *.tsbuildinfo
+*.mcpb
+*.mcpb.sha256
+*.sarif

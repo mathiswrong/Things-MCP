@@ -92,7 +92,7 @@ export function createServer(service: ThingsService) {
   );
   register(
     "things_create_item",
-    "Create a to-do, project, area, or tag. Supply a unique UUID requestId. To-do and project creation are verified; area and tag creation remain experimental. Local write permission is required and disabled by default.",
+    "Create a to-do, project, area, or tag. Supply a unique UUID requestId. Creation of all four kinds is native verified. Local write permission is required and disabled by default.",
     createSchema,
     false,
     (input) => service.create(input),
@@ -115,7 +115,7 @@ export function createServer(service: ThingsService) {
   );
   register(
     "things_move_item",
-    "Move a to-do to a project or area, a project to an area, detach a parent, or move to Inbox, Today, Anytime, Someday, or Logbook. Moving to Logbook can complete an item. Moving projects can affect descendants. Requires the latest revision and write permission. Does not reorder items, address headings, or restore Trash.",
+    "Move a to-do to a project or area, a project to an area, detach a parent, or move a to-do to Inbox, Today, Anytime, or Someday. Projects support Today and Someday. Project Anytime and direct Logbook moves are unavailable. Moving projects can affect descendants. Requires the latest revision and write permission. Does not reorder items, address headings, or restore Trash.",
     moveSchema,
     false,
     (input) => service.move(input),

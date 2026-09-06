@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability privately
+    url: https://github.com/mathiswrong/Things-MCP/security/advisories/new
+    about: Do not put vulnerabilities, credentials, or personal task data in public issues.
+  - name: Installation and usage
+    url: https://github.com/mathiswrong/Things-MCP/blob/main/docs/README.md
+    about: Setup, daily use, available tools, and troubleshooting.

@@ -90,7 +90,7 @@ async function main() {
   if (command === "setup") {
     if (!values["allow-writes"] && !values["read-only"]) {
       process.stdout.write(
-        "Run setup --read-only for safe initial use, or setup --allow-writes to authorize experimental ordinary writes. Add --allow-trash with --allow-writes only to enable individual to-do Trash for this local operator connection.\n",
+        "Run setup --read-only for safe initial use, or setup --allow-writes to authorize ordinary writes. Add --allow-trash with --allow-writes only to enable individual to-do Trash for this local operator connection.\n",
       );
       return;
     }
@@ -99,7 +99,7 @@ async function main() {
       await state.setTrash(Boolean(values["allow-trash"]));
     process.stdout.write(
       values["allow-writes"]
-        ? "Ordinary writes enabled locally. To-do mutations verified; other item types remain experimental.\n"
+        ? "Ordinary writes enabled locally. Read capabilities for verified operations and limits.\n"
         : "Read-only access enabled.\n",
     );
     return;

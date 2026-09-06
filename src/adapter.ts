@@ -51,6 +51,9 @@ export function nativeExecutor(
     if ((runtime.platform ?? process.platform) !== "darwin")
       throw new BridgeError("PLATFORM_UNSUPPORTED");
     const payload = JSON.stringify({ operation, input });
+    const readsLogbook =
+      (operation === "inList" || operation === "find") &&
+      (input as { list?: string }).list === "logbook";
     if (Buffer.byteLength(payload) > 262144)
       throw new BridgeError("INVALID_INPUT");
     return new Promise((resolve, reject) => {
@@ -82,12 +85,15 @@ export function nativeExecutor(
         if (error) reject(error);
         else resolve(value);
       };
-      const timeout = setTimeout(() => {
-        child.kill("SIGKILL");
-        finish(
-          new BridgeError(mutation ? "OUTCOME_UNKNOWN" : "NATIVE_FAILURE"),
-        );
-      }, runtime.timeoutMs ?? 20000);
+      const timeout = setTimeout(
+        () => {
+          child.kill("SIGKILL");
+          finish(
+            new BridgeError(mutation ? "OUTCOME_UNKNOWN" : "NATIVE_FAILURE"),
+          );
+        },
+        runtime.timeoutMs ?? (readsLogbook ? 60000 : 20000),
+      );
       const abort = () => {
         child.kill("SIGKILL");
         finish(new BridgeError("OUTCOME_UNKNOWN"));
@@ -127,7 +133,7 @@ export function nativeExecutor(
           );
         }
       });
-      child.stdin.end(payload);
+      child.stdin.end(move ? undefined : payload);
     });
   };
 }

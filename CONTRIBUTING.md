@@ -1,6 +1,6 @@
 # Contributing
 
-Use a feature branch and open a pull request with the problem, resulting behavior, and relevant validation. Keep examples synthetic and changes focused. Public contributors do not need sibling rulebooks, a Things license, a provider account, or a signing identity to build and run the automatic tests.
+Follow the [community conduct policy](CODE_OF_CONDUCT.md). Use a feature branch and open a pull request with the problem, resulting behavior, and relevant validation. Keep examples synthetic and changes focused. Public contributors do not need sibling rulebooks, a Things license, a provider account, or a signing identity to build and run the automatic tests.
 
 ## Build and test
 

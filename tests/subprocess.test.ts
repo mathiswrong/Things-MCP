@@ -106,3 +106,22 @@ test("telemetry drops task contents, paths, requests, users, exceptions and brea
   assert.ok(!serialized.includes("secret"));
   assert.equal(result.tags?.code, "NATIVE_FAILURE");
 });
+
+test("argument-based list commands receive no unused stdin payload", async () => {
+  const execute = executor(`
+    let bytes = 0;
+    process.stdin.on('data', chunk => bytes += chunk.length);
+    process.stdin.on('end', () => process.stdout.write(JSON.stringify({ok:true,result:bytes})));
+  `);
+  assert.equal(
+    await execute(
+      "moveList",
+      {
+        target: { kind: "todo", id: "fixture-task" },
+        destination: { kind: "list", list: "today" },
+      },
+      true,
+    ),
+    0,
+  );
+});

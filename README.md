@@ -4,7 +4,9 @@ Find and manage Things 3 tasks from a conversation. Things MCP connects compatib
 
 Create Inbox tasks, edit titles and notes, set deadlines, schedule dates, move tasks, and complete or reopen them. A separate permission enables moving individual to-dos to Trash. Your Mac runs the bridge. The local connection needs no companion app or project-operated account or server.
 
-[Installation](packaging/INSTALL.md) · [Daily use](docs/DAILY-USE.md) · [Capabilities](docs/CAPABILITIES.md) · [Full scope](docs/FULL-SCOPE.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) · [Buy me a coffee](https://buymeacoffee.com/paul2d)
+[Documentation](docs/README.md) · [Installation](packaging/INSTALL.md) · [Daily use](docs/DAILY-USE.md) · [Capabilities](docs/CAPABILITIES.md) · [Full scope](docs/FULL-SCOPE.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) · [Buy me a coffee](https://buymeacoffee.com/paul2d)
+
+Version 0.1 is an early release. The local extension installs through its host. First-time browser setup is an advanced installation, and fresh-Mac consent and sleep/wake recovery still need wider testing. See [verification coverage](VERIFICATION.md).
 
 ## Install
 
@@ -30,19 +32,19 @@ Other clients can use the standard local MCP transport. See [other MCP clients](
 | Set or clear a deadline | Available |
 | Schedule a to-do on a calendar date | Available |
 | Complete, cancel, or reopen a to-do | Available |
-| Create a project and complete an empty project | Available |
-| Create areas or tags; broader non-task editing | Experimental; not yet verified against the real app |
+| Create and edit projects, areas, and tags | Available; project lifecycle checks used an empty project |
 | Built-in list queries and project/area filters | Available |
-| Moves between lists, projects, and areas | Available; see exact verification coverage |
+| Moves between supported lists, projects, and areas | Available; project Anytime and direct Logbook moves are excluded after failed native verification |
 | Move an individual to-do to Trash | Separate permission required |
 | Container/permanent deletion, restoration, duplication, tag assignment, reminders | Not included |
-| Full checklists, headings, native repeating rules | Excluded under the supported-interface and no-Shortcuts boundary |
+| Full checklists and headings | Not included; full access uses Shortcuts, which this server does not use |
+| Native repeating rules | No supported public rule-editing interface identified |
 
-This release does not cover every Things operation. [The capability reference](docs/CAPABILITIES.md) explains field limits, search behavior, and unavailable features. Tools return their current implementation status through `things_capabilities`.
+This release does not cover every Things operation. Some missing actions have public Things APIs and remain implementation work; others have no supported interface. [The capability reference](docs/CAPABILITIES.md) explains field limits, search behavior, and unavailable features. Tools return their current implementation status through `things_capabilities`.
 
 ## Requirements
 
-- A Mac with Things 3 installed and running. Native checks used Things 3.23.3.
+- A Mac with Things 3 installed and running. Native checks used Things 3.23.3 and 3.23.4.
 - A client that supports the chosen connection. The packaged local route uses Claude Desktop; remote use depends on your ChatGPT account's available plugin and tunnel features.
 - macOS Automation permission to control Things when requested.
 - For remote access, the Mac must remain awake, online, and signed in.

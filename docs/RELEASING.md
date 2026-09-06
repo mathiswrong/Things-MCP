@@ -1,6 +1,6 @@
 # Release checklist
 
-This procedure prepares a reviewable release. It does not authorize publication. Keep the repository private until the maintainer approves its license, content, and visibility change.
+This procedure prepares a reviewable release. It does not authorize publication. The maintainer authorizes each release; ordinary development does not authorize publishing.
 
 ## Verify the source and assets
 
@@ -14,14 +14,14 @@ This procedure prepares a reviewable release. It does not authorize publication.
 ## Prepare GitHub
 
 - Include the selected project license at the repository root, in package metadata, and in the distributed archive. Preserve dependency notices. Keep `private: true` in package.json if distribution is through release assets; that flag prevents accidental npm publishing and does not control GitHub visibility.
-- Enable private vulnerability reporting once the repository is public. Verify the Security tab's report link. Do not use public issues for sensitive reports.
+- Apply the protections in [Maintaining](MAINTAINING.md). Enable private vulnerability reporting once the repository is public. Verify the Security tab's report link. Do not use public issues for sensitive reports.
 - The checked-in `.github/FUNDING.yml` uses GitHub's native Buy Me a Coffee support. It becomes effective when it is on the default branch. The README also has a direct support link. No paid feature gate is involved.
 - Draft release notes that name the supported workflows, installation route, version requirements, and actual limitations. A draft release can be reviewed while the repository is private.
 - Attach the `.mcpb` and its checksum to the release. GitHub's source archives are not substitutes for the installable package. Do not upload a personal desktop plugin manifest or tunnel configuration.
 
 ## Final approval and publication
 
-Show the maintainer the exact source commit, selected license, release notes, assets, and remaining limitations. Obtain explicit approval before merging, changing visibility, or publishing the release. Check that other open branches and pull requests do not expose private content when visibility changes.
+Prepare the exact source commit, project license, release notes, assets, and remaining limitations before publication. Proceed within the maintainer's explicit release authorization; ask only for an unresolved decision or an action outside that authorization. Check that other open branches and pull requests do not expose private content when visibility changes.
 
 After approval, merge the reviewed work, publish the approved release assets from the reviewed commit, and verify the repository and downloads while signed out. Confirm the license, README links, Sponsor button, and private security-reporting entry point. A private-repository success does not prove anonymous download access.
 

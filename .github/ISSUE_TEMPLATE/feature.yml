@@ -1,0 +1,16 @@
+name: Feature request
+description: Suggest a task workflow or supported automation addition.
+title: "feature: "
+body:
+  - type: textarea
+    id: workflow
+    attributes:
+      label: Desired workflow
+      description: Describe what you want to do with a synthetic example.
+    validations:
+      required: true
+  - type: textarea
+    id: interface
+    attributes:
+      label: Supported Things interface
+      description: Link official documentation if you know a supported route. Missing server features and missing vendor APIs are tracked separately in the full-scope guide.

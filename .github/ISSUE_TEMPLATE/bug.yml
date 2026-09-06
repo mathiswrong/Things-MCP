@@ -1,0 +1,36 @@
+name: Bug report
+description: Report a reproducible problem using synthetic task data.
+title: "bug: "
+body:
+  - type: markdown
+    attributes:
+      value: "Reports are public. Remove task contents, account IDs, keys, screenshots of your library, and raw logs. Use the private security link for vulnerabilities."
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: Things MCP, Things, macOS, and client versions.
+    validations:
+      required: true
+  - type: dropdown
+    id: connection
+    attributes:
+      label: Connection
+      options:
+        - Local desktop extension
+        - Private tunnel
+        - Other local MCP host
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Use a new synthetic task. Include expected and actual behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: error
+    attributes:
+      label: Error code
+      description: Include the short error code and what you tried. Do not paste raw logs or task IDs.

@@ -10,11 +10,10 @@ on run arguments
     else if destination is "today" then
       set listID to "TMTodayListSource"
     else if destination is "anytime" then
+      if itemKind is "project" then return "{\"ok\":false,\"code\":\"INVALID_INPUT\"}"
       set listID to "TMNextListSource"
     else if destination is "someday" then
       set listID to "TMSomedayListSource"
-    else if destination is "logbook" then
-      set listID to "TMLogbookListSource"
     else
       return "{\"ok\":false,\"code\":\"INVALID_INPUT\"}"
     end if
