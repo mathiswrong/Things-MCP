@@ -2,7 +2,7 @@
 
 Find and manage Things 3 tasks from a conversation. Things MCP connects compatible MCP clients to the Things app on your Mac through its supported automation interfaces.
 
-Create Inbox tasks, edit titles and notes, set deadlines, schedule dates, move tasks, and complete or reopen them. A separate permission enables moving individual to-dos to Trash. Your Mac runs the bridge. The local connection needs no companion app or project-operated account or server.
+Manage tasks, projects, areas and tags. Create checklists and project templates, set reminders, duplicate items and move projects with descendant summaries. Native edits verify exposed fields; URL-only operations report dispatch. Deletion requires separate permission. The bridge runs on your Mac without a companion app or project-operated service.
 
 [Documentation](docs/README.md) · [Maintainer wiki](almanac/README.md) · [Installation](packaging/INSTALL.md) · [Daily use](docs/DAILY-USE.md) · [Capabilities](docs/CAPABILITIES.md) · [Full scope](docs/FULL-SCOPE.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) · [Buy me a coffee](https://buymeacoffee.com/paul2d)
 
