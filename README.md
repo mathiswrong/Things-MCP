@@ -18,6 +18,8 @@ For **Claude Desktop on macOS**:
 4. Start a new conversation and ask: **Use Things MCP to check the connection without reading or changing tasks.** Allow macOS Automation access to Things if prompted.
 5. With **Allow changes** enabled, try: **Use Things MCP to create an Inbox task called “Try Things MCP”, then read it back.**
 
+For **Cowork on a Mac**, use the same extension, start a new task, and select **Cowork**. Follow the [Cowork installation and connection check](packaging/INSTALL.md#cowork-on-a-mac) for the steps, permission setting, and tested versions.
+
 For **ChatGPT browser chats**:
 
 1. Follow [ChatGPT setup](docs/CHATGPT.md) to connect a private tunnel on your Mac to your own account. First-time setup is currently an advanced installation.
