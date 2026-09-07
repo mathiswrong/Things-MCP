@@ -4,7 +4,7 @@ Things MCP connects a conversation to Things 3 on your Mac. Version 1.0 provides
 
 ## Start here
 
-1. [Install the local extension](../packaging/INSTALL.md).
+1. [Install the local extension](../packaging/INSTALL.md), including [Cowork on a Mac](../packaging/INSTALL.md#cowork-on-a-mac).
 2. [Connect ChatGPT through a private tunnel](CHATGPT.md), if needed.
 3. [Use the installed connection](DAILY-USE.md) to find, create, edit, schedule, and move tasks.
 4. [Configure optional URL operations](URL-OPERATIONS.md) for checklists, templates, reminders and duplication.

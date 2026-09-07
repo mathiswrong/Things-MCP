@@ -2,6 +2,16 @@
 
 Version **1.0.2** was checked on September 6, 2026. It exposes twenty tools. The detailed [acceptance record](docs/V1-READINESS.md) separates observed native behavior from verification and environment limits.
 
+## Cowork desktop check
+
+On September 7, 2026, a fresh Cowork task in Claude Desktop **1.46388.4** used the existing Things MCP **1.0.1** desktop extension on macOS **26.6.2**, with Things **3.23.4** running.
+
+- Cowork discovered all twenty tools and successfully called capabilities and native health. The health tool's actual response was inspected.
+- One labeled synthetic to-do passed create/read, notes edit/read, and complete/read. Edits used the current revision and distinct durable request IDs. A second MCP connection independently confirmed each resulting item state and all three completed mutation receipts with `read_back` verification.
+- Ordinary writes were already enabled. Trash and advanced destructive grants remained off. No unrelated tasks were read or changed. The synthetic task was left completed.
+
+This verifies the tested desktop Cowork flow through the installed MCPB extension. It does not certify a fresh installation, version 1.0.2 in Cowork, web or mobile Cowork, manual JSON configuration, organization policies, or every tool and host version. See [Cowork setup](packaging/INSTALL.md#cowork-on-a-mac).
+
 ## Version 1.0.2 checks
 
 - Clean dependency installation, typecheck, lint, **82 tests**, runtime build, stdio smoke, extension packaging, extracted-package discovery/read-only/restart checks and native health passed. The dependency audit reported zero vulnerabilities.
