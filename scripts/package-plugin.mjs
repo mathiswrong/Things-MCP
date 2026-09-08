@@ -24,7 +24,7 @@ const manifest = {
     displayName: "Things MCP",
     shortDescription: "Manage Things 3 tasks and projects",
     longDescription:
-      "Manage tasks, projects, tags, checklists, reminders and templates through Things on your Mac. Project moves report descendant observations; URL-only changes report dispatch. Starts read-only. Changes require a local grant, and the Mac must be awake and online.",
+      "IMPORTANT: Open Things 3 on this Mac before launching your LLM client, or you may see “unable to connect to server”. Keep Things running. If the client cannot connect, open Things, restart the client and start a new conversation. Manage tasks, projects, tags, checklists, reminders and templates through Things on your Mac. Project moves report descendant observations; URL-only changes report dispatch. Starts read-only. Changes require a local grant, and the Mac must be awake and online.",
     developerName: "Things MCP contributors",
     category: "Productivity",
     capabilities: ["Read", "Write"],
