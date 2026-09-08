@@ -1,5 +1,12 @@
 # Install Things MCP
 
+> [!IMPORTANT]
+> **Open Things 3 before launching your LLM client.**
+>
+> Things must already be running on the Mac hosting Things MCP before you open your AI app or browser conversation. Otherwise, you may see **“unable to connect to server”**. Keep Things running while you use the connection.
+>
+> **Already seeing the error?** Open Things, fully quit and reopen your desktop client (or reload your browser client), then start a new conversation and check the connection.
+
 These instructions describe version 1.0. The package exposes twenty tools. New connections start read-only.
 
 ## Before you start
@@ -11,7 +18,7 @@ Things MCP is independent of Things and the client vendors. Their apps, accounts
 ## Claude Desktop
 
 1. Download the versioned `things-mcp-<version>.mcpb` from the repository's [Releases page](https://github.com/mathiswrong/Things-MCP/releases). Choose the `.mcpb` asset, not GitHub's source ZIP. If no release has been published, developers can build it using CONTRIBUTING.md.
-2. Open Things 3.
+2. **Open Things 3 first, then launch Claude Desktop.** If Claude Desktop is already open and cannot connect, fully quit and reopen it while Things stays running.
 3. Open the downloaded package with Claude Desktop and choose **Install**. If the file opens elsewhere, use **Settings > Extensions > Advanced settings > Install extension** and select it there.
 4. Open **Settings > Extensions > Things MCP > Configure**. Keep write access off for the first health check, or turn on **Allow changes** if you want to manage tasks immediately. Select **Save** after changing a setting.
 5. Start a new conversation and ask: **Use Things MCP to check the connection without reading or changing tasks.** Approve that tool call if prompted.

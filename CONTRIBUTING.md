@@ -1,5 +1,14 @@
 # Contributing
 
+> [!IMPORTANT]
+> **Open Things 3 before launching your LLM client.**
+>
+> Things must already be running on the Mac hosting Things MCP before you open your AI app or browser conversation. Otherwise, you may see **“unable to connect to server”**. Keep Things running while you use the connection.
+>
+> **Already seeing the error?** Open Things, fully quit and reopen your desktop client (or reload your browser client), then start a new conversation and check the connection.
+
+This startup order applies to live connections. Automated builds and tests do not require Things or an LLM client.
+
 Follow the [community conduct policy](CODE_OF_CONDUCT.md). Use a feature branch and open a pull request with the problem, resulting behavior, and relevant validation. Keep examples synthetic and changes focused. Public contributors do not need sibling rulebooks, a Things license, a provider account, or a signing identity to build and run the automatic tests.
 
 ## Build and test
