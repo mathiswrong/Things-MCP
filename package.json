@@ -33,7 +33,7 @@
   "devDependencies": {
     "@anthropic-ai/mcpb": "2.1.2",
     "@biomejs/biome": "2.5.12",
-    "@types/node": "26.4.1",
+    "@types/node": "26.5.1",
     "@types/proper-lockfile": "4.1.4",
     "esbuild": "0.28.2",
     "tsx": "4.23.13",
