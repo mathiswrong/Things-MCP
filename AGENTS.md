@@ -1,5 +1,14 @@
 # Project working rules
 
+> [!IMPORTANT]
+> **Open Things 3 before launching your LLM client.**
+>
+> Things must already be running on the Mac hosting Things MCP before you open your AI app or browser conversation. Otherwise, you may see **“unable to connect to server”**. Keep Things running while you use the connection.
+>
+> **Already seeing the error?** Open Things, fully quit and reopen your desktop client (or reload your browser client), then start a new conversation and check the connection.
+
+This startup order applies to live connections. Automated builds and tests do not require Things or an LLM client.
+
 - Follow `CONTRIBUTING.md` for portable build, verification, and contribution requirements. In the owner's Projects workspace, also read the Projects-root `DEV-RULEBOOK.md` and `SUPER-SIMPLE-DESIGN.md`. Public contributors do not need those private files.
 - Use neutral `feat/` or `fix/` branches. Keep commit messages, pull requests, comments, and docstrings technical and free of provenance signatures or automated co-author trailers. Name integrations only where needed for compatibility or required configuration. Preserve legally required third-party notices.
 - Keep credentials, task data, personal configuration, private conversations, screenshots, disposable outputs, and builds out of source control. Scan the tree, reachable history, release assets, and pull-request text before publication.

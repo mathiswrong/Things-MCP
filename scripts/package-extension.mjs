@@ -39,7 +39,7 @@ try {
     ...(metadata.license !== "UNLICENSED" ? { license: metadata.license } : {}),
     description: metadata.description,
     long_description:
-      "Twenty tools for tasks, projects, tags, checklists, reminders and templates, including project move summaries. Requires Things 3 running on this Mac. Starts read-only; enable changes in extension settings. URL-only fields report dispatch rather than complete read-back. No account or separate runtime installation is needed for this local connection. Requested task information is shared with the connected client.",
+      "IMPORTANT: Open Things 3 on this Mac before launching your LLM client, or you may see “unable to connect to server”. Keep Things running. If the client cannot connect, open Things, restart the client and start a new conversation. Twenty tools for tasks, projects, tags, checklists, reminders and templates, including project move summaries. Starts read-only; enable changes in extension settings. URL-only fields report dispatch rather than complete read-back. No account or separate runtime installation is needed for this local connection. Requested task information is shared with the connected client.",
     author: { name: "Things MCP contributors" },
     server: {
       type: "node",

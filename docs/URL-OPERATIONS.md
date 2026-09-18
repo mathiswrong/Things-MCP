@@ -1,5 +1,12 @@
 # Things URL operations
 
+> [!IMPORTANT]
+> **Open Things 3 before launching your LLM client.**
+>
+> Things must already be running on the Mac hosting Things MCP before you open your AI app or browser conversation. Otherwise, you may see **“unable to connect to server”**. Keep Things running while you use the connection.
+>
+> **Already seeing the error?** Open Things, fully quit and reopen your desktop client (or reload your browser client), then start a new conversation and check the connection.
+
 The native tools cover fields that Things can read back. Four additional tools use Things' [documented URL interface](https://culturedcode.com/things/support/articles/2803573/) for features outside that read-back surface.
 
 | Tool | Use |

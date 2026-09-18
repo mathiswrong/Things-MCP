@@ -1,5 +1,12 @@
 # Other MCP clients
 
+> [!IMPORTANT]
+> **Open Things 3 before launching your LLM client.**
+>
+> Things must already be running on the Mac hosting Things MCP before you open your AI app or browser conversation. Otherwise, you may see **“unable to connect to server”**. Keep Things running while you use the connection.
+>
+> **Already seeing the error?** Open Things, fully quit and reopen your desktop client (or reload your browser client), then start a new conversation and check the connection.
+
 Things MCP exposes standard MCP over stdio. A compatible desktop client starts the process locally and exchanges protocol messages through its input and output. This route needs a Mac with Things; running the server on an ordinary Linux cloud host cannot access your Mac's app.
 
 The MCPB package is the easiest supported local installation. The instructions below are for developers and hosts that require a manual MCP server entry. They do not establish compatibility with every client.
@@ -39,4 +46,4 @@ Then request a fresh health check from each client. Revoking a grant does not ca
 
 ## Connection check
 
-Ask the client to call `things_capabilities`, then `things_health`. Verify the running state and intended write permission. Start with a single synthetic item when testing mutations. A connection that only exposes read tools or does not support tool approval may behave differently from the verified clients.
+Open Things 3 before launching the client. Ask the client to call `things_capabilities`, then `things_health`. Verify the running state and intended write permission. Start with a single synthetic item when testing mutations. A connection that only exposes read tools or does not support tool approval may behave differently from the verified clients.

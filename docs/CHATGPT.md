@@ -1,5 +1,12 @@
 # ChatGPT setup
 
+> [!IMPORTANT]
+> **Open Things 3 before launching your LLM client.**
+>
+> Things must already be running on the Mac hosting Things MCP before you open your AI app or browser conversation. Otherwise, you may see **“unable to connect to server”**. Keep Things running while you use the connection.
+>
+> **Already seeing the error?** Open Things, fully quit and reopen your desktop client (or reload your browser client), then start a new conversation and check the connection.
+
 ChatGPT browser conversations cannot start a process on your Mac directly. Things MCP uses OpenAI's Secure MCP Tunnel to reach the local server. Your own account owns the tunnel and credential; this project does not operate a relay or need access to your account.
 
 This is an advanced installation. The account setup uses existing provider screens, but installing the background transport currently needs developer commands. It is not a one-click installer for another Mac. Once configured, ordinary use needs no open Terminal or companion app.

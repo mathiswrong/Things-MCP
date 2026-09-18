@@ -1,9 +1,17 @@
 # Troubleshooting
 
+> [!IMPORTANT]
+> **Open Things 3 before launching your LLM client.**
+>
+> Things must already be running on the Mac hosting Things MCP before you open your AI app or browser conversation. Otherwise, you may see **“unable to connect to server”**. Keep Things running while you use the connection.
+>
+> **Already seeing the error?** Open Things, fully quit and reopen your desktop client (or reload your browser client), then start a new conversation and check the connection.
+
 Start with: **Use Things MCP to check the connection without reading or changing tasks.** The result reports whether Things is running and whether this connection can write.
 
 | Symptom | What to do |
 |---|---|
+| “unable to connect to server” | Open Things 3 first. Fully quit and reopen the desktop client, or reload the browser client, then start a new conversation and run a connection check. If it still fails, check extension settings and the transport diagnostics below. |
 | The package opens in the wrong application | In Claude Desktop, use Settings > Extensions > Advanced settings > Install extension and select the `.mcpb` file. |
 | The tools do not appear | Check that Things MCP is enabled in extension settings. Start a new conversation and select the extension or plugin. If only some tools load after an update, disable and re-enable this extension, then start a new conversation. |
 | `APP_UNAVAILABLE` | Open Things on the Mac running the bridge. Remote clients also need that Mac awake and online. |
