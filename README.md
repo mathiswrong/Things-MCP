@@ -29,6 +29,7 @@ Things MCP connects compatible MCP clients to the Things app on your Mac through
 | Your client | Setup route |
 | --- | --- |
 | **Claude Desktop on macOS** | [Download the `.mcpb` extension](https://github.com/mathiswrong/Things-MCP/releases/latest). No Terminal or separate runtime installation. |
+| **Cowork on a Mac** | [Use the same desktop extension](packaging/INSTALL.md#cowork-on-a-mac), then check the connection in a new Cowork task. |
 | **ChatGPT in a browser** | [Set up a private tunnel](docs/CHATGPT.md). First-time setup requires developer commands. |
 | **Other MCP clients** | [Configure the local transport](docs/OTHER-CLIENTS.md). Setup and compatibility depend on the host. |
 
@@ -39,6 +40,10 @@ Things MCP connects compatible MCP clients to the Things app on your Mac through
 3. Open **Settings > Extensions > Things MCP > Configure**. Enable **Allow changes** if you want to manage tasks, then select **Save**. New installations start read-only.
 4. Start a new conversation and ask: **Use Things MCP to check the connection without reading or changing tasks.** Allow macOS Automation access to Things if prompted.
 5. With **Allow changes** enabled, try: **Use Things MCP to create an Inbox task called “Try Things MCP”, then read it back.**
+
+### Cowork on a Mac
+
+For **Cowork on a Mac**, use the same extension, start a new task, and select **Cowork**. Follow the [Cowork installation and connection check](packaging/INSTALL.md#cowork-on-a-mac) for the steps, permission setting, and tested versions.
 
 ### ChatGPT browser chats
 
