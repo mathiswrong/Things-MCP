@@ -19,6 +19,29 @@ Things MCP is independent of Things and the client vendors. Their apps, accounts
 
 The local connection needs no API key, configuration editing, Terminal window, or separate background service. The client starts its packaged server when needed.
 
+## Cowork on a Mac
+
+Use the same desktop extension in Cowork. If Things MCP is already installed in Claude Desktop, keep Things running and start at step 3.
+
+1. Open Things 3 and leave it running.
+2. Download the `.mcpb` file from [Releases](https://github.com/mathiswrong/Things-MCP/releases). Open it with Claude Desktop and choose **Install**. If needed, use **Settings > Extensions > Advanced settings > Install extension** to select the file.
+3. In Claude Desktop, start a new task and select **Cowork**.
+4. Send this connection-check prompt:
+
+   > Use Things MCP to check the connection. Call things_capabilities and things_health without reading or changing tasks. If the connector is unavailable, say so without using another integration.
+
+5. To create or edit tasks, open **Settings > Extensions > Things MCP > Configure**, enable **Allow changes**, and select **Save**. Then try:
+
+   > Create one Inbox task called “Try Things MCP in Cowork,” then read it back to confirm it was created.
+
+For this local Cowork connection, use **Allow changes**. The **Allow changes from remote connections** switch controls the separately configured tunnel. See [Try a task](#try-a-task) for completing your test task and handling uncertain results.
+
+If the tools do not appear, check that Things MCP is enabled in extension settings and start a fresh Cowork task. If health reports `AUTOMATION_DENIED`, allow the requesting application or runtime to control Things under **macOS System Settings > Privacy & Security > Automation**. If a write reports `READ_ONLY`, save the **Allow changes** setting and request another health check.
+
+If it still fails, report your Claude Desktop, Things MCP, macOS, and Things versions, the installation method, and the failing tool's error. Do not include personal task contents. See [Troubleshooting](../docs/TROUBLESHOOTING.md) for other error codes.
+
+Desktop Cowork discovery, connection checks, and a create/read/edit/complete flow were verified with Things MCP **1.0.1**, Claude Desktop **1.46388.4**, and Things **3.23.4** on macOS **26.6.2**. This used an existing installation and did not cover web or mobile Cowork. See the [Cowork verification record](../VERIFICATION.md#cowork-desktop-check).
+
 ## Optional checklist, reminder and duplication setup
 
 Follow [Things URL setup](../docs/URL-OPERATIONS.md). Create templates without a token; editing existing tasks or duplicating them requires your local Things URL token in Keychain. URL receipts report dispatch without claiming complete read-back.
