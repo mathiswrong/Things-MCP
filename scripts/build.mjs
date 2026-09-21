@@ -99,7 +99,7 @@ export async function buildRuntime(directory) {
     if (
       metadata.name === "@sentry/server-utils" &&
       !files.length &&
-      metadata.version === "10.73.0" &&
+      ["10.73.0", "10.75.0"].includes(metadata.version) &&
       metadata.license === "MIT"
     ) {
       notices.push(
@@ -107,7 +107,7 @@ export async function buildRuntime(directory) {
       );
       notices.push(
         await readFile(
-          join(root, "packaging/notices/sentry-10.73.0.txt"),
+          join(root, `packaging/notices/sentry-${metadata.version}.txt`),
           "utf8",
         ),
       );
