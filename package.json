@@ -24,7 +24,7 @@
     "tunnel": "node scripts/tunnel.mjs"
   },
   "dependencies": {
-    "@modelcontextprotocol/client": "2.0.0",
+    "@modelcontextprotocol/client": "2.1.0",
     "@modelcontextprotocol/server": "2.0.0",
     "@sentry/node": "10.75.0",
     "proper-lockfile": "4.1.2",
