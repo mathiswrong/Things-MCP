@@ -13,7 +13,7 @@ test("the packaging signature dependency rejects extra DigestAlgorithm elements"
     "node-forge",
   );
   const { publicKey, privateKey } = generateKeyPairSync("rsa", {
-    modulusLength: 1024,
+    modulusLength: 2048,
     publicExponent: 3,
     publicKeyEncoding: { type: "pkcs1", format: "pem" },
     privateKeyEncoding: { type: "pkcs1", format: "pem" },
