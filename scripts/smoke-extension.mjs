@@ -4,10 +4,12 @@ import { createHash } from "node:crypto";
 import { mkdir, mkdtemp, readdir, readFile, rm } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
+import { setTimeout } from "node:timers/promises";
 import { promisify } from "node:util";
 import { getMcpConfigForManifest, unpackExtension } from "@anthropic-ai/mcpb";
 import { Client } from "@modelcontextprotocol/client";
 import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
+import lockfile from "proper-lockfile";
 import { defaultBuildDirectory } from "./build.mjs";
 
 const metadata = JSON.parse(
@@ -89,15 +91,23 @@ try {
   assert.equal(config.env.THINGS_MCP_ALLOW_WRITES, "false");
   const invalidState = join(directory, "invalid-settings");
   await assert.rejects(
-    promisify(execFile)(runtime, config.args, {
-      env: {
-        PATH: "/usr/bin:/bin",
-        THINGS_MCP_STATE_DIR: invalidState,
-        THINGS_MCP_ALLOW_WRITES: "true",
-        THINGS_MCP_BROWSER_ALLOW_WRITES: "invalid",
+    promisify(execFile)(
+      runtime,
+      [
+        "--import=data:text/javascript,setInterval(() => {}, 1000)",
+        ...config.args,
+      ],
+      {
+        env: {
+          PATH: "/usr/bin:/bin",
+          THINGS_MCP_STATE_DIR: invalidState,
+          THINGS_MCP_ALLOW_WRITES: "true",
+          THINGS_MCP_BROWSER_ALLOW_WRITES: "invalid",
+        },
+        timeout: 3000,
       },
-      timeout: 10000,
-    }),
+    ),
+    (error) => error.code === 1 && !error.killed,
   );
   await assert.rejects(readFile(join(invalidState, "settings.json")), {
     code: "ENOENT",
@@ -118,6 +128,34 @@ try {
   );
   const originalSettings = await readFile(join(state, "settings.json"), "utf8");
   assert.deepEqual(JSON.parse(originalSettings), { allowWrites: true });
+  const concurrentClients = [0, 1].map(
+    () => new Client({ name: "concurrent-startup-test", version: "1.0.0" }),
+  );
+  const release = await lockfile.lock(state, { retries: 0 });
+  const unlocking = setTimeout(1000).then(() => release());
+  try {
+    const connecting = Promise.all(
+      concurrentClients.map((connection) =>
+        connection.connect(
+          new StdioClientTransport({
+            command: runtime,
+            args: config.args,
+            env,
+            stderr: "pipe",
+          }),
+          { timeout: 5000 },
+        ),
+      ),
+    );
+    await Promise.all([connecting, unlocking]);
+    for (const connection of concurrentClients)
+      assert.equal((await connection.listTools()).tools.length, 20);
+  } finally {
+    await unlocking;
+    await Promise.all(
+      concurrentClients.map((connection) => connection.close()),
+    );
+  }
   for (let pass = 0; pass < 2; pass++) {
     client = new Client({ name: "extension-smoke-test", version: "1.0.0" });
     await client.connect(
@@ -174,7 +212,7 @@ try {
     "trash-settings.json",
   ]);
   process.stdout.write(
-    "Packaged extension: checksum, extraction, portable launch, twenty tools, write rejection, and restart passed.\n",
+    "Packaged extension: checksum, extraction, portable launch, twenty tools, write rejection, concurrent startup, fatal exit, and restart passed.\n",
   );
   if (process.argv.includes("--live-health"))
     process.stdout.write("Live health passed without reading task contents.\n");
