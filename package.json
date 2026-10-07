@@ -24,7 +24,7 @@
     "tunnel": "node scripts/tunnel.mjs"
   },
   "dependencies": {
-    "@modelcontextprotocol/client": "2.0.0",
+    "@modelcontextprotocol/client": "2.3.1",
     "@modelcontextprotocol/server": "2.0.0",
     "@sentry/node": "10.75.0",
     "proper-lockfile": "4.1.2",
@@ -40,6 +40,7 @@
     "typescript": "7.0.2"
   },
   "overrides": {
-    "tmp": "0.2.7"
+    "tmp": "0.2.7",
+    "node-forge": "https://codeload.github.com/digitalbazaar/forge/tar.gz/ceba34402e329f0365134f23fe19898756527d65"
   }
 }

@@ -218,7 +218,7 @@ export class State {
             lease,
           );
       }
-    });
+    }, true);
   }
   private async trashSettings() {
     const value = await this.read("trash-settings.json");
@@ -268,7 +268,7 @@ export class State {
           lease,
         );
       }
-    });
+    }, true);
   }
   async setWrites(enabled: boolean) {
     await this.exclusive(async (lease) => {
@@ -316,7 +316,10 @@ export class State {
       );
     });
   }
-  async exclusive<T>(action: (lease: Lease) => Promise<T>): Promise<T> {
+  async exclusive<T>(
+    action: (lease: Lease) => Promise<T>,
+    waitForLock = false,
+  ): Promise<T> {
     await this.initialize();
     let release: () => Promise<void>;
     const controller = new AbortController();
@@ -325,7 +328,9 @@ export class State {
       release = await lockfile.lock(this.directory, {
         stale: 120000,
         update: 10000,
-        retries: 0,
+        retries: waitForLock
+          ? { retries: 40, factor: 1, minTimeout: 50, maxTimeout: 50 }
+          : 0,
         onCompromised: () => {
           controller.abort();
         },

@@ -175,7 +175,8 @@ async function main() {
 }
 
 main().catch(async (error) => {
-  process.stderr.write(`${JSON.stringify(publicError(error))}\n`);
   await closeTelemetry();
-  process.exitCode = 1;
+  process.stderr.write(`${JSON.stringify(publicError(error))}\n`, () => {
+    process.exit(1);
+  });
 });
