@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.3
+
+- Prevented concurrent desktop connections from failing during shared permission setup. Setup waits briefly for the lock; uncertain mutations are never retried.
+- Fatal startup errors now exit after flushing the error, including when the host keeps background handles open.
+- Added packaged startup regression checks and updated dependencies, including a pinned upstream packaging signature fix.
+- Clarified desktop installation and startup guidance. The twenty tools and permission defaults are unchanged.
+
 ## 1.0.2
 
 - Updated the maintained wiki and public documentation to describe the shipped twenty-tool server and project descendant receipts.

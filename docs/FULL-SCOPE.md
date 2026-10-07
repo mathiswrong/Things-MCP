@@ -1,6 +1,6 @@
 # Operation scope
 
-This is the version 1.0.2 scope. Availability follows the current code, the installed Things public scripting dictionary and the [documented Things URL commands](https://culturedcode.com/things/support/articles/2803573/). A command appearing in a dictionary is not proof that it executes successfully.
+This is the version 1.0.3 scope. Availability follows the current code, the installed Things public scripting dictionary and the [documented Things URL commands](https://culturedcode.com/things/support/articles/2803573/). A command appearing in a dictionary is not proof that it executes successfully.
 
 ## Implemented native operations
 
