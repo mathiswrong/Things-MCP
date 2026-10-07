@@ -1,6 +1,16 @@
 # Verification record
 
-Version **1.0.2** was checked on September 6, 2026. It exposes twenty tools. The detailed [acceptance record](docs/V1-READINESS.md) separates observed native behavior from verification and environment limits.
+Version **1.0.3** was checked on October 6, 2026. It exposes twenty tools. The detailed [acceptance record](docs/V1-READINESS.md) separates observed native behavior from verification and environment limits.
+
+## Version 1.0.3 checks
+
+- Clean dependency installation, typecheck, lint, **83 tests**, runtime build, stdio smoke, extension packaging, extracted-package checks and native health passed. The dependency audit reported zero vulnerabilities.
+- Packaged regression checks connect two clients behind a held shared setup lock and verify fatal startup errors exit despite a persistent host handle. Ordinary mutations still fail immediately when busy and uncertain mutations are not retried.
+- A dependency regression accepts a valid synthetic RSA signature and rejects extra DigestAlgorithm elements. It fails against the previous unpatched packaging dependency. The temporary upstream source pin is recorded in [packaging dependencies](packaging/DEPENDENCIES.md).
+- The installed desktop extension connected through the host's built-in runtime and its Cowork/Code server manager discovered twenty tools after the startup fix. Native health passed with Things 3.24.1 running. No personal tasks were read or modified for this startup patch; earlier mutation evidence remains below.
+- The installed browser tunnel upgraded to the 1.0.3 runtime and reported healthy/ready. A connected plugin health call confirmed Things was running; existing ordinary-write grants were preserved and Trash/container grants remained off.
+- Source, reachable history and extracted package scans passed. The archive includes its MIT license and required dependency notices. The checksum matches the distributable.
+- These checks do not certify every host version or a fresh Mac. The supported tool set and permission defaults are unchanged.
 
 ## Cowork desktop check
 

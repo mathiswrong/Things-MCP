@@ -1,6 +1,6 @@
 # Capability reference
 
-Version 1.0.2 exposes twenty MCP tools using supported AppleScript/JXA and Things URLs. It does not accept caller scripts, access the Things database, or use Apple Shortcuts. [Verification](../VERIFICATION.md) records the evidence and environment limits.
+Version 1.0.3 exposes twenty MCP tools using supported AppleScript/JXA and Things URLs. It does not accept caller scripts, access the Things database, or use Apple Shortcuts. [Verification](../VERIFICATION.md) records the evidence and environment limits.
 
 | Tool | Behavior |
 |---|---|

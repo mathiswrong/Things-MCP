@@ -64,9 +64,9 @@ Other clients can use the standard local MCP transport. See [other MCP clients](
 | **Clean up deliberately** | Move items to recoverable Trash with separate permission; restore open tasks and projects. |
 
 <details>
-<summary><strong>See the full operation list for version 1.0.2</strong></summary>
+<summary><strong>See the full operation list for version 1.0.3</strong></summary>
 
-| Operation | Version 1.0.2 |
+| Operation | Version 1.0.3 |
 |---|---|
 | Search and read to-dos, projects, areas, and tags | Available |
 | Create an Inbox to-do | Available |
