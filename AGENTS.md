@@ -5,7 +5,7 @@ House rules: github.com/mathiswrong/control, local copy in `_control/` beside th
 
 ## Status ledger
 
-Before ending a session, update `STATUS.md` at this repo root: tool (claude code, codex, or cursor), model, task, state (working, blocked, waiting on me, or done), last touched (ISO timestamp), next step. No secrets, tokens, or private links in it.
+`STATUS.md` at this repo root is the session ledger, one `## <task>` entry per piece of work in flight (format: `_control/templates/STATUS.md`). Before ending a session, add or update your own entry: tool, model, state (working, blocked, waiting on me, or done), last touched, next step. Leave other sessions' entries alone. No secrets, tokens, or private links in it.
 
 ## Rules in force
 
