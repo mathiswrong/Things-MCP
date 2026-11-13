@@ -25,10 +25,10 @@
   },
   "dependencies": {
     "@modelcontextprotocol/client": "2.3.1",
-    "@modelcontextprotocol/server": "2.0.0",
+    "@modelcontextprotocol/server": "2.4.0",
     "@sentry/node": "10.75.0",
     "proper-lockfile": "4.1.2",
-    "zod": "4.6.5"
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@anthropic-ai/mcpb": "2.1.2",
@@ -41,6 +41,9 @@
   },
   "overrides": {
     "tmp": "0.2.7",
-    "node-forge": "https://codeload.github.com/digitalbazaar/forge/tar.gz/ceba34402e329f0365134f23fe19898756527d65"
+    "node-forge": "https://codeload.github.com/digitalbazaar/forge/tar.gz/ceba34402e329f0365134f23fe19898756527d65",
+    "@anthropic-ai/mcpb": {
+      "zod": "4.6.7"
+    }
   }
 }
