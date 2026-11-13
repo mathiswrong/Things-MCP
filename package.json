@@ -32,8 +32,8 @@
   },
   "devDependencies": {
     "@anthropic-ai/mcpb": "2.1.2",
-    "@biomejs/biome": "2.5.15",
-    "@types/node": "26.6.5",
+    "@biomejs/biome": "2.6.6",
+    "@types/node": "26.6.6",
     "@types/proper-lockfile": "4.1.4",
     "esbuild": "0.28.2",
     "tsx": "4.23.15",
