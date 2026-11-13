@@ -8,4 +8,4 @@ The builder's `node-forge` dependency has no published fix for [GHSA-86w9-cpqp-8
 
 The runtime build derives third-party notices from the dependencies reported by esbuild, preserving their license and notice files. A missing notice fails the build. The SDK's MIT notices and Apache-2.0 dependency notices remain in the package. No project license is granted by these third-party notices.
 
-The published `@sentry/server-utils` 10.73.0 and 10.75.0 packages omit their monorepo license file. `notices/sentry-10.73.0.txt` and `notices/sentry-10.75.0.txt` preserve the license from [the corresponding upstream versions](https://github.com/getsentry/sentry-javascript/blob/10.75.0/LICENSE). The build exception is restricted to those package versions and the MIT license identifier. Updating it requires reviewing the upstream notice again.
+The Sentry 11.12.0 archives for `@sentry/server-utils` and `@sentry/server-runtime-injection` include their MIT license and a separate `build/THIRD-PARTY-LICENSES.txt` for bundled dependencies. The build includes both files for each package.
