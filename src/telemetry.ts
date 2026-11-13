@@ -21,7 +21,20 @@ export function startTelemetry(dsn: string | undefined) {
   if (!dsn) return;
   Sentry.init({
     dsn,
-    sendDefaultPii: false,
+    dataCollection: {
+      userInfo: false,
+      cookies: false,
+      httpHeaders: false,
+      httpBodies: [],
+      urlQueryParams: false,
+      graphQL: { document: false, variables: false },
+      genAI: { inputs: false, outputs: false },
+      mcp: { inputs: false, outputs: false },
+      databaseQueryData: false,
+      queues: false,
+      stackFrameVariables: false,
+      frameContextLines: 0,
+    },
     defaultIntegrations: false,
     tracesSampleRate: 0,
     beforeSend: scrubEvent,

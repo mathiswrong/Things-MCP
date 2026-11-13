@@ -68,7 +68,7 @@ export async function buildRuntime(directory) {
     sourcemap: false,
     metafile: true,
     banner: {
-      js: "import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);",
+      js: "import { createRequire as createBundleRequire } from 'node:module'; const require = createBundleRequire(import.meta.url);",
     },
   });
   await mkdir(join(output, "native"), { recursive: true });
@@ -96,25 +96,14 @@ export async function buildRuntime(directory) {
     const files = (await readdir(packageRoot))
       .filter((name) => /^(licen[sc]e|copying|notice)(\..*)?$/i.test(name))
       .sort();
-    if (
-      metadata.name === "@sentry/server-utils" &&
-      !files.length &&
-      ["10.73.0", "10.75.0"].includes(metadata.version) &&
-      metadata.license === "MIT"
-    ) {
-      notices.push(
-        `${metadata.name}@${metadata.version} (${metadata.license})`,
-      );
-      notices.push(
-        await readFile(
-          join(root, `packaging/notices/sentry-${metadata.version}.txt`),
-          "utf8",
-        ),
-      );
-      continue;
-    }
     if (!files.length)
       throw new Error(`Missing third-party notice: ${metadata.name}`);
+    if (
+      ["@sentry/server-utils", "@sentry/server-runtime-injection"].includes(
+        metadata.name,
+      )
+    )
+      files.push("build/THIRD-PARTY-LICENSES.txt");
     notices.push(`${metadata.name}@${metadata.version} (${metadata.license})`);
     for (const file of files)
       notices.push(await readFile(join(packageRoot, file), "utf8"));
