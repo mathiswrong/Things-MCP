@@ -24,6 +24,8 @@ The native adapter runs fixed scripts with structured input, bounded subprocess 
 
 Project reads add `childCount` and a fingerprint of exposed child data. Child queries include logged tasks omitted by the ordinary open-project collection. Built-in list moves use the dedicated fixed helper; other edits use the main native dispatcher [@adapter] [@native]. These details matter for revisions and descendant preservation.
 
+Destination validation reads the project fields without enumerating children. A long Logbook history previously exhausted the subprocess deadline before creation, movement or URL placement could start. Full project reads still include the child fingerprint [@adapter].
+
 ## URL boundary
 
 The URL transport retrieves the existing authorization token from Keychain under service `Things MCP URLs`, account `default`. Only typed operations become URLs; callers cannot select arbitrary callback destinations or execute scripts [@transport] [@urls]. URLs complement native reads, but do not provide complete checklist, heading or reminder read-back. See [Mutation Reconciliation](mutation-reconciliation.md) for the resulting receipt distinction.

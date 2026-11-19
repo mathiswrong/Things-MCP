@@ -23,7 +23,7 @@ The server exposes twenty tools. The capability registry groups related operatio
 | Native changes | Create/edit to-dos, projects, areas and tags; status, supported timestamps, tags, hierarchy, calendar scheduling and supported placement. |
 | Project moves | Verified descendant preservation and a durable observation summary with full returned-task counts and bounded changed-ID detail. |
 | Recovery and deletion | Open-item restoration, separate open-to-do Trash and previewed container deletion with independent grants and native gates. |
-| URL changes | Structured templates, checklist replacement/clearing/append/prepend, heading placement, reminders, Evening, When clearing and duplication. |
+| URL changes | Structured templates, checklist replacement/clearing/append/prepend, project-root or heading placement, reminders, Evening, When clearing and duplication. |
 | Navigation | Show/edit items, Quick Entry, built-in views and search on the Mac. |
 
 These families are implemented by the registered tools; URL results certify dispatch only [@server] [@registry]. Exact inputs are documented in the public [capability reference](../../docs/CAPABILITIES.md).

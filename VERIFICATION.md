@@ -1,6 +1,12 @@
 # Verification record
 
-Version **1.0.3** was checked on October 6, 2026. It exposes twenty tools. The detailed [acceptance record](docs/V1-READINESS.md) separates observed native behavior from verification and environment limits.
+Version **1.0.4** includes the project placement fix verified on Things 3.24.2. It exposes twenty tools. The detailed [acceptance record](docs/V1-READINESS.md) separates observed native behavior from verification and environment limits.
+
+## Version 1.0.4 checks
+
+The release build passed typechecking, lint and 87 automatic tests. The opt-in live placement test is skipped during ordinary builds. Both the stdio smoke check and the extracted extension smoke check passed, including checksum, twenty-tool discovery, write rejection and restart. The dependency audit reported zero vulnerabilities.
+
+The installed tunnel served the merged placement fix on November 19. One labeled synthetic to-do was created in a large project, moved into a second large project, and placed at the root of a headed fixture using only `projectId`. The fixture was removed. A separate native item read hit the 20-second deadline during cleanup. Read-back on the Mac confirmed the final placement and cleanup.
 
 ## Project placement on Things 3.24.2
 
