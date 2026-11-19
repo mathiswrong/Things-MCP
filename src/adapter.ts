@@ -30,6 +30,8 @@ const responseSchema = z.discriminatedUnion("ok", [
   z.strictObject({ ok: z.literal(true), result: z.unknown() }),
   z.strictObject({
     ok: z.literal(false),
+    errorNumber: z.int32().optional(),
+    errorText: z.string().max(256).optional(),
     code: z.enum([
       "APP_UNAVAILABLE",
       "NOT_FOUND",
@@ -39,6 +41,25 @@ const responseSchema = z.discriminatedUnion("ok", [
     ]),
   }),
 ]);
+// Native exceptions can interpolate task text or the entire authenticated URL.
+// Only verbatim, content-free messages belong in the client response.
+const nativeReasons = new Set([
+  "Can't get object.",
+  "Can't convert types.",
+  "Can't set object.",
+  "AppleEvent timed out.",
+  "AppleEvent handler failed.",
+  "Message not understood.",
+  "A privilege violation occurred.",
+  "Not authorized to send Apple events to Things3.",
+]);
+const appleEventReasons: Record<number, string> = {
+  [-1728]: "Object not found.",
+  [-1712]: "AppleEvent timed out.",
+  [-1700]: "Type coercion failed.",
+  [-10000]: "AppleEvent handler failed.",
+  [-1743]: "Automation permission denied.",
+};
 export type Executor = (
   operation: string,
   input: unknown,
@@ -113,15 +134,16 @@ export function nativeExecutor(
         if (error) reject(error);
         else resolve(value);
       };
-      const timeout = setTimeout(
-        () => {
-          child.kill("SIGKILL");
-          finish(
-            new BridgeError(mutation ? "OUTCOME_UNKNOWN" : "NATIVE_FAILURE"),
-          );
-        },
-        runtime.timeoutMs ?? (readsLogbook ? 60000 : 20000),
-      );
+      const timeoutMs = runtime.timeoutMs ?? (readsLogbook ? 60000 : 20000);
+      const timeout = setTimeout(() => {
+        child.kill("SIGKILL");
+        finish(
+          new BridgeError(
+            mutation ? "OUTCOME_UNKNOWN" : "NATIVE_FAILURE",
+            `Native ${operation} timed out after ${timeoutMs} ms. The bridge stopped osascript.`,
+          ),
+        );
+      }, timeoutMs);
       const abort = () => {
         child.kill("SIGKILL");
         finish(new BridgeError("OUTCOME_UNKNOWN"));
@@ -153,8 +175,22 @@ export function nativeExecutor(
           const parsed = responseSchema.parse(
             JSON.parse(Buffer.concat(chunks).toString("utf8")),
           );
-          if (!parsed.ok) finish(new BridgeError(parsed.code));
-          else finish(undefined, parsed.result);
+          if (parsed.ok) return finish(undefined, parsed.result);
+          const number = parsed.errorNumber;
+          const reason =
+            parsed.errorText && nativeReasons.has(parsed.errorText)
+              ? parsed.errorText
+              : number !== undefined
+                ? appleEventReasons[number]
+                : undefined;
+          finish(
+            new BridgeError(
+              parsed.code,
+              number !== undefined
+                ? `Native ${operation}: Apple event ${number}.${reason ? ` ${reason}` : ""}`
+                : undefined,
+            ),
+          );
         } catch {
           finish(
             new BridgeError(mutation ? "OUTCOME_UNKNOWN" : "NATIVE_FAILURE"),
@@ -198,8 +234,11 @@ export class NativeAdapter implements Adapter {
   children(input: Reference, signal?: AbortSignal) {
     return this.call("children", input, z.array(itemSchema), false, signal);
   }
+  getFields(input: Reference, signal?: AbortSignal) {
+    return this.call("get", input, itemSchema, false, signal);
+  }
   async get(input: Reference, signal?: AbortSignal) {
-    const item = await this.call("get", input, itemSchema, false, signal);
+    const item = await this.getFields(input, signal);
     if (input.kind === "project" && !item.inTrash) {
       const children = await this.children(input, signal);
       item.childRevision = fingerprint(

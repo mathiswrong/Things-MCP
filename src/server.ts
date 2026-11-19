@@ -82,7 +82,7 @@ export function createServer(service: ThingsService) {
   );
   register(
     "things_edit_extras",
-    "Send checklist replacement/append/prepend, heading placement or scheduling including reminders/Evening/clearing to Things. Requires writes, current revision and the local Keychain URL token. Checklist replacement replaces every row. These fields cannot be read back; receipt is unverified dispatch. Repeat templates may reject these changes.",
+    "Send checklist replacement/append/prepend, project or heading placement, or scheduling including reminders/Evening/clearing to Things. Requires writes, current revision and the local Keychain URL token. Checklist replacement replaces every row. These fields cannot be read back; receipt is unverified dispatch. Repeat templates may reject these changes.",
     urlEditSchema,
     false,
     (input) => service.url({ ...input, action: "edit" }),

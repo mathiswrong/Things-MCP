@@ -92,6 +92,7 @@ test("checklist clearing, incremental text, scheduling clearing and duplication 
     [{ appendChecklist: ["A", "B"] }, { "append-checklist-items": "A\nB" }],
     [{ prependChecklist: ["A"] }, { "prepend-checklist-items": "A" }],
     [{ when: "" }, { when: "" }],
+    [{ projectId: "headed-project" }, { "list-id": "headed-project" }],
   ] as const) {
     const command = urlCommand(urlActionSchema.parse({ ...base, changes }));
     const { id: _id, ...parameters } = command.parameters;

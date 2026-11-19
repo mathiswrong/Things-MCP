@@ -71,13 +71,17 @@ class MemoryAdapter implements Adapter {
   async health() {
     return { version: "fixture", running: true, timezone: "UTC" };
   }
-  async get(reference: Reference, signal?: AbortSignal) {
+  async getFields(reference: Reference, signal?: AbortSignal) {
     this.reads += 1;
     await this.onRead?.(signal);
     if (this.failRead) throw new BridgeError("NATIVE_FAILURE");
     const item = this.items.get(reference.id);
     if (!item || item.kind !== reference.kind)
       throw new BridgeError("NOT_FOUND");
+    return { ...item };
+  }
+  async get(reference: Reference, signal?: AbortSignal) {
+    const item = await this.getFields(reference, signal);
     if (item.kind === "project" && !item.inTrash) {
       const children = await this.children(reference);
       return {
@@ -113,6 +117,7 @@ class MemoryAdapter implements Adapter {
       ...target,
       title: this.discardWrites ? "Unchanged title" : input.title,
       ...(input.notes !== undefined ? { notes: input.notes } : {}),
+      ...(input.projectId ? { projectId: input.projectId } : {}),
     });
     if (this.failAfterCreate) throw new BridgeError("NATIVE_FAILURE");
     return target;
@@ -1953,5 +1958,75 @@ test("individual task moves and existing receipts retain their original shape", 
       ...result,
       replayed: true,
     });
+  });
+});
+
+test("to-do placement does not read the destination project's children", async () => {
+  await fixture(async ({ adapter, service }) => {
+    const destination = { kind: "project" as const, id: "headed-project" };
+    adapter.items.set(destination.id, {
+      ...destination,
+      title: "Project with headings",
+    });
+    adapter.children = async () => {
+      throw new BridgeError("NATIVE_FAILURE");
+    };
+    const target = seed(adapter);
+    await service.move({
+      requestId: randomUUID(),
+      target: { kind: target.kind, id: target.id },
+      expectedRevision: fingerprint(target),
+      destination,
+    });
+    assert.equal(adapter.items.get(target.id)?.projectId, destination.id);
+    const receipt = await service.create({
+      requestId: randomUUID(),
+      kind: "todo",
+      title: "Top level",
+      projectId: destination.id,
+    });
+    assert.equal(
+      adapter.items.get(receipt.target.id)?.projectId,
+      destination.id,
+    );
+  });
+});
+
+test("URL project placement validates the destination before requesting a token", async () => {
+  await fixture(async ({ adapter, state }) => {
+    const target = seed(adapter);
+    const destination = {
+      kind: "project" as const,
+      id: "placement-project",
+      title: "Fixture",
+    };
+    let tokens = 0;
+    const service = new ThingsService(adapter, state, {
+      token: async () => {
+        tokens++;
+        return "fixture";
+      },
+      send: async (command) => {
+        assert.equal(command.parameters["list-id"], destination.id);
+      },
+    });
+    const request = {
+      action: "edit",
+      requestId: randomUUID(),
+      target: { kind: "todo", id: target.id },
+      expectedRevision: fingerprint(target),
+      changes: { projectId: destination.id },
+    };
+    await assert.rejects(service.url(request), code("NOT_FOUND"));
+    adapter.items.set(destination.id, { ...destination, inTrash: true });
+    await assert.rejects(service.url(request), code("INVALID_INPUT"));
+    assert.equal(await state.operation(request.requestId), undefined);
+    assert.equal(tokens, 0);
+    adapter.items.set(destination.id, destination);
+    adapter.children = async () => {
+      throw new BridgeError("NATIVE_FAILURE");
+    };
+    assert.equal((await service.url(request)).verification, "url_dispatched");
+    assert.equal(tokens, 1);
   });
 });

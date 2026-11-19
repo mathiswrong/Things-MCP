@@ -119,10 +119,6 @@ export const urlEditSchema = z
       value.target.kind === "todo" ||
       Object.keys(value.changes).every((key) => key === "when"),
     "Project URL edits support scheduling only.",
-  )
-  .refine(
-    (value) => !value.changes.projectId || !!value.changes.heading,
-    "Project placement here requires a heading.",
   );
 export const duplicateSchema = z.strictObject({
   ...revision,

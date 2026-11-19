@@ -46,7 +46,8 @@ on run arguments
     end tell
     return "{\"ok\":true,\"result\":true}"
   on error errorText number errorNumber
-    if errorNumber is -1743 then return "{\"ok\":false,\"code\":\"AUTOMATION_DENIED\"}"
-    return "{\"ok\":false,\"code\":\"NATIVE_FAILURE\"}"
+    set errorCode to "NATIVE_FAILURE"
+    if errorNumber is -1743 then set errorCode to "AUTOMATION_DENIED"
+    return "{\"ok\":false,\"code\":\"" & errorCode & "\",\"errorNumber\":" & (errorNumber as text) & "}"
   end try
 end run
