@@ -611,6 +611,15 @@ function run() {
         : allowed.indexOf(error.message) >= 0
           ? error.message
           : "NATIVE_FAILURE";
-    return JSON.stringify({ ok: false, code: code });
+    return JSON.stringify({
+      ok: false,
+      code,
+      ...(Number.isInteger(error.errorNumber)
+        ? {
+            errorNumber: error.errorNumber,
+            errorText: String(error.message).slice(0, 256),
+          }
+        : {}),
+    });
   }
 }

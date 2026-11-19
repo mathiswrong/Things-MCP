@@ -44,6 +44,7 @@ test("MCP initialization, discovery, reads, and write rejection work through the
       throw new Error("not called");
     },
     health: async () => ({ version: "test", running: true, timezone: "UTC" }),
+    getFields: async () => fixture,
     get: async () => fixture,
     find: async () => ({
       items: [fixture],
@@ -89,6 +90,29 @@ test("MCP initialization, discovery, reads, and write rejection work through the
       JSON.stringify(found.structuredContent).includes("Synthetic task"),
     );
     assert.ok(!JSON.stringify(found).includes("Private fixture"));
+    const capabilities = await client.callTool({
+      name: "things_capabilities",
+      arguments: {},
+    });
+    assert.match(
+      JSON.stringify(capabilities.content),
+      /todo_move_into_project_with_headings_live_verified_3.24.2/,
+    );
+    adapter.get = async () => {
+      throw new BridgeError(
+        "NATIVE_FAILURE",
+        "Native children timed out after 60000 ms. The bridge stopped osascript.",
+      );
+    };
+    const timeout = await client.callTool({
+      name: "things_get_item",
+      arguments: { kind: "project", id: "fixture" },
+    });
+    assert.equal(timeout.isError, true);
+    assert.match(
+      JSON.stringify(timeout.content),
+      /Native children timed out after 60000 ms/,
+    );
     const denied = await client.callTool({
       name: "things_create_item",
       arguments: {

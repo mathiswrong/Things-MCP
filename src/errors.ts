@@ -36,8 +36,7 @@ const messages: Record<ErrorCode, string> = {
   APP_UNAVAILABLE:
     "Things is unavailable. Open Things on this Mac, then retry.",
   PLATFORM_UNSUPPORTED: "The Things adapter requires macOS.",
-  NATIVE_FAILURE:
-    "Things automation failed. Check that Things is running and automation access is allowed, then request a connection health check.",
+  NATIVE_FAILURE: "Things automation failed.",
   OUTCOME_UNKNOWN:
     "The write may have happened. Read the affected items before taking another action. This request will not be repeated automatically.",
   STALE_ITEM:
@@ -53,8 +52,11 @@ const messages: Record<ErrorCode, string> = {
     "The local operation journal could not be read or written safely. Resolve it before further writes.",
 };
 export class BridgeError extends Error {
-  constructor(public readonly code: ErrorCode) {
-    super(messages[code]);
+  constructor(
+    public readonly code: ErrorCode,
+    public readonly detail?: string,
+  ) {
+    super(detail ? `${messages[code]} ${detail}` : messages[code]);
   }
 }
 export function publicError(error: unknown) {

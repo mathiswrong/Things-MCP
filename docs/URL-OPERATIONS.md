@@ -12,7 +12,7 @@ The native tools cover fields that Things can read back. Four additional tools u
 | Tool | Use |
 |---|---|
 | `things_create_from_template` | Create one to-do with checklist rows, or one project containing headings and to-dos. Checklist rows can start open, completed or canceled. |
-| `things_edit_extras` | Replace, clear, append or prepend checklist rows; move a to-do to an existing heading; set a date, reminder or Evening; clear its When field. |
+| `things_edit_extras` | Replace, clear, append or prepend checklist rows; move a to-do to a project root with `projectId` alone, or to an existing heading; set a date, reminder or Evening; clear its When field. |
 | `things_duplicate_item` | Duplicate a to-do or project, optionally naming the copy. Repeating items cannot be duplicated. |
 | `things_show_view` | Open search or a built-in view, including Deadlines, Repeating and logged projects, with optional tag filters. |
 

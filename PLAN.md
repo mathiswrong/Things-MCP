@@ -8,6 +8,8 @@ The server provides twenty tools for native reads and edits, supported moves, pr
 
 There is no companion app, Apple Shortcuts dependency, direct Things Cloud account API or project-operated relay. The installed Things app owns synchronization. Native repeat-rule editing remains excluded without a substitute scheduler or handoff feature.
 
+- [x] Create and move to-dos to the root of a project with headings on Things 3.24.2 {#write-placement-check}
+
 ## Remaining boundaries
 
 [The scope inventory](docs/FULL-SCOPE.md) separates missing public mechanisms from commands that failed verification. Whole-library maintenance remains disabled; targeted fixtures cannot establish its safety in a nonempty library. Fresh-account consent, physical sleep/wake, actual logout/login and every client/runtime version are not certified. Initial browser provisioning still requires developer commands.

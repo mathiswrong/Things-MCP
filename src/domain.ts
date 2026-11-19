@@ -370,6 +370,7 @@ export interface Adapter {
   navigate(input: Navigate, signal?: AbortSignal): Promise<boolean>;
   children(reference: Reference, signal?: AbortSignal): Promise<Item[]>;
   health(): Promise<z.infer<typeof healthSchema>>;
+  getFields(reference: Reference, signal?: AbortSignal): Promise<Item>;
   get(reference: Reference, signal?: AbortSignal): Promise<Item>;
   find(query: Query): Promise<z.infer<typeof queryResultSchema>>;
   create(input: Create, signal?: AbortSignal): Promise<Reference>;

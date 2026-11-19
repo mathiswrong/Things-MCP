@@ -17,7 +17,7 @@ export const capabilities = [
     operation: "create_item",
     state: "implemented",
     adapter: "applescript",
-    validation: "native_write_verified_3.23.4",
+    validation: "todo_create_in_project_with_headings_live_verified_3.24.2",
     limitation:
       "Creation and renaming of to-dos, projects, areas and tags verified. Local write permission required.",
   },
@@ -41,9 +41,9 @@ export const capabilities = [
     operation: "move_item",
     state: "implemented",
     adapter: "applescript",
-    validation: "todo_and_populated_project_moves_live_verified_3.23.4",
+    validation: "todo_move_into_project_with_headings_live_verified_3.24.2",
     limitation:
-      "To-do Inbox, Today, Anytime, Someday, project placement and detachment verified. Area placement/detachment and populated-project Today/Someday verified. Project Anytime and direct Logbook moves are rejected after failed native verification. Populated-project area movement and descendant preservation passed native checks. Project move receipts include descendantImpact counts and up to 20 changed task IDs with exposed field names; unchanged fields do not prove no inherited effect. No headings, reordering, or Trash restoration.",
+      "To-do Inbox, Today, Anytime, Someday, project placement and detachment verified. Area placement/detachment and populated-project Today/Someday verified. Project Anytime and direct Logbook moves are rejected after failed native verification. Populated-project area movement and descendant preservation passed native checks. Project move receipts include descendantImpact counts and up to 20 changed task IDs with exposed field names; unchanged fields do not prove no inherited effect. To-dos move to the project root. Use edit_extras to select a heading. No reordering or Trash restoration.",
   },
   {
     operation: "trash_item",
@@ -124,10 +124,11 @@ export const capabilities = [
   },
   {
     operation: "edit_extras",
+    validation: "project_id_without_heading_live_verified_3.24.2",
     state: "implemented",
     adapter: "url_scheme",
     limitation:
-      "Checklist edits, heading placement, reminders, Evening and When clearing require the local Keychain token and a current revision. Unexposed fields cannot participate in revision checks. Receipt confirms dispatch only.",
+      "Checklist edits, project or heading placement, reminders, Evening and When clearing require the local Keychain token and a current revision. Unexposed fields cannot participate in revision checks. Receipt confirms dispatch only.",
   },
   {
     operation: "show_view",

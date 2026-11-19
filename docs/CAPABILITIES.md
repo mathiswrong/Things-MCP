@@ -20,7 +20,7 @@ Version 1.0.3 exposes twenty MCP tools using supported AppleScript/JXA and Thing
 | `things_preview_destructive` | Preview of exposed objects affected by a container deletion or global maintenance command. Returns a scope revision. |
 | `things_apply_destructive` | Implementation with independent grants and stale-scope checks. Open-project, area and tag-hierarchy deletion are native verified. Global-command gates remain disabled pending separate checks. |
 | `things_create_from_template` | Create one structured to-do or project with checklist rows and initial headings; unverified URL dispatch. |
-| `things_edit_extras` | Checklist replacement/clear/append/prepend, heading placement, reminders, Evening and When clearing; unverified URL dispatch. |
+| `things_edit_extras` | Checklist replacement/clear/append/prepend, project or heading placement, reminders, Evening and When clearing. The receipt confirms URL dispatch. |
 | `things_duplicate_item` | Duplicate a to-do or project; receipt identifies the source and does not return a copy ID. |
 | `things_show_view` | Open Things search or built-in views, with optional tag filters; URL dispatch only. |
 | `things_request_status` | Read a durable mutation receipt or pending/unknown status by request ID. |
@@ -85,7 +85,7 @@ Individual to-do Trash requires its own grant. Container deletion has its own in
 
 To-dos can move to Inbox, Today, Anytime, Someday, projects and areas. Projects can move to Today, Someday and areas. Upcoming uses scheduling. Project Anytime and direct Logbook moves previously failed verification and remain rejected. Existing Trash items cannot be edited. Closed-task deletion returned -1728 in native checks and is rejected before writing. The restore tool supports open to-dos returning to Inbox; open projects restore to Today. Closed items remain under investigation.
 
-URL operations provide duplication, reminders, Evening, When clearing, structured project templates, checklist replacement and incremental checklist text, and task placement under an existing heading. Initial checklist rows can be open, completed or canceled. Existing checklist rows and heading internals cannot be fully queried through the selected interfaces. Editing a single existing row by stable ID, editing headings in place and native repeat-rule changes remain unavailable. These are different limits from the supported URL writes.
+URL operations provide duplication, reminders, Evening, When clearing, structured project templates, checklist replacement and incremental checklist text, and task placement at a project root or under an existing heading. Initial checklist rows can be open, completed or canceled. Existing checklist rows and heading internals cannot be fully queried through the selected interfaces. Editing a single existing row by stable ID, editing headings in place and native repeat-rule changes remain unavailable. These are different limits from the supported URL writes.
 
 Native repeat-rule editing, general undo, lossless type conversion, arbitrary reordering and direct Things Cloud account access have no established supported route. Private experimental commands and substitute schedulers are excluded. Missing server work is recorded separately from vendor limits in [Full scope](FULL-SCOPE.md).
 

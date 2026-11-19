@@ -57,12 +57,15 @@ export class ThingsService {
         if (current.inTrash) throw new BridgeError("INVALID_INPUT");
         if (fingerprint(current) !== value.expectedRevision)
           throw new BridgeError("STALE_ITEM");
-        if (value.action === "edit" && value.changes.heading) {
+        if (
+          value.action === "edit" &&
+          (value.changes.heading || value.changes.projectId)
+        ) {
           const projectId = value.changes.projectId ?? current.projectId;
           if (!projectId) throw new BridgeError("INVALID_INPUT");
           if (
             (
-              await this.adapter.get(
+              await this.adapter.getFields(
                 { kind: "project", id: projectId },
                 lease.signal,
               )
@@ -79,6 +82,7 @@ export class ThingsService {
             : item.list?.kind === "project"
               ? { projectId: item.list.id }
               : { areaId: item.list?.id },
+          lease.signal,
         );
       }
       if (value.action === "edit" || value.action === "duplicate") {
@@ -111,7 +115,7 @@ export class ThingsService {
           lease,
         );
         return { ...receipt, replayed: false };
-      } catch {
+      } catch (error) {
         await this.state
           .record(
             value.requestId,
@@ -119,7 +123,10 @@ export class ThingsService {
             lease,
           )
           .catch(() => undefined);
-        throw new BridgeError("OUTCOME_UNKNOWN");
+        throw new BridgeError(
+          "OUTCOME_UNKNOWN",
+          error instanceof BridgeError ? error.detail : undefined,
+        );
       } finally {
         delete command.parameters["auth-token"];
       }
@@ -175,7 +182,7 @@ export class ThingsService {
       },
       undefined,
       false,
-      async () => this.validateReferences(value),
+      async (lease) => this.validateReferences(value, lease.signal),
     );
   }
   async update(input: unknown) {
@@ -222,7 +229,7 @@ export class ThingsService {
             .sort();
         }
         resolved = this.parse(updateSchema, { ...value, changes });
-        await this.validateReferences(changes, value.target);
+        await this.validateReferences(changes, lease.signal, value.target);
       },
     );
   }
@@ -233,13 +240,14 @@ export class ThingsService {
       areaId?: string;
       parentTagId?: string | null;
     },
+    signal: AbortSignal,
     target?: Reference,
   ) {
     for (const id of fields.tagIds ?? [])
-      await this.adapter.get({ kind: "tag", id });
+      await this.adapter.getFields({ kind: "tag", id }, signal);
     for (const kind of ["project", "area"] as const) {
       const id = fields[kind === "project" ? "projectId" : "areaId"];
-      if (id && (await this.adapter.get({ kind, id })).inTrash)
+      if (id && (await this.adapter.getFields({ kind, id }, signal)).inTrash)
         throw new BridgeError("INVALID_INPUT");
     }
     let parentId = fields.parentTagId;
@@ -248,8 +256,9 @@ export class ThingsService {
       if (seen.has(parentId) || seen.size > 100)
         throw new BridgeError("INVALID_INPUT");
       seen.add(parentId);
-      parentId = (await this.adapter.get({ kind: "tag", id: parentId }))
-        .parentTagId;
+      parentId = (
+        await this.adapter.getFields({ kind: "tag", id: parentId }, signal)
+      ).parentTagId;
     }
   }
   async schedule(input: unknown) {
@@ -505,7 +514,10 @@ export class ThingsService {
       async (lease) => {
         const destination = value.destination;
         if (destination.kind === "area" || destination.kind === "project") {
-          const parent = await this.adapter.get(destination, lease.signal);
+          const parent = await this.adapter.getFields(
+            destination,
+            lease.signal,
+          );
           if (parent.inTrash) throw new BridgeError("INVALID_INPUT");
         }
       },
@@ -684,7 +696,7 @@ export class ThingsService {
           current.kind === "todo" &&
           current.projectId
         ) {
-          const parent = await this.adapter.get(
+          const parent = await this.adapter.getFields(
             { kind: "project", id: current.projectId },
             lease.signal,
           );
@@ -784,7 +796,10 @@ export class ThingsService {
           ["AUTOMATION_DENIED", "VERIFICATION_FAILED"].includes(error.code)
         )
           throw error;
-        throw new BridgeError("OUTCOME_UNKNOWN");
+        throw new BridgeError(
+          "OUTCOME_UNKNOWN",
+          error instanceof BridgeError ? error.detail : undefined,
+        );
       }
     });
   }

@@ -2,6 +2,14 @@
 
 Version **1.0.3** was checked on October 6, 2026. It exposes twenty tools. The detailed [acceptance record](docs/V1-READINESS.md) separates observed native behavior from verification and environment limits.
 
+## Project placement on Things 3.24.2
+
+On November 19, 2026, the installed Things 3.24.2 and a backup of 3.23.4 had byte-identical Things.sdef files. The native project setter and creation command placed two scheduled synthetic to-dos at the root of a project containing a heading. Independent inspection confirmed both had no heading. A URL edit with only `projectId` moved the control to-do out of the heading and to the project root. The tool returned a dispatch receipt. The fixture project was then moved to Trash.
+
+Destination validation used to enumerate and fingerprint all exposed children, including Logbook entries. Two large destination reads exhausted the 60-second subprocess budget before the mutation journal or write. Reading only the destination fields took less than one second each. Revisions for edits to the project itself still include its children.
+
+To repeat the live test, create a disposable project with a heading named “Fixture heading” and give the project the title “Things MCP placement fixture ” followed by eight lowercase hexadecimal characters. Set `THINGS_MCP_LIVE_PLACEMENT_PROJECT` to its ID. Use an authorized local state directory and, for client-scoped grants, set `THINGS_MCP_LIVE_CLIENT` to that client. Run `node --import tsx --test tests/project-placement.live.test.ts`, inspect both to-dos above the heading, then remove the fixture. If a mutation reports uncertainty, inspect the fixture and the Inbox before cleanup.
+
 ## Version 1.0.3 checks
 
 - Clean dependency installation, typecheck, lint, **83 tests**, runtime build, stdio smoke, extension packaging, extracted-package checks and native health passed. The dependency audit reported zero vulnerabilities.

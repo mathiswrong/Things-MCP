@@ -125,3 +125,36 @@ test("argument-based list commands receive no unused stdin payload", async () =>
     0,
   );
 });
+
+test("native failures identify the operation and Apple event without exposing native payloads", async () => {
+  for (const message of [
+    "Can't get object.",
+    "private task: things:///update?auth-token=secret",
+  ]) {
+    const response = {
+      ok: false,
+      code: "NATIVE_FAILURE",
+      errorNumber: -1728,
+      errorText: message,
+    };
+    const execute = executor(
+      `process.stdout.write(${JSON.stringify(JSON.stringify(response))});`,
+    );
+    await assert.rejects(execute("get", {}, false), (error) => {
+      assert.ok(error instanceof BridgeError);
+      assert.match(error.message, /Native get: Apple event -1728/);
+      if (message === "Can't get object.")
+        assert.ok(error.message.includes(message));
+      assert.doesNotMatch(error.message, /private|secret/);
+      return true;
+    });
+  }
+  await assert.rejects(
+    executor("process.stdin.resume();setInterval(()=>{},1000)", 30)(
+      "children",
+      {},
+      false,
+    ),
+    /Native children timed out after 30 ms/,
+  );
+});
