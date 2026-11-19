@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.4
+
+- Create or move a to-do into a project with a long Logbook history without waiting for every child to load. Projects with headings accept to-dos at the project root.
+- Move a to-do to the project root with `things_edit_extras` by supplying only `projectId`.
+- Native timeout errors identify the operation and time limit. Apple event failures include the error number and a content-free reason when available.
+- Updated the MCP SDK and packaging dependencies.
+
 ## 1.0.3
 
 - Prevented concurrent desktop connections from failing during shared permission setup. Setup waits briefly for the lock; uncertain mutations are never retried.
