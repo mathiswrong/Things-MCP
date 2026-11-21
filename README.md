@@ -29,6 +29,7 @@ Things MCP connects compatible MCP clients to the Things app on your Mac through
 | Your client | Setup route |
 | --- | --- |
 | **Claude Desktop on macOS** | [Download the `.mcpb` extension](https://github.com/mathiswrong/Things-MCP/releases/latest). No Terminal or separate runtime installation. |
+| **Claude in a browser linked to your Mac** | [Connect through Claude Desktop](packaging/INSTALL.md#use-things-from-claudeai). Check which Mac handled the call in the browser chat. |
 | **Cowork on a Mac** | [Use the same desktop extension](packaging/INSTALL.md#cowork-on-a-mac), then check the connection in a new Cowork task. |
 | **ChatGPT in a browser** | [Set up a private tunnel](docs/CHATGPT.md). First-time setup requires developer commands. |
 | **Other MCP clients** | [Configure the local transport](docs/OTHER-CLIENTS.md). Setup and compatibility depend on the host. |
@@ -117,7 +118,7 @@ With **Allow changes** enabled:
 ## Requirements
 
 - A Mac with Things 3 installed and **running before you launch your LLM client**. Native checks used Things 3.23.3 and 3.23.4.
-- A client that supports the chosen connection. The packaged local route uses Claude Desktop; remote use depends on your ChatGPT account's available plugin and tunnel features.
+- A client that supports the chosen connection. The packaged local route uses Claude Desktop; linked claude.ai chats use the desktop bridge. ChatGPT browser access requires the plugin and tunnel features on your account.
 - macOS Automation permission to control Things when requested.
 - For remote access, the Mac must remain awake, online, and signed in.
 

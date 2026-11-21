@@ -26,6 +26,38 @@ Things MCP is independent of Things and the client vendors. Their apps, accounts
 
 The local connection needs no API key, configuration editing, Terminal window, or separate background service. The client starts its packaged server when needed.
 
+## Use Things from claude.ai
+
+A browser chat can use the Things server that Claude Desktop runs on your Mac. Keep the Mac awake and online, with Things 3 and Claude Desktop running. You can leave an existing **Local dev** connector in place.
+
+1. In Claude Desktop, open **Settings > Desktop app > Extensions > Manage** and find **Local MCP servers**. Some versions put this list under **Settings > Developer**. Select your Things server and check for **Running**. If it is already running, skip installation. If Things appears only in the website's Connectors list, [register the local server](#register-the-local-server-manually).
+2. Start a **new chat** at [claude.ai](https://claude.ai/new). Open **+ > Devices** and select the Mac running Things. If it is already selected, leave it selected. The chat should show the Mac as **Connected**. If the Mac is missing, open **Devices > Manage computers** and check its connection before continuing.
+3. Send this read-only check, using the server name from step 1:
+
+   > On the linked Mac, use the local Things server from Claude Desktop to call `things_health` once. Skip the Local dev connector. If the local server is unavailable, say so. Do not read or change any tasks.
+
+4. Expand the tool activity in the reply. On the **Things health** call, open **Which computer** (the computer icon). **Linked to** should name the Mac you selected. Expand the response and check **Running: Yes** and the Things version. The device label on that specific call tells you which connection handled it.
+
+### Register the local server manually
+
+Use this route if Claude Desktop has no running Things entry. It requires Node.js 24 or later. The server speaks stdio directly. Claude Desktop starts it, and the health check needs no Things URL token.
+
+1. Follow [Build and install locally](../docs/OTHER-CLIENTS.md#build-and-install-locally). Keep the JSON printed by `npm run install:local`. It contains the absolute Node and server paths for your Mac.
+2. Open **Edit config** in **Local MCP servers**. Before editing `~/Library/Application Support/Claude/claude_desktop_config.json`, make a backup copy. Inside the existing `mcpServers` object, add the installer's `things` entry under the name `Things`. Keep every existing entry and all other settings. If `mcpServers` is missing, add it at the top level.
+3. Keep the printed `command` and the first two `args` values. Append `"--client", "desktop-plugin"` to `args`. This gives the connection its own write setting and starts it read-only by default. The finished entry has this shape (replace the first two paths with the installer output):
+
+   ```json
+   {
+     "Things": {
+       "command": "/absolute/path/to/node",
+       "args": ["/absolute/path/to/cli.mjs", "stdio", "--client", "desktop-plugin"]
+     }
+   }
+   ```
+
+4. Save and validate the file with `python3 -m json.tool "$HOME/Library/Application Support/Claude/claude_desktop_config.json" > /dev/null`. A successful check exits silently. With Things 3 open, fully quit and reopen Claude Desktop. If **Things** fails to start, open **View logs** or check `~/Library/Logs/Claude/mcp-server-Things.log` for the startup error.
+5. Run the browser health check above. If you later want the desktop server and its linked chats to create or edit tasks, add `"env": {"THINGS_MCP_ALLOW_WRITES": "true"}` alongside `args` in the `Things` entry. Restart Claude Desktop and run the check again. **Writes enabled** should now say **Yes**. Individual to-do Trash has a separate grant and stays off by default.
+
 ## Cowork on a Mac
 
 Use the same desktop extension in Cowork. If Things MCP is already installed in Claude Desktop, keep Things running and start at step 3.
