@@ -24,6 +24,7 @@ Start with: **Use Things MCP to check the connection without reading or changing
 | `BUSY` | Another operation is running. Retry the same request later. |
 | `OUTCOME_UNKNOWN` or `VERIFICATION_FAILED` | Inspect the affected item and its request receipt before making another change. Do not blindly recreate it or use a new request ID. |
 | `STATE_FAILURE` or `UNSAFE_STATE` | Stop making writes. Report the error code without including your journal. Do not delete or move the state folder as a workaround. |
+| Things appears as **Local dev** on claude.ai, but a linked chat cannot find it | Check **Local MCP servers** in Claude Desktop, then [verify the call from a fresh browser chat](../packaging/INSTALL.md#use-things-from-claudeai). |
 | ChatGPT cannot reach the Mac | Check the plugin connection, workspace association, Mac availability, and whether Things MCP is allowed under Login Items. See the tunnel diagnostics in the ChatGPT guide. |
 | An expected Things feature is missing | Check the capability reference. Not every Things action has a supported tool. |
 
